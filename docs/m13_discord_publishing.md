@@ -25,3 +25,7 @@ The public automation repo owns publishing; private `statrally-soccer-btts` cont
 - Avoid repeated No Bet messages if there is no change; deduplication/rate-limit policy remains to be implemented.
 
 Do not blend this with M14 realized-P&L tracking or M15 web design. Scheduled scanner remains intentionally gated; do not enable it solely to test formatting.
+
+## November 1 progress
+
+The public scanner workflow now runs Discord draft formatting after the private M12 scan. Automatic webhook delivery uses an independent `ENABLE_DISCORD_POSTS` gate and `--suppress-no-bet` to avoid repeated routine No Bet messages. Eight targeted checks of an equivalent local stdlib publisher implementation passed without any GitHub Actions execution or webhook request. The full repository test suite has **not** been executed in GitHub. The webhook has **not** been configured or tested; M13 remains in progress. The current publisher does not authorize betting selections or attempt trade execution.
