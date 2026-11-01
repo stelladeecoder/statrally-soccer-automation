@@ -1,0 +1,35 @@
+name: M13 multi-league verification corrected
+on:
+  pull_request:
+    branches: [main]
+    paths: [.github/workflows/m13-multileague-fixed.yml]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: public-automation
+      - uses: actions/checkout@v4
+        with:
+          repository: stelladeecoder/statrally-soccer-btts
+          token: ${{ secrets.STAT_RALLY_PRIVATE_READ_TOKEN }}
+          persist-credentials: false
+          path: private-engine
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify public tests
+        working-directory: public-automation
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests -v
+      - name: Dry run multi-league schedule
+        run: |
+          cd private-engine
+          PYTHONPATH=src python src/m13_daily_fixtures.py > "$RUNNER_TEMP/schedule.json"
+          cd ..
+          python public-automation/src/m13_discord_publish.py --input "$RUNNER_TEMP/schedule.json" --mode watchlist
