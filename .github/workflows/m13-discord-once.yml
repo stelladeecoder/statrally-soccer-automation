@@ -1,0 +1,26 @@
+name: M13 one-time Discord offline verification
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/m13-discord-once.yml
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run all public automation tests
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests -v
+      - name: Verify No Bet dry-run without sending
+        run: |
+          printf '%s' '{"status":"research_only","trades_placed":0,"decisions":[{"status":"NO_BET","qualified_bet":false}]}' > /tmp/scan.json
+          python src/m13_discord_publish.py --input /tmp/scan.json
+          python src/m13_discord_publish.py --input /tmp/scan.json --suppress-no-bet
