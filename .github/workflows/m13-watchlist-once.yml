@@ -1,0 +1,25 @@
+name: M13 watchlist one-time verification
+on:
+  pull_request:
+    branches: [main]
+    paths: [.github/workflows/m13-watchlist-once.yml]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run public automation suite
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests -v
+      - name: Test verified watchlist rendering without Discord send
+        env:
+          PYTHONPATH: src
+        run: |
+          python -c 'import json; from m13_discord_publish import render_watchlist; data={"status":"research_only","trades_placed":0,"decisions":[{"status":"NO_BET","fixture_verified":True,"home_team":"Team A","away_team":"Team B","kickoff_utc":"2026-11-08T12:00:00+00:00"}]}; content=render_watchlist(data)["content"]; assert "Team A vs Team B" in content; assert "\\n" not in content; print("WATCHLIST_DRY_RUN_PASS")'
