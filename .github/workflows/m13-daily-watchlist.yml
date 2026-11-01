@@ -1,0 +1,35 @@
+name: Daily soccer fixture watchlist
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "5 7 * * *"
+      timezone: "America/Chicago"
+permissions:
+  contents: read
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: automation
+      - uses: actions/checkout@v4
+        with:
+          repository: stelladeecoder/statrally-soccer-btts
+          ref: main
+          token: ${{ secrets.STAT_RALLY_PRIVATE_READ_TOKEN }}
+          persist-credentials: false
+          path: engine
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Fetch fixtures
+        working-directory: engine
+        env:
+          PYTHONPATH: src
+        run: python src/m13_daily_fixtures.py > "$RUNNER_TEMP/fixtures.json"
+      - name: Post daily fixtures
+        env:
+          STATRALLY_DISCORD_WEBHOOK: ${{ secrets.STATRALLY_DISCORD_WEBHOOK }}
+        run: python automation/src/m13_discord_publish.py --input "$RUNNER_TEMP/fixtures.json" --mode watchlist --send
