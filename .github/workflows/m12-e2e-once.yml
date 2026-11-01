@@ -1,0 +1,30 @@
+name: M12 one-shot end-to-end fixture evaluation
+on:
+  pull_request:
+    branches: [main]
+    paths: [.github/workflows/m12-e2e-once.yml]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: stelladeecoder/statrally-soccer-btts
+          token: ${{ secrets.STAT_RALLY_PRIVATE_READ_TOKEN }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install only required runtime dependency
+        run: python -m pip install pandas
+      - name: Offline M12 unit and integration tests
+        env:
+          PYTHONPATH: src
+        run: python -m unittest tests.test_m12_operational_scan tests.test_m12_kalshi_decision_pipeline tests.test_m12_kalshi_manual_capture -v
+      - name: Live read-only Kalshi ESPN fixture model EV chain
+        env:
+          PYTHONPATH: src
+        run: python src/m12_operational_scan.py --league epl --max-markets 10
