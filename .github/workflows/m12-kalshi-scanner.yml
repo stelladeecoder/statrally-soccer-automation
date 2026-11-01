@@ -46,9 +46,9 @@ jobs:
           python src/m12_operational_scan.py --league epl --max-markets 3 > "$RUNNER_TEMP/m12_scan.json"
           echo "M12 public-runner scan completed. Research only; no trading authorization."
       - name: Validate public-facing Discord draft without posting
-        run: python public-automation/src/m13_discord_publish.py --input "$RUNNER_TEMP/m12_scan.json"
+        run: python public-automation/src/m13_discord_publish.py --input "$RUNNER_TEMP/m12_scan.json" --mode watchlist
       - name: Publish Discord message only when explicitly enabled
-        if: ${{ vars.ENABLE_DISCORD_POSTS == 'true' }}
+        if: ${{ vars.ENABLE_DISCORD_POSTS == 'true' && github.event_name == 'schedule' }}
         env:
           STATRALLY_DISCORD_WEBHOOK: ${{ secrets.STATRALLY_DISCORD_WEBHOOK }}
         run: python public-automation/src/m13_discord_publish.py --input "$RUNNER_TEMP/m12_scan.json" --send --suppress-no-bet
