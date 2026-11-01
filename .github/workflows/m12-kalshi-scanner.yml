@@ -1,0 +1,41 @@
+name: StatRally M12 Kalshi scanner (private engine)
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "10 13,18,23 * * *"
+permissions:
+  contents: read
+concurrency:
+  group: statrally-m12-scan
+  cancel-in-progress: false
+jobs:
+  scan:
+    # Gate at the job level: no runner minutes when explicitly disabled.
+    if: ${{ vars.ENABLE_STAT_RALLY_SCANS == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify private repository access token is configured
+        env:
+          TOKEN: ${{ secrets.STAT_RALLY_PRIVATE_READ_TOKEN }}
+        run: |
+          test -n "$TOKEN" || { echo "Missing read-only private repository token"; exit 1; }
+      - name: Check out private approved engine
+        uses: actions/checkout@v4
+        with:
+          repository: stelladeecoder/statrally-soccer-btts
+          ref: main
+          token: ${{ secrets.STAT_RALLY_PRIVATE_READ_TOKEN }}
+          persist-credentials: false
+          path: private-engine
+      - name: Configure Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run bounded read-only scan
+        working-directory: private-engine
+        env:
+          PYTHONPATH: src
+        run: |
+          python src/m12_kalshi_manual_capture.py --league epl --max-markets 3 --live --output "$RUNNER_TEMP/m12_quotes.jsonl"
+          echo "M12 public-runner scan completed. Research only; no trading authorization."
