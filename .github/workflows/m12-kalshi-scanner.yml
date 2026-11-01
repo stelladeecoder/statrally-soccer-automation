@@ -15,6 +15,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      - name: Check out public automation publisher
+        uses: actions/checkout@v4
+        with:
+          path: public-automation
       - name: Verify private repository access token is configured
         env:
           TOKEN: ${{ secrets.STAT_RALLY_PRIVATE_READ_TOKEN }}
@@ -37,5 +41,12 @@ jobs:
         env:
           PYTHONPATH: src
         run: |
-          python src/m12_operational_scan.py --league epl --max-markets 3
+          python src/m12_operational_scan.py --league epl --max-markets 3 > "$RUNNER_TEMP/m12_scan.json"
           echo "M12 public-runner scan completed. Research only; no trading authorization."
+      - name: Validate public-facing Discord draft without posting
+        run: python public-automation/src/m13_discord_publish.py --input "$RUNNER_TEMP/m12_scan.json"
+      - name: Publish Discord message only when explicitly enabled
+        if: ${{ vars.ENABLE_DISCORD_POSTS == 'true' }}
+        env:
+          STATRALLY_DISCORD_WEBHOOK: ${{ secrets.STATRALLY_DISCORD_WEBHOOK }}
+        run: python public-automation/src/m13_discord_publish.py --input "$RUNNER_TEMP/m12_scan.json" --send
