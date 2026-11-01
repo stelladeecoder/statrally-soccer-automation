@@ -85,7 +85,7 @@ def render_approved_picks(envelope):
         if type(price) not in (float,int) or type(ev) not in (float,int) or not 0 < price < 1 or ev <= 0:
             raise ValueError("Invalid positive expected value or market entry")
         lines.append(f"• {pick['home_team']} vs {pick['away_team']} | BTTS {pick['side']} | entry ${price:.2f} | net EV ${ev:.3f} per contract")
-    return {"content":"**StatRally | Verified Kalshi BTTS Picks**\\n" + "\\n".join(lines)}
+    return {"content":"**StatRally | Verified Kalshi BTTS Picks**\n" + "\n".join(lines)}
 
 
 def publish(payload, webhook, opener=urlopen):
@@ -102,21 +102,21 @@ def main():
     parser=argparse.ArgumentParser()
     parser.add_argument("--input",required=True,help="Private scanner JSON output")
     parser.add_argument("--send",action="store_true",help="Explicitly allow Discord delivery")
-    parser.add_argument("--mode",choices=("summary","watchlist","picks"),default="summary")
+    parser.add_argument("--mode",choices=("summary","watchlist","picks","approved-picks"),default="summary")
     parser.add_argument("--suppress-no-bet",action="store_true",help="Avoid repeated routine No Bet posts")
     args=parser.parse_args()
     report=json.loads(Path(args.input).read_text(encoding="utf-8"))
-    payload=render_watchlist(report) if args.mode=="watchlist" else render_picks(report) if args.mode=="picks" else render(report)
+    payload=(render_watchlist(report) if args.mode=="watchlist" else render_picks(report) if args.mode=="picks" else render_approved_picks(report) if args.mode=="approved-picks" else render(report))
     if payload is None:
         print("DISCORD_SKIP_NO_VERIFIED_FIXTURES")
         return
-    if args.suppress_no_bet and not any(d.get("qualified_bet") is True for d in report["decisions"]):
+    if args.suppress_no_bet and args.mode=="summary" and not any(d.get("qualified_bet") is True for d in report["decisions"]):
         print("DISCORD_SKIP_NO_QUALIFIED_SELECTIONS")
         return
     if not args.send:
         print(json.dumps({"status":"dry_run","payload":payload},sort_keys=True))
         return
-    webhook=os.environ.get("STATRALLY_DISCORD_WEBHOOK","")
+    webhook=os.environ.get("STATRALLY_PICKS_DISCORD_WEBHOOK" if args.mode=="approved-picks" else "STATRALLY_DISCORD_WEBHOOK","")
     if not webhook:
         parser.error("STATRALLY_DISCORD_WEBHOOK secret missing")
     publish(payload,webhook)
