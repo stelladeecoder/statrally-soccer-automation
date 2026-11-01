@@ -3,7 +3,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import Mock
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"src"))
-from m13_discord_publish import render,publish,render_watchlist
+from m13_discord_publish import render,publish,render_watchlist,render_picks
 
 class M13DiscordTests(unittest.TestCase):
     def test_watchlist_rejects_unverified_fixture(self):
@@ -12,6 +12,11 @@ class M13DiscordTests(unittest.TestCase):
     def test_watchlist_shows_verified_fixture_only(self):
         r=render_watchlist({"status":"research_only","trades_placed":0,"decisions":[{"fixture_verified":True,"home_team":"Manchester United","away_team":"Aston Villa","kickoff_utc":"2026-11-08T12:00:00+00:00","status":"NO_BET"}]})
         self.assertIn("Manchester United vs Aston Villa",r["content"])
+    def test_picks_never_publish_unapproved_scan(self):
+        self.assertIsNone(render_picks({"status":"research_only","trades_placed":0,"decisions":[{"qualified_bet":True}]}))
+    def test_picks_reject_invalid_scan(self):
+        with self.assertRaises(ValueError):
+            render_picks({"status":"other","trades_placed":0,"decisions":[]})
     def test_no_bet(self):
         p=render({"status":"research_only","trades_placed":0,"decisions":[{"status":"NO_BET","qualified_bet":False}]})
         self.assertIn("No qualified selections",p["content"])
