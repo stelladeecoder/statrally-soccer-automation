@@ -49,4 +49,4 @@ jobs:
         if: ${{ vars.ENABLE_DISCORD_POSTS == 'true' }}
         env:
           STATRALLY_DISCORD_WEBHOOK: ${{ secrets.STATRALLY_DISCORD_WEBHOOK }}
-        run: python public-automation/src/m13_discord_publish.py --input "$RUNNER_TEMP/m12_scan.json" --send
+        run: python public-automation/src/m13_discord_publish.py --input "$RUNNER_TEMP/m12_scan.json" --send --suppress-no-bet
