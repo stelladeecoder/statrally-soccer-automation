@@ -28,8 +28,8 @@ class M13DiscordTests(unittest.TestCase):
         msg=render_approved_picks(sample)["content"]
         self.assertIn("Sample Home vs Sample Away",msg)
         self.assertIn("net EV",msg)
-        self.assertIn("\\n",msg)
-        self.assertNotIn("\\\\n",msg)
+        self.assertEqual(msg.count(chr(10)),1)
+        self.assertNotIn(chr(92)+"n",msg)
     def test_unapproved_picks_rejected(self):
         sample={"schema_version":1,"approval":"verified","model_calibrated":False,"picks":[]}
         with self.assertRaises(ValueError):
