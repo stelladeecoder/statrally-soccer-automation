@@ -21,24 +21,24 @@ def render(scan):
     return {"content": "StatRally BTTS scan complete. No qualified selections. Research only; no wagers placed."}
 
 def render_watchlist(scan):
-    if not isinstance(scan, dict) or scan.get("status") != "research_only" or scan.get("trades_placed") != 0:
-        raise ValueError("Verified research scan required")
-    decisions=scan.get("decisions")
-    if not isinstance(decisions,list):
-        raise ValueError("Missing decisions")
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+    if not isinstance(scan, dict) or scan.get("status") != "fixture_schedule":
+        raise ValueError("Daily fixture schedule required")
+    fixtures=scan.get("fixtures")
+    if not isinstance(fixtures,list):
+        raise ValueError("Missing fixture list")
     lines=[]
-    for d in decisions:
-        if d.get("fixture_verified") is not True:
+    for match in fixtures:
+        home,away,kickoff=match.get("home_team"),match.get("away_team"),match.get("kickoff_utc")
+        if not all(isinstance(x,str) and x.strip() for x in (home,away,kickoff)):
             continue
-        home,away,kickoff=d.get("home_team"),d.get("away_team"),d.get("kickoff_utc")
-        if not all(isinstance(v,str) and v.strip() for v in (home,away,kickoff)):
-            continue
-        if d.get("status") not in ("NO_BET","RESEARCH_ONLY"):
-            continue
-        lines.append(f"• {home} vs {away} | {kickoff} UTC")
+        when=datetime.fromisoformat(kickoff.replace("Z","+00:00")).astimezone(ZoneInfo("America/Chicago"))
+        lines.append(f"• {when.strftime('%-I:%M %p')} CT | {home} vs {away}")
     if not lines:
         return None
-    return {"content":"**StatRally | Verified BTTS watchlist**\n" + "\n".join(lines[:8])}
+    day=scan.get("date_central","")
+    return {"content":"**StatRally | EPL Matches — "+str(day)+"**\\n"+"\\n".join(lines)}
 
 def render_picks(scan):
     """Fail closed: M12 has no exportable approved candidate evidence yet."""
