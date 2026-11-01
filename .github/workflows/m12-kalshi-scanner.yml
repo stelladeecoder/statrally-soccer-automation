@@ -1,8 +1,9 @@
-name: StatRally M12 Kalshi scanner (private engine)
+name: StatRally Kalshi scanner and soccer schedule
 on:
   workflow_dispatch:
   schedule:
-    - cron: "10 13 * * *"
+    - cron: "0 7 * * *"
+      timezone: "America/Chicago"
     - cron: "10 18,23 * * *"
 permissions:
   contents: read
@@ -46,7 +47,7 @@ jobs:
         run: |
           python src/m12_operational_scan.py --league epl --max-markets 3 > "$RUNNER_TEMP/m12_scan.json"
           echo "M12 public-runner scan completed. Research only; no trading authorization."
-      - name: Get today's EPL schedule from ESPN
+      - name: Get today's multi-league soccer schedule from ESPN
         working-directory: private-engine
         env:
           PYTHONPATH: src
@@ -56,7 +57,7 @@ jobs:
       - name: Validate picks-channel decision (fail closed)
         run: python public-automation/src/m13_discord_publish.py --input "$RUNNER_TEMP/m12_scan.json" --mode picks
       - name: Publish Discord message only when explicitly enabled
-        if: ${{ vars.ENABLE_DISCORD_POSTS == 'true' && github.event_name == 'schedule' && github.event.schedule == '10 13 * * *' }}
+        if: ${{ vars.ENABLE_DISCORD_POSTS == 'true' && github.event_name == 'schedule' && github.event.schedule == '0 7 * * *' }}
         env:
           STATRALLY_DISCORD_WEBHOOK: ${{ secrets.STATRALLY_DISCORD_WEBHOOK }}
         run: python public-automation/src/m13_discord_publish.py --input "$RUNNER_TEMP/m13_schedule.json" --mode watchlist --send
