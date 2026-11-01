@@ -21,6 +21,9 @@ class M13DiscordTests(unittest.TestCase):
     def test_reject_trade_activity(self):
         with self.assertRaises(ValueError):
             render({"status":"research_only","trades_placed":1,"decisions":[]})
+    def test_empty_scan_is_no_bet(self):
+        payload=render({"status":"research_only","trades_placed":0,"decisions":[]})
+        self.assertIn("No qualified selections",payload["content"])
     def test_reject_non_discord_webhook(self):
         with self.assertRaises(ValueError):
             publish({"content":"No Bet"},"https://example.com/token",opener=lambda *a,**kw:None)
