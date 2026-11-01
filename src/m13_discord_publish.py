@@ -38,7 +38,7 @@ def render_watchlist(scan):
     if not lines:
         return None
     day=scan.get("date_central","")
-    return {"content":"**StatRally | EPL Matches — "+str(day)+"**\\n"+"\\n".join(lines)}
+    return {"content":"**StatRally | EPL Matches — "+str(day)+"**\n"+"\n".join(lines)}
 
 def render_picks(scan):
     """Fail closed: M12 has no exportable approved candidate evidence yet."""
