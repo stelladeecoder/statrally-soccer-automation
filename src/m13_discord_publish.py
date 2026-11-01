@@ -34,9 +34,13 @@ def main():
     parser=argparse.ArgumentParser()
     parser.add_argument("--input",required=True,help="Private scanner JSON output")
     parser.add_argument("--send",action="store_true",help="Explicitly allow Discord delivery")
+    parser.add_argument("--suppress-no-bet",action="store_true",help="Avoid repeated routine No Bet posts")
     args=parser.parse_args()
     report=json.loads(Path(args.input).read_text(encoding="utf-8"))
     payload=render(report)
+    if args.suppress_no_bet and not any(d.get("qualified_bet") is True for d in report["decisions"]):
+        print("DISCORD_SKIP_NO_QUALIFIED_SELECTIONS")
+        return
     if not args.send:
         print(json.dumps({"status":"dry_run","payload":payload},sort_keys=True))
         return
