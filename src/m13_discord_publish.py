@@ -36,7 +36,7 @@ def render_watchlist(scan):
         when=datetime.fromisoformat(kickoff.replace("Z","+00:00")).astimezone(ZoneInfo("America/Chicago"))
         groups.setdefault(league,[]).append((when,f"• {when.strftime('%-I:%M %p')} CT | {home} vs {away}"))
     if not groups and scan.get("status")=="fixture_schedule":
-        return {"content":"**StatRally | Soccer Matches — "+str(scan.get("date_central",""))+"**\\nNo matches scheduled today."}
+        return {"content":"**StatRally | Soccer Matches — "+str(scan.get("date_central",""))+"**\nNo matches scheduled today."}
     if not groups:
         return None
     parts=["**StatRally | Soccer Matches — "+str(scan.get("date_central",""))+"**"]
@@ -46,9 +46,9 @@ def render_watchlist(scan):
     failed=scan.get("failed_leagues",[])
     if failed:
         parts.append("Schedule incomplete: unavailable feeds for "+", ".join(failed))
-    content="\\n".join(parts)
+    content="\n".join(parts)
     if len(content)>2000:
-        content=content[:1960].rsplit("\\n",1)[0]+"\\n(Additional fixtures omitted)"
+        content=content[:1960].rsplit("\n",1)[0]+"\n(Additional fixtures omitted)"
     return {"content":content}
 
 def render_picks(scan):
