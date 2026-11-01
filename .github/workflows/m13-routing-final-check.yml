@@ -1,0 +1,20 @@
+name: M13 final routing verification
+on:
+  pull_request:
+    branches: [main]
+    paths: [.github/workflows/m13-routing-final-check.yml]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: All public publisher safety tests
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests -v
