@@ -40,6 +40,15 @@ def render_watchlist(scan):
         return None
     return {"content":"**StatRally | Verified BTTS watchlist**\n" + "\n".join(lines[:8]) + "\nNo betting selections are authorized."}
 
+def render_picks(scan):
+    """Fail closed: M12 has no exportable approved candidate evidence yet."""
+    if not isinstance(scan, dict) or scan.get("status") != "research_only" or scan.get("trades_placed") != 0:
+        raise ValueError("Verified research scan required")
+    if not isinstance(scan.get("decisions"), list):
+        raise ValueError("Missing decisions")
+    return None
+
+
 def publish(payload, webhook, opener=urlopen):
     if not webhook.startswith("https://discord.com/api/webhooks/") and not webhook.startswith("https://discordapp.com/api/webhooks/"):
         raise ValueError("Discord webhook URL required")
@@ -54,11 +63,11 @@ def main():
     parser=argparse.ArgumentParser()
     parser.add_argument("--input",required=True,help="Private scanner JSON output")
     parser.add_argument("--send",action="store_true",help="Explicitly allow Discord delivery")
-    parser.add_argument("--mode",choices=("summary","watchlist"),default="summary")
+    parser.add_argument("--mode",choices=("summary","watchlist","picks"),default="summary")
     parser.add_argument("--suppress-no-bet",action="store_true",help="Avoid repeated routine No Bet posts")
     args=parser.parse_args()
     report=json.loads(Path(args.input).read_text(encoding="utf-8"))
-    payload=render_watchlist(report) if args.mode=="watchlist" else render(report)
+    payload=render_watchlist(report) if args.mode=="watchlist" else render_picks(report) if args.mode=="picks" else render(report)
     if payload is None:
         print("DISCORD_SKIP_NO_VERIFIED_FIXTURES")
         return
