@@ -35,10 +35,10 @@ def render_watchlist(scan):
             continue
         if d.get("status") not in ("NO_BET","RESEARCH_ONLY"):
             continue
-        lines.append(f"• {home} vs {away} | {kickoff} UTC | {d['status']} (research only)")
+        lines.append(f"• {home} vs {away} | {kickoff} UTC")
     if not lines:
         return None
-    return {"content":"**StatRally | Verified BTTS watchlist**\n" + "\n".join(lines[:8]) + "\nNo betting selections are authorized."}
+    return {"content":"**StatRally | Verified BTTS watchlist**\n" + "\n".join(lines[:8])}
 
 def render_picks(scan):
     """Fail closed: M12 has no exportable approved candidate evidence yet."""
