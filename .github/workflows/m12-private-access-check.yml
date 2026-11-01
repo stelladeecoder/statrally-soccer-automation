@@ -1,0 +1,31 @@
+name: M12 private access one-shot verification
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/m12-private-access-check.yml
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Check read-only token presence
+        env:
+          TOKEN: ${{ secrets.STAT_RALLY_PRIVATE_READ_TOKEN }}
+        run: |
+          if [ -z "$TOKEN" ]; then echo "Secret missing"; exit 1; fi
+          echo "Secret exists (value not exposed)"
+      - name: Test private checkout
+        uses: actions/checkout@v4
+        with:
+          repository: stelladeecoder/statrally-soccer-btts
+          ref: main
+          token: ${{ secrets.STAT_RALLY_PRIVATE_READ_TOKEN }}
+          persist-credentials: false
+          path: private-engine
+      - name: Confirm scanner file available without running live API
+        run: |
+          test -f private-engine/src/m12_operational_scan.py
+          echo "PRIVATE_REPOSITORY_ACCESS_PASS"
