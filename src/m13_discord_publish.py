@@ -57,7 +57,35 @@ def render_picks(scan):
         raise ValueError("Verified research scan required")
     if not isinstance(scan.get("decisions"), list):
         raise ValueError("Missing decisions")
+    # A research-only scanner output is never an approved selection envelope.
     return None
+
+
+def render_approved_picks(envelope):
+    """Format only separately approved, explicitly verified prediction envelopes."""
+    if not isinstance(envelope,dict) or envelope.get("schema_version") != 1:
+        raise ValueError("Approved-picks schema required")
+    if envelope.get("approval") != "verified" or envelope.get("model_calibrated") is not True:
+        raise ValueError("Verified calibrated model approval required")
+    picks=envelope.get("picks")
+    if not isinstance(picks,list) or not 1 <= len(picks) <= 3:
+        raise ValueError("Between one and three approved picks required")
+    lines=[]
+    for pick in picks:
+        if not isinstance(pick,dict) or pick.get("fixture_verified") is not True or pick.get("fee_verified") is not True:
+            raise ValueError("Fixture and fee verification required")
+        if pick.get("qualified_bet") is not True:
+            raise ValueError("Unqualified selection rejected")
+        fields=("home_team","away_team","side","market_ticker")
+        if not all(isinstance(pick.get(k),str) and pick[k].strip() for k in fields):
+            raise ValueError("Missing mandatory selection identity")
+        if pick["side"] not in ("YES","NO"):
+            raise ValueError("Invalid side")
+        price,ev=pick.get("entry_price"),pick.get("net_ev_per_contract")
+        if type(price) not in (float,int) or type(ev) not in (float,int) or not 0 < price < 1 or ev <= 0:
+            raise ValueError("Invalid positive expected value or market entry")
+        lines.append(f"• {pick['home_team']} vs {pick['away_team']} | BTTS {pick['side']} | entry ${price:.2f} | net EV ${ev:.3f} per contract")
+    return {"content":"**StatRally | Verified Kalshi BTTS Picks**\\n" + "\\n".join(lines)}
 
 
 def publish(payload, webhook, opener=urlopen):
