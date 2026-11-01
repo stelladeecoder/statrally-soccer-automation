@@ -17,7 +17,7 @@ class M13DiscordTests(unittest.TestCase):
         self.assertNotIn("NO_BET",text)
         self.assertNotIn("No betting",text)
     def test_watchlist_does_not_post_empty_day(self):
-        self.assertIsNone(render_watchlist({"status":"fixture_schedule","date_central":"2026-11-01","fixtures":[]}))
+        self.assertIn("No matches scheduled today",render_watchlist({"status":"fixture_schedule","date_central":"2026-11-01","fixtures":[]})["content"])
     def test_picks_never_publish_unapproved_scan(self):
         self.assertIsNone(render_picks({"status":"research_only","trades_placed":0,"decisions":[{"qualified_bet":True}]}))
     def test_picks_reject_invalid_scan(self):
