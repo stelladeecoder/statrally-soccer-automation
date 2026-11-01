@@ -56,8 +56,3 @@ jobs:
         run: python public-automation/src/m13_discord_publish.py --input "$RUNNER_TEMP/m13_schedule.json" --mode watchlist
       - name: Validate picks-channel decision (fail closed)
         run: python public-automation/src/m13_discord_publish.py --input "$RUNNER_TEMP/m12_scan.json" --mode picks
-      - name: Publish Discord message only when explicitly enabled
-        if: ${{ vars.ENABLE_DISCORD_POSTS == 'true' && github.event_name == 'schedule' && github.event.schedule == '0 7 * * *' }}
-        env:
-          STATRALLY_DISCORD_WEBHOOK: ${{ secrets.STATRALLY_DISCORD_WEBHOOK }}
-        run: python public-automation/src/m13_discord_publish.py --input "$RUNNER_TEMP/m13_schedule.json" --mode watchlist --send
