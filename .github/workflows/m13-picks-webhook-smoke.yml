@@ -1,0 +1,28 @@
+name: M13 one-time picks webhook smoke test
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/m13-picks-webhook-smoke.yml
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Verify isolated picks-channel Discord webhook
+        env:
+          STATRALLY_PICKS_DISCORD_WEBHOOK: ${{ secrets.STATRALLY_PICKS_DISCORD_WEBHOOK }}
+        run: |
+          python - <<'PY'
+          import json,os,urllib.request
+          url=os.environ.get("STATRALLY_PICKS_DISCORD_WEBHOOK","")
+          if not url.startswith(("https://discord.com/api/webhooks/","https://discordapp.com/api/webhooks/")):
+              raise SystemExit("Missing or invalid picks webhook secret")
+          content="🧪 **StatRally M13 Webhook Test**\nThis is a connection test for #btts-picks. **NOT A BETTING PICK.** No real predictions or trades were made."
+          req=urllib.request.Request(url,data=json.dumps({"content":content}).encode(),headers={"Content-Type":"application/json","User-Agent":"StatRally/0.1"},method="POST")
+          with urllib.request.urlopen(req,timeout=15) as resp:
+              if resp.status not in (200,204): raise SystemExit("Discord test delivery failed")
+          print("PICKS_WEBHOOK_TEST_DELIVERED")
+          PY
