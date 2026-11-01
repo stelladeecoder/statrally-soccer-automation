@@ -29,3 +29,9 @@ Do not blend this with M14 realized-P&L tracking or M15 web design. Scheduled sc
 ## November 1 progress
 
 The public scanner workflow now runs Discord draft formatting after the private M12 scan. Automatic webhook delivery uses an independent `ENABLE_DISCORD_POSTS` gate and `--suppress-no-bet` to avoid repeated routine No Bet messages. Eight targeted checks of an equivalent local stdlib publisher implementation passed without any GitHub Actions execution or webhook request. The full repository test suite has **not** been executed in GitHub. The webhook has **not** been configured or tested; M13 remains in progress. The current publisher does not authorize betting selections or attempt trade execution.
+
+## Verified public CI acceptance — November 1, 2026
+
+Temporary PR #3 one-shot GitHub Actions run `41356210451` **passed**. All nine public-repository tests passed. CLI rendered the generic No Bet research message in dry-run, then confirmed suppression with `DISCORD_SKIP_NO_QUALIFIED_SELECTIONS`. No Discord HTTP request was made. The test pull request was closed **without merging**, preserving minimal routine CI overhead. The existing scheduled M12/M13 workflow was also fixed to install `pandas` before invoking the private model bridge.
+
+**M13 still in progress:** `STATRALLY_DISCORD_WEBHOOK` must be configured securely and a controlled real delivery independently verified. `ENABLE_DISCORD_POSTS` and `ENABLE_STAT_RALLY_SCANS` stay off unless explicitly activated by the repository owner. No betting candidate publications are approved.
