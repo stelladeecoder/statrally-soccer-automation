@@ -37,5 +37,5 @@ jobs:
         env:
           PYTHONPATH: src
         run: |
-          python src/m12_kalshi_manual_capture.py --league epl --max-markets 3 --live --output "$RUNNER_TEMP/m12_quotes.jsonl"
+          python src/m12_operational_scan.py --league epl --max-markets 3
           echo "M12 public-runner scan completed. Research only; no trading authorization."
