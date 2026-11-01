@@ -34,18 +34,6 @@ The current research model is **not approved to claim a profitable betting edge*
 
 The fixture watchlist is **independent** of the gated M12 scanner so a research-scanner error does not prevent the day's schedule.
 
-## Required GitHub Actions secrets
-
-Set these in **Settings → Secrets and variables → Actions** in the **public** repository:
-
-| Secret | Used for |
-| --- | --- |
-| `STAT_RALLY_PRIVATE_READ_TOKEN` | Read-only checkout of the private research repository |
-| `STATRALLY_DISCORD_WEBHOOK` | Deliver daily fixtures to `#match-watchlist` |
-| `STATRALLY_PICKS_DISCORD_WEBHOOK` | Isolated picks-channel connection; live picks not enabled |
-
-Never place secret values in commits, issues, PRs, or logs. The existing webhooks have been tested separately.
-
 ## Code and local tests
 
 - `src/m13_discord_publish.py`: watchlist formatter, guarded research reporting, picks formatting, webhook transport.
