@@ -1,12 +1,6 @@
 name: Validate public automation scaffold
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - "src/**"
-      - "tests/**"
-      - ".github/workflows/validate.yml"
 permissions:
   contents: read
 jobs:
