@@ -6,12 +6,18 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"src"))
 from m13_discord_publish import render,publish,render_watchlist,render_picks
 
 class M13DiscordTests(unittest.TestCase):
-    def test_watchlist_rejects_unverified_fixture(self):
-        r=render_watchlist({"status":"research_only","trades_placed":0,"decisions":[{"fixture_verified":False,"home_team":"A","away_team":"B","kickoff_utc":"2026-11-08T12:00:00+00:00","status":"NO_BET"}]})
-        self.assertIsNone(r)
-    def test_watchlist_shows_verified_fixture_only(self):
-        r=render_watchlist({"status":"research_only","trades_placed":0,"decisions":[{"fixture_verified":True,"home_team":"Manchester United","away_team":"Aston Villa","kickoff_utc":"2026-11-08T12:00:00+00:00","status":"NO_BET"}]})
-        self.assertIn("Manchester United vs Aston Villa",r["content"])
+    def test_watchlist_rejects_decision_scan(self):
+        with self.assertRaises(ValueError):
+            render_watchlist({"status":"research_only","decisions":[]})
+    def test_watchlist_shows_daily_fixtures_without_bet_decisions(self):
+        report={"status":"fixture_schedule","date_central":"2026-11-08","fixtures":[{"home_team":"Manchester United","away_team":"Aston Villa","kickoff_utc":"2026-11-08T16:30:00+00:00"}]}
+        text=render_watchlist(report)["content"]
+        self.assertIn("Manchester United vs Aston Villa",text)
+        self.assertIn("10:30 AM CT",text)
+        self.assertNotIn("NO_BET",text)
+        self.assertNotIn("No betting",text)
+    def test_watchlist_does_not_post_empty_day(self):
+        self.assertIsNone(render_watchlist({"status":"fixture_schedule","date_central":"2026-11-01","fixtures":[]}))
     def test_picks_never_publish_unapproved_scan(self):
         self.assertIsNone(render_picks({"status":"research_only","trades_placed":0,"decisions":[{"qualified_bet":True}]}))
     def test_picks_reject_invalid_scan(self):
