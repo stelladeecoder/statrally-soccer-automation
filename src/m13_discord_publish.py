@@ -23,22 +23,33 @@ def render(scan):
 def render_watchlist(scan):
     from datetime import datetime
     from zoneinfo import ZoneInfo
-    if not isinstance(scan, dict) or scan.get("status") != "fixture_schedule":
+    if not isinstance(scan,dict) or scan.get("status") not in ("fixture_schedule","partial_fixture_schedule"):
         raise ValueError("Daily fixture schedule required")
     fixtures=scan.get("fixtures")
     if not isinstance(fixtures,list):
         raise ValueError("Missing fixture list")
-    lines=[]
+    groups={}
     for match in fixtures:
-        home,away,kickoff=match.get("home_team"),match.get("away_team"),match.get("kickoff_utc")
-        if not all(isinstance(x,str) and x.strip() for x in (home,away,kickoff)):
+        home,away,kickoff,league=(match.get(k) for k in ("home_team","away_team","kickoff_utc","league"))
+        if not all(isinstance(x,str) and x.strip() for x in (home,away,kickoff,league)):
             continue
         when=datetime.fromisoformat(kickoff.replace("Z","+00:00")).astimezone(ZoneInfo("America/Chicago"))
-        lines.append(f"• {when.strftime('%-I:%M %p')} CT | {home} vs {away}")
-    if not lines:
+        groups.setdefault(league,[]).append((when,f"• {when.strftime('%-I:%M %p')} CT | {home} vs {away}"))
+    if not groups and scan.get("status")=="fixture_schedule":
+        return {"content":"**StatRally | Soccer Matches — "+str(scan.get("date_central",""))+"**\\nNo matches scheduled today."}
+    if not groups:
         return None
-    day=scan.get("date_central","")
-    return {"content":"**StatRally | EPL Matches — "+str(day)+"**\n"+"\n".join(lines)}
+    parts=["**StatRally | Soccer Matches — "+str(scan.get("date_central",""))+"**"]
+    for league in sorted(groups):
+        parts.append("**"+league+"**")
+        parts.extend(line for _,line in sorted(groups[league]))
+    failed=scan.get("failed_leagues",[])
+    if failed:
+        parts.append("Schedule incomplete: unavailable feeds for "+", ".join(failed))
+    content="\\n".join(parts)
+    if len(content)>2000:
+        content=content[:1960].rsplit("\\n",1)[0]+"\\n(Additional fixtures omitted)"
+    return {"content":content}
 
 def render_picks(scan):
     """Fail closed: M12 has no exportable approved candidate evidence yet."""
