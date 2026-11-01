@@ -38,7 +38,7 @@ def render_watchlist(scan):
         lines.append(f"• {home} vs {away} | {kickoff} UTC | {d['status']} (research only)")
     if not lines:
         return None
-    return {"content":"**StatRally | Verified BTTS watchlist**\\n" + "\\n".join(lines[:8]) + "\\nNo betting selections are authorized."}
+    return {"content":"**StatRally | Verified BTTS watchlist**\n" + "\n".join(lines[:8]) + "\nNo betting selections are authorized."}
 
 def publish(payload, webhook, opener=urlopen):
     if not webhook.startswith("https://discord.com/api/webhooks/") and not webhook.startswith("https://discordapp.com/api/webhooks/"):
