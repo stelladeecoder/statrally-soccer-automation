@@ -1,0 +1,41 @@
+name: M13 one-shot combined flow
+on:
+  pull_request:
+    branches: [main]
+    paths: [.github/workflows/m13-combined-once.yml]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: public-automation
+      - uses: actions/checkout@v4
+        with:
+          repository: stelladeecoder/statrally-soccer-btts
+          ref: main
+          token: ${{ secrets.STAT_RALLY_PRIVATE_READ_TOKEN }}
+          persist-credentials: false
+          path: private-engine
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install required model runtime
+        run: python -m pip install pandas
+      - name: Validate public publisher
+        working-directory: public-automation
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests -v
+      - name: Scan bounded live Kalshi markets
+        working-directory: private-engine
+        env:
+          PYTHONPATH: src
+        run: python src/m12_operational_scan.py --league epl --max-markets 3 > "$RUNNER_TEMP/m12_scan.json"
+      - name: Validate Discord watchlist and blocked picks
+        run: |
+          python public-automation/src/m13_discord_publish.py --input "$RUNNER_TEMP/m12_scan.json" --mode watchlist
+          python public-automation/src/m13_discord_publish.py --input "$RUNNER_TEMP/m12_scan.json" --mode picks
