@@ -1,0 +1,26 @@
+name: M13 one-time Discord connection check
+on:
+  pull_request:
+    branches: [main]
+    paths: [.github/workflows/m13-one-time-delivery.yml]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify publisher unit tests
+        env:
+          PYTHONPATH: src
+        run: python -m unittest tests.test_m13_discord_publish -v
+      - name: Deliver one controlled Discord test message
+        run: |
+          python -c 'from m13_discord_publish import publish; import os; publish({"content":"StatRally M13 test: one-time webhook connection verified. Scheduled reports remain disabled."}, os.environ["STATRALLY_DISCORD_WEBHOOK"]); print("M13_DELIVERY_OK")'
+        env:
+          PYTHONPATH: src
+          STATRALLY_DISCORD_WEBHOOK: ${{ secrets.STATRALLY_DISCORD_WEBHOOK }}
