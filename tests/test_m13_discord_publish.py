@@ -3,7 +3,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import Mock
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"src"))
-from m13_discord_publish import render,publish,render_watchlist,render_picks
+from m13_discord_publish import render,publish,render_watchlist,render_picks,render_approved_picks
 
 class M13DiscordTests(unittest.TestCase):
     def test_watchlist_rejects_decision_scan(self):
@@ -23,6 +23,20 @@ class M13DiscordTests(unittest.TestCase):
     def test_picks_reject_invalid_scan(self):
         with self.assertRaises(ValueError):
             render_picks({"status":"other","trades_placed":0,"decisions":[]})
+    def test_approved_picks_format_simulated(self):
+        sample={"schema_version":1,"approval":"verified","model_calibrated":True,"picks":[{"fixture_verified":True,"fee_verified":True,"qualified_bet":True,"home_team":"Sample Home","away_team":"Sample Away","side":"YES","market_ticker":"SAMPLE-1","entry_price":0.55,"net_ev_per_contract":0.04}]}
+        msg=render_approved_picks(sample)["content"]
+        self.assertIn("Sample Home vs Sample Away",msg)
+        self.assertIn("net EV",msg)
+    def test_unapproved_picks_rejected(self):
+        sample={"schema_version":1,"approval":"verified","model_calibrated":False,"picks":[]}
+        with self.assertRaises(ValueError):
+            render_approved_picks(sample)
+    def test_too_many_picks_rejected(self):
+        base={"fixture_verified":True,"fee_verified":True,"qualified_bet":True,"home_team":"H","away_team":"A","side":"YES","market_ticker":"T","entry_price":0.5,"net_ev_per_contract":0.01}
+        sample={"schema_version":1,"approval":"verified","model_calibrated":True,"picks":[base]*4}
+        with self.assertRaises(ValueError):
+            render_approved_picks(sample)
     def test_no_bet(self):
         p=render({"status":"research_only","trades_placed":0,"decisions":[{"status":"NO_BET","qualified_bet":False}]})
         self.assertIn("No qualified selections",p["content"])
