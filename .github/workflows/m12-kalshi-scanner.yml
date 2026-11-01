@@ -36,6 +36,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Install private engine runtime dependency
+        run: python -m pip install pandas
       - name: Run bounded read-only scan
         working-directory: private-engine
         env:
