@@ -285,3 +285,13 @@ A separate daily/weekly/cumulative report is intentional, not a duplicate.
    summary; no financial data or live secrets are used.
 
 Until these operational checks are satisfied, M14 remains **in progress**.
+
+## November 2, 2026 — Current REST schema compatibility blocker (official live docs)
+
+**Do not deploy or label M14 live-account ready.** Official documentation was directly accessible in a separate review environment:
+
+- [Portfolio fills](https://docs.kalshi.com/api-reference/portfolio/get-fills) documents `count_fp`, `yes_price_dollars`, `no_price_dollars`, `fee_cost`, `outcome_side`, `book_side`, `subaccount_number` and `exchange_index`. The present adapter instead requires legacy integer `count` and `yes_price_fixed`/`no_price_fixed` fields plus external per-fill fee evidence.
+- [Portfolio settlements](https://docs.kalshi.com/api-reference/portfolio/get-settlements) documents `yes_count_fp`, `no_count_fp`, `yes_total_cost_dollars`, `no_total_cost_dollars`, `fee_cost`, and additional fields. Current adapter expects legacy integer counts and cent-denominated cost fields.
+- The current [historical fills endpoint](https://docs.kalshi.com/api-reference/historical/get-historical-fills) is required for older fills; current [historical positions endpoint](https://docs.kalshi.com/api-reference/historical/get-historical-positions) has its own schema and needs separate reviewed handling. The live settlements endpoint does not return archived settlements.
+
+Required next engineering task: implement a **new versioned adapter** for current documented fields, exact decimal string counts/prices, source-provided fill fees, and archived-history reconciliation; do not silently coerce fractional positions, assume archived settlements exist, or bypass independent accounting evidence. Maintain old SDK adapter only as explicitly legacy and unverified. Add official-schema-shaped synthetic tests for each endpoint and negative cases. Keep real results publishing disabled until authenticated read-only verification against independent account statements succeeds.
