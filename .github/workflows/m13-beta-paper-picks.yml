@@ -33,8 +33,8 @@ jobs:
       - name: Capture verified experimental signals
         working-directory: engine
         env:
-          PYTHONPATH: src
-        run: python src/m13_beta_export.py --discover > "$RUNNER_TEMP/beta.json"
+          PYTHONPATH: ../automation/src:src
+        run: python ../automation/src/m13_beta_capture.py --output "$RUNNER_TEMP/beta.json"
       - name: Persist paper log and post eligible beta signals
         env:
           PYTHONPATH: automation/src

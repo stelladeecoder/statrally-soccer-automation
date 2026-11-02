@@ -1,8 +1,9 @@
 """Grade only delivered, verified ESPN full-time beta paper predictions."""
 import json
 from datetime import datetime, timezone
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from urllib.request import Request, urlopen
+from m13_beta_signals import parse_time
 
 LEAGUES={"epl":"eng.1","mls":"usa.1","liga_mx":"mex.1"}
 
@@ -22,14 +23,18 @@ def grade(signal, response):
     competitions=event.get("competitions",[])
     if len(competitions)!=1: raise ValueError("Ambiguous competition")
     opponents=competitions[0].get("competitors",[])
+    if not isinstance(opponents,list) or len(opponents)!=2:
+        raise ValueError("Exactly two competitors required")
     home=[x for x in opponents if x.get("homeAway")=="home"]
     away=[x for x in opponents if x.get("homeAway")=="away"]
     if len(home)!=1 or len(away)!=1: raise ValueError("Missing home/away roles")
     if home[0].get("team",{}).get("displayName")!=signal["home_team"] or away[0].get("team",{}).get("displayName")!=signal["away_team"]:
         raise ValueError("Team identity mismatch")
-    if datetime.fromisoformat(event["date"].replace("Z","+00:00")) != datetime.fromisoformat(signal["kickoff_utc"].replace("Z","+00:00")):
+    if parse_time(event["date"]) != parse_time(signal["kickoff_utc"]):
         raise ValueError("Kickoff changed; require review")
     if event.get("status",{}).get("type",{}).get("completed") is not True:
+        return {"status":"pending"}
+    if event.get("status",{}).get("type",{}).get("name")!="STATUS_FULL_TIME":
         return {"status":"pending"}
     for record in (home[0],away[0]):
         if not str(record.get("score","")).isdigit():
@@ -56,7 +61,7 @@ def aggregate(graded):
                 p_yes=p if item.get("side","YES")=="YES" else 1-p
                 errors.append((p_yes-Decimal(int(item["btts_yes"])))**2)
             brier=str(sum(errors,Decimal(0))/len(errors))
-        except (ValueError,TypeError):
+        except (ValueError,TypeError,InvalidOperation):
             brier=None
     return {"graded":total,"wins":wins,"losses":losses,
             "brier_score":brier,
