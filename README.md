@@ -15,6 +15,12 @@ Public GitHub Actions and Discord-delivery infrastructure for **StatRally**, a s
 
 The watchlist is **fixtures only**, with no EV, odds, No Bet decisions, or player recommendations. Not every competition has games every day. Discord team/league logos and richer embeds are deferred to a later enhancement.
 
+## Experimental beta paper picks (M13)
+
+The separate [beta paper picks workflow](.github/workflows/m13-beta-paper-picks.yml) is scheduled at **08:23, 11:23 and 14:23 America/Chicago**. It runs the private read-only research exporter and publishes only eligible, independently fixture-mapped experimental BTTS YES/NO signals to the existing picks channel. **No verified edge, automated trading, or real-money picks are enabled.** The model remains uncalibrated.
+
+A public GitHub Issue is reserved before each Discord attempt to record and deduplicate paper signals. Outcomes remain pending until independently checked. No qualified signal means **no post**. Current reviewed mappings are limited; unattended live beta delivery has not been confirmed. See [beta deployment notes](docs/m13_beta_publishing.md).
+
 ## Repository boundaries
 
 | Repository | Responsibility | Visibility |
