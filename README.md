@@ -21,6 +21,12 @@ The separate [beta paper picks workflow](.github/workflows/m13-beta-paper-picks.
 
 A public GitHub Issue is reserved before each Discord attempt to record and deduplicate paper signals. Outcomes remain pending until independently checked. No qualified signal means **no post**. Current reviewed mappings are limited; unattended live beta delivery has not been confirmed. See [beta deployment notes](docs/m13_beta_publishing.md).
 
+## Beta grading and accuracy tracking
+
+The [paper grading workflow](.github/workflows/m13-beta-grading.yml) checks completed ESPN fixtures and adds verified BTTS outcomes to the recorded beta-signal Issues. Once independently graded signals exist, it maintains a public **StatRally BETA | experimental paper performance** Issue showing wins, losses, hit rate and Brier score. These are **paper prediction metrics, not real transaction P&L**. Actual Kalshi performance accounting remains in M14.
+
+The [beta scan](.github/workflows/m13-beta-paper-picks.yml) now attempts strict Kalshi-to-ESPN fixture discovery for the **currently allowlisted EPL, MLS and Liga MX BTTS series**, and uses explicit manually reviewed fixture mappings as well. Team roles, exact names, event IDs and kickoff proximity must agree. Other watchlist leagues require separately verified BTTS market identifiers and supported historical models. A scheduled workflow does **not** guarantee eligible picks or prove Discord delivery; the first unattended beta prediction has not yet been independently confirmed.
+
 ## Repository boundaries
 
 | Repository | Responsibility | Visibility |
