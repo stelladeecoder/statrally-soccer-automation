@@ -1,6 +1,7 @@
 """Grade only delivered, verified ESPN full-time beta paper predictions."""
 import json
 from datetime import datetime, timezone
+from decimal import Decimal
 from urllib.request import Request, urlopen
 
 LEAGUES={"epl":"eng.1","mls":"usa.1","liga_mx":"mex.1"}
@@ -37,13 +38,27 @@ def grade(signal, response):
     yes=hg>0 and ag>0
     if signal.get("side") not in ("YES","NO"):raise ValueError("Invalid prediction")
     return {"status":"graded","result":"WIN" if (signal["side"]=="YES")==yes else "LOSS",
-            "btts_yes":yes,"home_goals":hg,"away_goals":ag,
+            "btts_yes":yes,"side":signal["side"],"home_goals":hg,"away_goals":ag,
             "model_probability":signal.get("model_probability"),"market_price":signal.get("market_price")}
 
 def aggregate(graded):
     wins=sum(x["result"]=="WIN" for x in graded if x.get("status")=="graded")
     losses=sum(x["result"]=="LOSS" for x in graded if x.get("status")=="graded")
     total=wins+losses
+    scored=[x for x in graded if x.get("status")=="graded" and x.get("btts_yes") in (True,False) and x.get("model_probability") is not None]
+    brier=None
+    if scored:
+        try:
+            errors=[]
+            for item in scored:
+                p=Decimal(str(item["model_probability"]))
+                if not p.is_finite() or p<0 or p>1:raise ValueError("Invalid probability")
+                p_yes=p if item.get("side","YES")=="YES" else 1-p
+                errors.append((p_yes-Decimal(int(item["btts_yes"])))**2)
+            brier=str(sum(errors,Decimal(0))/len(errors))
+        except (ValueError,TypeError):
+            brier=None
     return {"graded":total,"wins":wins,"losses":losses,
+            "brier_score":brier,
             "hit_rate":round(wins/total,4) if total else None,
             "pending":sum(x.get("status")=="pending" for x in graded)}
