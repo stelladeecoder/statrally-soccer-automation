@@ -44,7 +44,7 @@ def process(envelope,repo,token,webhook):
         item=dict(envelope,signals=[signal])
         payload=render_beta(item)
         body=("**StatRally beta PAPER signal** (experimental; no validated edge)\n"
-              +marker+"\n\n" + payload["content"]
+              +marker+"\n"+"statrally-beta-data:"+json.dumps(signal,sort_keys=True,separators=(",",":"))+"\n\n" + payload["content"]
               +"\n\nState: reserved before Discord delivery. Outcome: pending; no trade.")
         issue=github("POST",f"/repos/{repo}/issues",token,
                      {"title":"BETA PAPER | "+signal["market_ticker"]+" | "+signal["side"],"body":body})
