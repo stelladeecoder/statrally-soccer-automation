@@ -1,0 +1,22 @@
+name: One-time M13 beta pipeline verification
+on:
+  pull_request:
+    branches: [main]
+    paths: [.github/workflows/m13-beta-pipeline-once.yml]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Offline beta pipeline and formatting
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests -p 'test_m13_beta*.py' -v
