@@ -29,11 +29,16 @@ def process(envelope,repo,token,webhook):
         return 0
     # Validate every selected candidate before creating any public state.
     render_beta(envelope)
-    existing=github("GET",f"/repos/{repo}/issues?state=all&per_page=100",token)
-    if not isinstance(existing,list):
-        raise RuntimeError("GitHub issue history unavailable; refusing delivery")
-    if len(existing)>=100:
-        raise RuntimeError("Issue history pagination required; refusing possible duplicate")
+    existing=[]
+    for page in range(1,21):
+        batch=github("GET",f"/repos/{repo}/issues?state=all&per_page=100&page={page}",token)
+        if not isinstance(batch,list):
+            raise RuntimeError("GitHub issue history unavailable; refusing delivery")
+        existing.extend(batch)
+        if len(batch)<100:
+            break
+    else:
+        raise RuntimeError("Issue history exceeds checked pages; refusing possible duplicate")
     done=0
     for signal in signals:
         identity=signal["market_ticker"]+"|"+signal["side"]+"|"+signal["kickoff_utc"]
