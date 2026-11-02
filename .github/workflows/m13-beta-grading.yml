@@ -1,0 +1,26 @@
+name: StatRally beta paper grading
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "41 17 * * *"
+      timezone: "America/Chicago"
+permissions:
+  contents: read
+  issues: write
+concurrency:
+  group: statrally-beta-paper-grading
+  cancel-in-progress: false
+jobs:
+  grade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Grade only verified final matches
+        env:
+          PYTHONPATH: src
+          GH_TOKEN: ${{ github.token }}
+        run: python src/m13_beta_grade_issues.py
