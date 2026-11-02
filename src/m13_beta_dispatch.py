@@ -32,6 +32,8 @@ def process(envelope,repo,token,webhook):
     existing=github("GET",f"/repos/{repo}/issues?state=all&per_page=100",token)
     if not isinstance(existing,list):
         raise RuntimeError("GitHub issue history unavailable; refusing delivery")
+    if len(existing)>=100:
+        raise RuntimeError("Issue history pagination required; refusing possible duplicate")
     done=0
     for signal in signals:
         identity=signal["market_ticker"]+"|"+signal["side"]+"|"+signal["kickoff_utc"]
@@ -41,9 +43,9 @@ def process(envelope,repo,token,webhook):
             continue
         item=dict(envelope,signals=[signal])
         payload=render_beta(item)
-        body=("**StatRally beta PAPER signal** (experimental; no validated edge)\\n"
-              +marker+"\\n\\n" + payload["content"]
-              +"\\n\\nState: reserved before Discord delivery. Outcome: pending; no trade.")
+        body=("**StatRally beta PAPER signal** (experimental; no validated edge)\n"
+              +marker+"\n\n" + payload["content"]
+              +"\n\nState: reserved before Discord delivery. Outcome: pending; no trade.")
         issue=github("POST",f"/repos/{repo}/issues",token,
                      {"title":"BETA PAPER | "+signal["market_ticker"]+" | "+signal["side"],"body":body})
         # Issue reservation is durable: failed/ambiguous Discord POST is NOT retried.
