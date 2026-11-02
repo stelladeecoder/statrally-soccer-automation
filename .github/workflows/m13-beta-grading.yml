@@ -23,4 +23,5 @@ jobs:
         env:
           PYTHONPATH: src
           GH_TOKEN: ${{ github.token }}
+          STATRALLY_RESULTS_DISCORD_WEBHOOK: ${{ secrets.STATRALLY_RESULTS_DISCORD_WEBHOOK }}
         run: python src/m13_beta_grade_issues.py
