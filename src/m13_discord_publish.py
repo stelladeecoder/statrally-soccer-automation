@@ -29,11 +29,16 @@ def render_watchlist(scan):
     if not isinstance(fixtures,list):
         raise ValueError("Missing fixture list")
     groups={}
+    seen=set()
     for match in fixtures:
         home,away,kickoff,league=(match.get(k) for k in ("home_team","away_team","kickoff_utc","league"))
         if not all(isinstance(x,str) and x.strip() for x in (home,away,kickoff,league)):
             continue
         when=datetime.fromisoformat(kickoff.replace("Z","+00:00")).astimezone(ZoneInfo("America/Chicago"))
+        identity=(league.strip().casefold(),home.strip().casefold(),away.strip().casefold(),when.isoformat())
+        if identity in seen:
+            continue
+        seen.add(identity)
         groups.setdefault(league,[]).append((when,f"• {when.strftime('%-I:%M %p')} CT | {home} vs {away}"))
     if not groups and scan.get("status")=="fixture_schedule":
         return {"content":"**StatRally | Soccer Matches — "+str(scan.get("date_central",""))+"**\nNo matches scheduled today."}
