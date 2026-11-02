@@ -34,7 +34,7 @@ jobs:
         working-directory: engine
         env:
           PYTHONPATH: src
-        run: python src/m13_beta_export.py > "$RUNNER_TEMP/beta.json"
+        run: python src/m13_beta_export.py --discover > "$RUNNER_TEMP/beta.json"
       - name: Persist paper log and post eligible beta signals
         env:
           PYTHONPATH: automation/src
