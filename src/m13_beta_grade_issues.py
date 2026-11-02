@@ -2,6 +2,7 @@
 import json,os
 from datetime import datetime,timezone
 from m13_beta_dispatch import github
+from m13_discord_publish import publish
 from m13_beta_grading import grade,aggregate,fetch_scoreboard,LEAGUES
 
 def run(repo,token):
@@ -33,6 +34,15 @@ def run(repo,token):
             marker="statrally-beta-grade:"+signal["market_ticker"]+"|"+signal["side"]+"|"+signal["kickoff_utc"]
             if not any(marker in c.get("body","") for c in comments):
                 github("POST",f"/repos/{repo}/issues/{issue['number']}/comments",token,{"body":marker+"\nPaper outcome: **"+result["result"]+"** | Final "+str(result["home_goals"])+"-"+str(result["away_goals"])+" | No trade."})
+            webhook=os.environ.get("STATRALLY_RESULTS_DISCORD_WEBHOOK","")
+            reserved="statrally-beta-results-reserved:"+signal["market_ticker"]+"|"+signal["side"]+"|"+signal["kickoff_utc"]
+            if webhook and not any(reserved in comment.get("body","") for comment in comments):
+                github("POST",f"/repos/{repo}/issues/{issue['number']}/comments",token,{"body":reserved})
+                payload={"content":"**StatRally | BETA PAPER RESULT — EXPERIMENTAL**\n"+
+                  signal["home_team"]+" vs "+signal["away_team"]+" | BTTS "+signal["side"]+
+                  " | "+result["result"]+" | Final "+str(result["home_goals"])+"-"+str(result["away_goals"])+
+                  "\nPaper prediction only. No financial P&L.","allowed_mentions":{"parse":[]}}
+                publish(payload,webhook)
             graded.append(result)
         except (ValueError,KeyError,TypeError,OSError):
             # Ambiguous or unavailable source must not produce a grade.
