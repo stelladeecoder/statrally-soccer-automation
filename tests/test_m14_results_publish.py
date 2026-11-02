@@ -6,11 +6,12 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from m14_import import connect
+from m14_import import connect, import_snapshot, load_history
 from m14_performance import build_report
 from m14_results_publish import (DeliveryUncertain, confirm_channel, deliver_once, render_results,
                                  send_results, test_webhook as send_connection_test, webhook_identity)
 from test_m14_performance import attestation, history
+from m14_samples import bundle, fill, settlement
 
 # Nonfunctional synthetic token used exclusively with injected fake HTTP transport.
 WEBHOOK = "https://discord.com/api/webhooks/123/SYNTHETIC_TEST_TOKEN"
@@ -27,6 +28,24 @@ class Response:
 def reconciled_report():
     base = build_report(history(), "live", "daily", "2026-11-02")
     return build_report(history(), "live", "daily", "2026-11-02", attestation(base))
+
+
+def live_snapshot():
+    # All records remain synthetic; the live label exercises the live-only gate.
+    data = bundle([fill("synthetic-buy", count=4),
+                   fill("synthetic-sell", action="sell", count=1, yes="0.6000", no="0.4000", when="2026-11-02T12:00:00Z")],
+                  [settlement(yes_count=3, yes_cost=120, revenue=300, fee="0.06", when="2026-11-03T12:00:00Z")],
+                  {"synthetic-buy": "0.04", "synthetic-sell": "0.02"})
+    data["data_kind"] = "live"
+    return data
+
+
+def reconciled_store(db, snapshot=None, through="2026-11-02"):
+    import_snapshot(db, live_snapshot() if snapshot is None else snapshot)
+    events, kind = load_history(db)
+    base = build_report(events, kind, "daily", through)
+    review = attestation(base)
+    return build_report(events, kind, "daily", through, review), review
 
 
 class ResultsTests(unittest.TestCase):
@@ -74,8 +93,9 @@ class ResultsTests(unittest.TestCase):
             self.assertNotIn("$", calls[0]["content"])
             self.assertEqual(send_connection_test(db, WEBHOOK, opener), "already_delivered")
             confirm_channel(db, WEBHOOK)
-            self.assertEqual(send_results(db, reconciled_report(), WEBHOOK, opener), "delivered")
-            self.assertEqual(send_results(db, reconciled_report(), WEBHOOK, opener), "already_delivered")
+            report, review = reconciled_store(db)
+            self.assertEqual(send_results(db, report, WEBHOOK, opener, review=review), "delivered")
+            self.assertEqual(send_results(db, report, WEBHOOK, opener, review=review), "already_delivered")
             self.assertEqual(len(calls), 2)
 
     def test_report_correction_does_not_repeat_same_period(self):
@@ -86,11 +106,14 @@ class ResultsTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory, connect(Path(directory) / "ledger.sqlite") as db:
             send_connection_test(db, WEBHOOK, opener)
             confirm_channel(db, WEBHOOK)
-            report = reconciled_report()
-            send_results(db, report, WEBHOOK, opener)
-            changed = copy.deepcopy(report)
-            changed["history_sha256"] = "correction"
-            self.assertEqual(send_results(db, changed, WEBHOOK, opener), "already_delivered")
+            report, review = reconciled_store(db)
+            send_results(db, report, WEBHOOK, opener, review=review)
+            snapshot = live_snapshot()
+            snapshot["fills_pages"][0]["response"]["fills"].append(fill("additional", ticker="SYNTHETIC-OTHER", when="2026-11-02T13:00:00Z"))
+            snapshot["fill_fees"].append({"fill_id": "additional", "fee_usd": "0"})
+            changed, changed_review = reconciled_store(db, snapshot)
+            self.assertNotEqual(changed["history_sha256"], report["history_sha256"])
+            self.assertEqual(send_results(db, changed, WEBHOOK, opener, review=changed_review), "already_delivered")
             self.assertEqual(len(calls), 2)
 
     def test_unknown_network_outcome_is_not_retried(self):

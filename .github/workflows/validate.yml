@@ -1,8 +1,14 @@
-name: Validate public automation scaffold
+name: Validate public automation
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
 permissions:
   contents: read
+concurrency:
+  group: public-tests-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 jobs:
   smoke-test:
     runs-on: ubuntu-latest
@@ -12,7 +18,30 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Test public scaffold
+      - name: Run all public tests including M14 (synthetic data, mocked HTTP)
         env:
           PYTHONPATH: src
-        run: python -m unittest discover -s tests -v
+        run: |
+          python - <<'PY'
+          import os
+          import sys
+          import unittest
+
+          suite = unittest.defaultTestLoader.discover("tests")
+          def tests_in(suite):
+              for item in suite:
+                  if isinstance(item, unittest.TestSuite):
+                      yield from tests_in(item)
+                  else:
+                      yield item
+          selected = list(tests_in(suite))
+          m14_count = sum(test.id().startswith("test_m14_") for test in selected)
+          if not selected or not m14_count:
+              sys.exit("Full public suite and M14 tests must be discovered")
+          result = unittest.TextTestRunner(verbosity=2).run(suite)
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
+              summary.write(f"Tests run: {result.testsRun}; M14 tests selected: {m14_count}; "
+                            f"failures: {len(result.failures)}; errors: {len(result.errors)}; "
+                            f"skipped: {len(result.skipped)}.\n")
+          sys.exit(0 if result.wasSuccessful() and result.testsRun == len(selected) else 1)
+          PY

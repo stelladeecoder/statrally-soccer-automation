@@ -53,7 +53,8 @@ PYTHONPATH=src python -m unittest discover -s tests -v
 
 **Verified:** all **17 tests passed** in GitHub Actions run [41363527302](https://github.com/stelladeecoder/statrally-soccer-automation/actions/runs/41363527302). A controlled message to `#btts-picks` was also confirmed by the server owner. These checks do **not** establish a validated betting edge.
 
-The expanded M14 suite runs locally with the same command. All new account and
+The expanded M14 suite runs locally with the same command and in read-only
+pull-request CI. All new account and
 performance examples are **synthetic**, and Discord transport is mocked. Local
 validation does not establish live account compatibility or real financial results.
 

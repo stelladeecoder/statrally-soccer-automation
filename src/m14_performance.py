@@ -1,7 +1,7 @@
 """Actual-event performance reports; no mark prices, model returns or API calls."""
 import argparse
 from datetime import date, datetime, time, timedelta
-from decimal import Decimal, localcontext
+from decimal import Context, Decimal, localcontext
 import json
 import sqlite3
 from zoneinfo import ZoneInfo
@@ -93,8 +93,7 @@ def verify_review(review, history_hash, end, actual):
 
 
 def build_report(events, data_kind, period, through, review=None):
-    with localcontext() as context:
-        context.prec = 60
+    with localcontext(Context(prec=60)):
         return _build_report(events, data_kind, period, through, review)
 
 
@@ -136,7 +135,7 @@ def _build_report(events, data_kind, period, through, review):
             "verification": "operator_reconciled" if verified else "unverified",
             "history_sha256": history_hash, "period": period, "timezone": "America/Chicago",
             "start_inclusive": start.isoformat(), "cutoff_exclusive": end.isoformat(),
-            "through": through, "metrics": interval, "cumulative": cumulative,
+            "through": day.isoformat(), "metrics": interval, "cumulative": cumulative,
             "open_positions": actual["open_positions"], "unrealized_pnl_usd": None,
             "performance_over_time": series, "reconciliation_values": actual}
 

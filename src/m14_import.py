@@ -4,7 +4,7 @@ Only GET response data is consumed. No API credentials or order endpoints.
 """
 import argparse
 from datetime import datetime, timezone
-from decimal import localcontext
+from decimal import Context, localcontext
 import hashlib
 import json
 import os
@@ -14,6 +14,11 @@ import sqlite3
 from m14_position_ledger import money, summarize, timestamp
 
 SCHEMA = "kalshi-sdk-3.2.0"
+FILL_FIELDS = frozenset(("fill_id", "trade_id", "order_id", "client_order_id", "ticker",
+                        "market_ticker", "side", "action", "count", "price", "yes_price",
+                        "no_price", "yes_price_fixed", "no_price_fixed", "is_taker", "created_time", "ts"))
+SETTLEMENT_FIELDS = frozenset(("ticker", "event_ticker", "market_result", "yes_count", "no_count",
+                              "yes_total_cost", "no_total_cost", "revenue", "settled_time", "fee_cost", "value"))
 
 
 def canonical(value):
@@ -106,8 +111,7 @@ def pages(bundle, name):
 
 
 def normalize_snapshot(bundle):
-    with localcontext() as context:
-        context.prec = 60
+    with localcontext(Context(prec=60)):
         return _normalize_snapshot(bundle)
 
 
@@ -151,6 +155,8 @@ def _normalize_snapshot(bundle):
     for record in pages(bundle, "fills"):
         if not isinstance(record, dict):
             raise ValueError("Invalid fill")
+        if set(record) - FILL_FIELDS:
+            raise ValueError("Unrecognized fill fields require a schema review")
         fid = text(record.get("fill_id"))
         ticker = text(record.get("ticker"))
         if record.get("trade_id", fid) != fid or record.get("market_ticker", ticker) != ticker:
@@ -194,6 +200,8 @@ def _normalize_snapshot(bundle):
     for record in pages(bundle, "settlements"):
         if not isinstance(record, dict):
             raise ValueError("Invalid settlement")
+        if set(record) - SETTLEMENT_FIELDS:
+            raise ValueError("Unrecognized settlement fields require a schema review")
         ticker = text(record.get("ticker"))
         when = timestamp(record.get("settled_time"))
         sid = "settlement:" + ticker + ":" + when.isoformat()
@@ -289,10 +297,36 @@ def import_snapshot(db, bundle):
 
 
 def load_history(db):
+    # A consistent read must include both raw sources and their derived events.
+    # Do not commit an enclosing publisher's BEGIN IMMEDIATE transaction.
+    own_transaction = not db.in_transaction
+    if own_transaction:
+        db.execute("BEGIN")
+    try:
+        return _load_history(db)
+    finally:
+        if own_transaction:
+            db.rollback()
+
+
+def _load_history(db):
     label = db.execute("SELECT value FROM metadata WHERE key='data_kind'").fetchone()
     if not label:
         raise ValueError("Import a complete snapshot first")
-    events = [json.loads(row[0]) for row in db.execute("SELECT record FROM events")]
+    source_records = dict(db.execute("SELECT source_id,record FROM sources"))
+    records = {key: json.loads(value) for key, value in source_records.items()}
+    bundle = {"schema": SCHEMA, "data_kind": label[0], "history_from_inception": True,
+              "fills_pages": [{"request_cursor": "", "response": {"fills": [value for key, value in records.items() if key.startswith("fill:")], "cursor": ""}}],
+              "settlements_pages": [{"request_cursor": "", "response": {"settlements": [value for key, value in records.items() if key.startswith("settlement:")], "cursor": ""}}],
+              "fill_fees": [value for key, value in records.items() if key.startswith("fee:")]}
+    normalized = normalize_snapshot(bundle)
+    if normalized["sources"] != source_records:
+        raise ValueError("Stored sources do not match their identities")
+    stored = {key: (source, json.loads(record)) for key, source, record in db.execute("SELECT event_id,source_id,record FROM events")}
+    expected = {event["event_id"]: (event["source_id"], event) for event in normalized["events"]}
+    if stored != expected:
+        raise ValueError("Stored events do not reconcile to source records")
+    events = normalized["events"]
     events.sort(key=lambda event: (timestamp(event["timestamp"]), event["event_id"]))
     return events, label[0]
 

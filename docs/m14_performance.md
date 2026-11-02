@@ -49,10 +49,25 @@ Sources: [SDK release](https://pypi.org/project/kalshi-python-sync/3.2.0/),
 Inspected wheel SHA-256:
 `667f6b4ed1e8dbc5b173e7d19e796dbda8602b0a9943506a87e46e6539a6301c`.
 The wheel was inspected outside the checkout, not installed as a runtime dependency.
-Direct access to `docs.kalshi.com` was denied by this cloud environment's proxy.
+Direct access to `docs.kalshi.com` remains denied by this cloud environment's proxy.
 **Current live API compatibility and fee semantics have not been validated with
 an authenticated account or real exports.** SDK schema evidence is not a claim
-that every current API version is supported. No CSV export layout is assumed.
+that every current API version is supported. Unrecognized fill/settlement fields
+now reject the import for schema review rather than being silently ignored.
+No CSV export layout is assumed.
+
+Authentication was additionally checked against Kalshi's official
+[Python starter client](https://github.com/Kalshi/kalshi-starter-code-python/blob/08fd693c0ff0080179d97126536436f0498df036/clients.py)
+at commit `08fd693c0ff0080179d97126536436f0498df036` and the SDK's `auth.py`.
+Both use RSA-PSS / SHA-256 signatures of millisecond timestamp + uppercase HTTP
+method + request path (query excluded), with `KALSHI-ACCESS-KEY`,
+`KALSHI-ACCESS-SIGNATURE`, and `KALSHI-ACCESS-TIMESTAMP` headers. This confirms
+reference-client behavior, not successful account authentication in this environment.
+
+Compatibility review: SDK paths and pagination/field definitions are inspected;
+the current live documentation, authenticated pagination, per-fill fee evidence,
+settlement cost/fee semantics, archived-history coverage and netting remain
+**unverified**. No signing credentials or actual account records are available.
 
 The supported fill subset uses `fill_id`, `ticker`, `side` (`yes`/`no`), `action`
 (`buy`/`sell`), integer `count`, `yes_price_fixed` / `no_price_fixed` (USD strings),
@@ -136,7 +151,9 @@ rebuilding so already delivered periods cannot be reposted.
 - Entry fees remain in the lot's open basis. Closing contracts consume FIFO
   price basis and their share of entry fees, plus any exit fee. Pro-rata entry
   fees round to 18 decimal USD places, with remaining residual carried in the
-  lot and consumed by its final closure. Arithmetic uses 60-digit precision.
+  lot and consumed by its final closure. Arithmetic uses an explicit 60-digit,
+  half-even Decimal context independent of the caller's precision, rounding or
+  traps; displayed dollar/percentage amounts round half-up to two places.
 - Realized net P&L = gross closing proceeds minus matched entry price basis,
   allocated entry fees and exit fees. Open entry fees are **not realized losses**.
   The earlier open-only regression expected an immediate fee loss; that assertion
@@ -187,6 +204,9 @@ Malformed inputs fail with nonzero status and redacted CLI errors. Repeating the
 same snapshot import is a no-op; concurrent imports serialize transactionally.
 Back up the private database securely: the same durable database holds both
 history and delivery receipts and must survive all reporting jobs/restarts.
+On reads, normalized events and their source references are checked against
+fresh normalization of the retained source records in a consistent transaction.
+Missing/modified events or mismatched source identities prevent reporting.
 
 ### Reconciliation and results activation (not performed)
 
@@ -209,9 +229,11 @@ local events each time; it never accepts an arbitrary pre-rendered report file
 as authorization to send. Synthetic reports remain test previews and cannot be
 sent as live financial results.
 
-Only after a separately authorized activation, securely configure
-`STATRALLY_RESULTS_DISCORD_WEBHOOK` for **#btts-results**, run a connection test,
-and visually confirm the destination:
+Only after a separately authorized activation, use the **private deployment
+runbook maintained outside this public checkout** to configure the dedicated
+results webhook binding. The required GitHub Actions secret is documented in
+that private runbook, not the public README. Run a connection test and visually
+confirm the destination:
 
 ```bash
 python3.12 src/m14_results_publish.py --database /workspace/statrally-local/ledger.sqlite --test-message --send
@@ -231,9 +253,14 @@ No workflow/scheduler or live secret was configured by this implementation.
 Do not use a fresh ephemeral GitHub runner without durable private state, or
 public Actions logs/artifacts for raw data. M13 variables/webhooks are not used.
 Discord payloads contain aggregate numbers only, never market/account identifiers
-or evidence references; mentions are disabled.
+or evidence references; mentions are disabled and count fields must be numeric.
+The send API requires the review evidence itself, rechecks source/event integrity,
+rebuilds the report from stored history and compares it with the proposed payload
+while holding the same write lock used to reserve delivery. Caller-supplied
+verification flags, changed metrics and stale histories cannot authorize a send.
 
 The outbox reserves each destination/period/cutoff **before** making a request.
+Equivalent date spellings normalize to one ISO date and one receipt key.
 Confirmed deliveries cannot repeat even if the history is later corrected.
 Timeouts, unexpected responses and crashes leave `uncertain` or `pending` entries
 that block retries; those CLI outcomes exit nonzero. Check the channel and private
@@ -253,6 +280,8 @@ A separate daily/weekly/cumulative report is intentional, not a duplicate.
 3. Configure, test and visually confirm the dedicated results webhook only when
    explicitly authorized; no connection test has been sent by this development.
 4. Choose durable private state and a private scheduler/review procedure before
-   enabling automated live reports. Verify final CI if GitHub API access permits.
+   enabling automated live reports. The read-only PR CI now runs the complete
+   public suite, checks M14 test discovery and writes exact counts to the run
+   summary; no financial data or live secrets are used.
 
 Until these operational checks are satisfied, M14 remains **in progress**.

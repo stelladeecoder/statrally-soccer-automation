@@ -1,7 +1,7 @@
 """M14 FIFO accounting for supplied events. No authentication or trading."""
 from collections import defaultdict
 from datetime import datetime, timezone
-from decimal import Decimal, InvalidOperation, localcontext
+from decimal import Context, Decimal, InvalidOperation, localcontext
 from pathlib import Path
 import argparse
 import json
@@ -31,8 +31,7 @@ def timestamp(value):
 
 def summarize(events):
     # Ample headroom for bounded inputs and 18-place fee allocation.
-    with localcontext() as context:
-        context.prec = 60
+    with localcontext(Context(prec=60)):
         return _summarize(events)
 
 

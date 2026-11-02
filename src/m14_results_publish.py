@@ -4,7 +4,8 @@ No scheduler is enabled. A result requires independent local reconciliation,
 then a tested webhook and explicit confirmation of its destination channel.
 """
 import argparse
-from decimal import Decimal, ROUND_HALF_UP
+from datetime import date
+from decimal import Context, Decimal, ROUND_HALF_UP, localcontext
 import hashlib
 import json
 import os
@@ -22,11 +23,13 @@ class DeliveryUncertain(RuntimeError):
 
 
 def dollars(value):
-    return format(money(value).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP), ".2f")
+    with localcontext(Context(prec=60, rounding=ROUND_HALF_UP)):
+        return format(money(value).quantize(Decimal("0.01")), ".2f")
 
 
 def percent(value):
-    return "N/A" if value is None else format((money(value) * 100).quantize(Decimal("0.01")), ".2f") + "%"
+    with localcontext(Context(prec=60, rounding=ROUND_HALF_UP)):
+        return "N/A" if value is None else format((money(value) * 100).quantize(Decimal("0.01")), ".2f") + "%"
 
 
 def render_results(report):
@@ -38,12 +41,14 @@ def render_results(report):
     period = report.get("period")
     if period not in ("daily", "weekly", "cumulative"):
         raise ValueError("Invalid results period")
-    from datetime import date
     through = date.fromisoformat(report["through"]).isoformat()
     verified = kind == "live" and report.get("verification") == "operator_reconciled"
     label = "RECONCILED RESULTS" if verified else "TEST — SYNTHETIC" if kind == "synthetic" else "UNVERIFIED PREVIEW — DO NOT PUBLISH"
     metrics = report["metrics"]
     cumulative = report["cumulative"]
+    for field in ("completed_positions", "wins", "losses", "breakeven", "early_exit_contracts"):
+        if type(metrics.get(field)) is not int or metrics[field] < 0:
+            raise ValueError("Nonnegative numeric report counts required")
     lines = [f"**StatRally | {label}**", f"{period.title()} through {through} (America/Chicago)",
              f"Realized net P&L: ${dollars(metrics['realized_net_pnl_usd'])}",
              f"Fees paid in period: ${dollars(metrics['fees_paid_usd'])}",
@@ -68,14 +73,16 @@ def webhook_identity(webhook):
 
 def report_key(report, destination):
     # One report per destination/period/cutoff, even if history is later corrected.
-    return digest([destination, "live", report["period"], report["through"]])
+    return digest([destination, "live", report["period"], date.fromisoformat(report["through"]).isoformat()])
 
 
-def deliver_once(db, key, payload, webhook, opener=urlopen):
+def deliver_once(db, key, payload, webhook, opener=urlopen, *, validate=None):
     webhook_identity(webhook)
     serialized = canonical(payload)
     with db:
         db.execute("BEGIN IMMEDIATE")
+        if validate is not None:
+            validate()
         existing = db.execute("SELECT state FROM outbox WHERE report_key=?", (key,)).fetchone()
         if existing:
             return "already_delivered" if existing[0] == "delivered" else "blocked_uncertain_delivery"
@@ -96,14 +103,24 @@ def deliver_once(db, key, payload, webhook, opener=urlopen):
     return "delivered"
 
 
-def send_results(db, report, webhook, opener=urlopen):
+def send_results(db, report, webhook, opener=urlopen, *, review=None):
     if report.get("data_kind") != "live" or report.get("verification") != "operator_reconciled":
         raise ValueError("Only independently reconciled live results can be sent")
+    if review is None:
+        raise ValueError("Independent reconciliation evidence required at send time")
     destination = webhook_identity(webhook)
-    confirmed = db.execute("SELECT value FROM metadata WHERE key=?", ("results_channel:" + destination,)).fetchone()
-    if not confirmed or confirmed[0] != "confirmed":
-        raise ValueError("Test webhook and confirm #btts-results destination first")
-    return deliver_once(db, report_key(report, destination), render_results(report), webhook, opener)
+    def validate():
+        # Source/event integrity, review, history and payload are checked while
+        # holding the SAME write lock as the durable reservation. Never trust
+        # caller-supplied verification flags or stale report metrics.
+        events, kind = load_history(db)
+        current = build_report(events, kind, report["period"], report["through"], review)
+        if current["verification"] != "operator_reconciled" or canonical(current) != canonical(report):
+            raise ValueError("Report changed or does not match reconciled stored history")
+        confirmed = db.execute("SELECT value FROM metadata WHERE key=?", ("results_channel:" + destination,)).fetchone()
+        if not confirmed or confirmed[0] != "confirmed":
+            raise ValueError("Test webhook and confirm #btts-results destination first")
+    return deliver_once(db, report_key(report, destination), render_results(report), webhook, opener, validate=validate)
 
 
 def test_webhook(db, webhook, opener=urlopen):
@@ -153,12 +170,12 @@ def main():
             if not args.through:
                 raise ValueError("Report cutoff required")
             events, kind = load_history(db)
-            report = build_report(events, kind, args.period, args.through,
-                                  read_json(args.reconciliation) if args.reconciliation else None)
+            review = read_json(args.reconciliation) if args.reconciliation else None
+            report = build_report(events, kind, args.period, args.through, review)
             if not args.send:
                 print(canonical({"status": "dry_run", "payload": render_results(report)}))
                 return
-            status = send_results(db, report, os.environ.get("STATRALLY_RESULTS_DISCORD_WEBHOOK", ""))
+            status = send_results(db, report, os.environ.get("STATRALLY_RESULTS_DISCORD_WEBHOOK", ""), review=review)
             print(canonical({"status": status}))
             if status == "blocked_uncertain_delivery":
                 parser.exit(2, "M14 delivery blocked; operator review required.\n")
