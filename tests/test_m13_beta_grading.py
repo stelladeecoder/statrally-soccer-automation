@@ -17,6 +17,9 @@ class GradingTests(unittest.TestCase):
         with self.assertRaises(ValueError):grade(dict(SIGNAL,home_team="Other"),fixture())
     def test_aggregate(self):
         x=aggregate([{"status":"graded","result":"WIN"},{"status":"graded","result":"LOSS"},{"status":"pending"}])
-        self.assertEqual(x,{"graded":2,"wins":1,"losses":1,"hit_rate":0.5,"pending":1})
+        self.assertEqual(x,{"graded":2,"wins":1,"losses":1,"hit_rate":0.5,"brier_score":None,"pending":1})
+    def test_brier_for_yes_paper_prediction(self):
+        x=aggregate([{"status":"graded","result":"WIN","side":"YES","model_probability":"0.6","btts_yes":True}])
+        self.assertEqual(x["brier_score"],"0.16")
     def test_empty(self):self.assertIsNone(aggregate([])["hit_rate"])
 if __name__=="__main__":unittest.main()
