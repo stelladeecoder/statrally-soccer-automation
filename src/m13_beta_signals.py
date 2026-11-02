@@ -53,7 +53,7 @@ def render_beta(envelope, now=None):
         local=kickoff.astimezone(ZoneInfo("America/Chicago"))
         lines.append(f"• {s['home_team']} vs {s['away_team']} | BTTS {s['side']} | {local:%b %d %I:%M %p} CT")
         lines.append(f"  Model estimate {p:.1%} | Kalshi quote ${q:.2f} | PAPER ONLY")
-    payload={"content":"\\n".join(lines),"allowed_mentions":{"parse":[]}}
+    payload={"content":"\n".join(lines),"allowed_mentions":{"parse":[]}}
     if len(payload["content"])>2000:
         raise ValueError("Discord message too long")
     return payload
