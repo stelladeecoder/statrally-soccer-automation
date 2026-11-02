@@ -1,0 +1,28 @@
+name: Discord results channel connection test (manual only)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Send clearly labeled results channel test
+        env:
+          WEBHOOK: ${{ secrets.STATRALLY_RESULTS_DISCORD_WEBHOOK }}
+        run: |
+          python - <<'PY'
+          import json, os
+          from urllib.request import Request, urlopen
+          webhook=os.environ.get("WEBHOOK","")
+          if not webhook.startswith("https://discord.com/api/webhooks/"):
+              raise SystemExit("Results Discord webhook secret missing or invalid")
+          message={"content":"**StatRally | RESULTS CHANNEL CONNECTION TEST**\nTest only. No picks, settlements, real financial data or trades.",
+                   "allowed_mentions":{"parse":[]}}
+          req=Request(webhook,data=json.dumps(message).encode(),headers={"Content-Type":"application/json","User-Agent":"StatRally/0.1"},method="POST")
+          with urlopen(req,timeout=15) as response:
+              if response.status not in (200,204):
+                  raise SystemExit("Discord did not accept the connection test")
+          print("Results test accepted by Discord. Confirm visually in #btts-results.")
+          PY
