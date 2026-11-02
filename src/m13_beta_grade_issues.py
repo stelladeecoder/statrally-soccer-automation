@@ -37,7 +37,26 @@ def run(repo,token):
         except (ValueError,KeyError,TypeError,OSError):
             # Ambiguous or unavailable source must not produce a grade.
             continue
-    print(json.dumps({"status":"paper_performance_no_trades","snapshot":aggregate(graded),"note":"Stats only cover independently graded, delivered Issues inspected in this run."},sort_keys=True))
+    snapshot=aggregate(graded)
+    # Persistent human-readable summary, kept separate from actual M14 trade results.
+    if snapshot["graded"]:
+        dashboard_title="StatRally BETA | experimental paper performance"
+        dashboard=next((i for i in all_issues if i.get("title")==dashboard_title and "pull_request" not in i),None)
+        dashboard_body=("\\n".join([
+           "**Experimental paper predictions only. No actual trades or verified edge.**",
+           f"Graded: {snapshot['graded']} | Wins: {snapshot['wins']} | Losses: {snapshot['losses']}",
+           f"Hit rate: {snapshot['hit_rate']}",
+           f"Brier score (where probabilities available): {snapshot['brier_score'] or 'N/A'}",
+           "Includes independently graded, confirmed Discord-delivered Issue signals.",
+           "This does not represent realized ROI or monetary profit."]))
+        if dashboard:
+            github("PATCH",f"/repos/{repo}/issues/{dashboard['number']}",token,
+                   {"body":dashboard_body})
+        else:
+            github("POST",f"/repos/{repo}/issues",token,
+                   {"title":dashboard_title,"body":dashboard_body})
+    print(json.dumps({"status":"paper_performance_no_trades","snapshot":snapshot,
+      "note":"Stats cover independently graded delivered Issues only."},sort_keys=True))
 
 if __name__=="__main__":
     repo=os.environ["GITHUB_REPOSITORY"]
