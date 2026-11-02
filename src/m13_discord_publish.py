@@ -2,6 +2,7 @@
 import argparse
 import json
 import os
+from m13_beta_signals import render_beta
 from pathlib import Path
 from urllib.request import Request, urlopen
 
@@ -107,11 +108,11 @@ def main():
     parser=argparse.ArgumentParser()
     parser.add_argument("--input",required=True,help="Private scanner JSON output")
     parser.add_argument("--send",action="store_true",help="Explicitly allow Discord delivery")
-    parser.add_argument("--mode",choices=("summary","watchlist","picks","approved-picks"),default="summary")
+    parser.add_argument("--mode",choices=("summary","watchlist","picks","approved-picks","beta"),default="summary")
     parser.add_argument("--suppress-no-bet",action="store_true",help="Avoid repeated routine No Bet posts")
     args=parser.parse_args()
     report=json.loads(Path(args.input).read_text(encoding="utf-8"))
-    payload=(render_watchlist(report) if args.mode=="watchlist" else render_picks(report) if args.mode=="picks" else render_approved_picks(report) if args.mode=="approved-picks" else render(report))
+    payload=(render_watchlist(report) if args.mode=="watchlist" else render_picks(report) if args.mode=="picks" else render_approved_picks(report) if args.mode=="approved-picks" else render_beta(report) if args.mode=="beta" else render(report))
     if payload is None:
         print("DISCORD_SKIP_NO_VERIFIED_FIXTURES")
         return
@@ -121,7 +122,7 @@ def main():
     if not args.send:
         print(json.dumps({"status":"dry_run","payload":payload},sort_keys=True))
         return
-    webhook=os.environ.get("STATRALLY_PICKS_DISCORD_WEBHOOK" if args.mode=="approved-picks" else "STATRALLY_DISCORD_WEBHOOK","")
+    webhook=os.environ.get("STATRALLY_PICKS_DISCORD_WEBHOOK" if args.mode in ("approved-picks","beta") else "STATRALLY_DISCORD_WEBHOOK","")
     if not webhook:
         parser.error("STATRALLY_DISCORD_WEBHOOK secret missing")
     publish(payload,webhook)
