@@ -7,7 +7,7 @@ import sqlite3
 from zoneinfo import ZoneInfo
 
 from m14_import import canonical, connect, digest, load_history, read_json
-from m14_position_ledger import money, summarize, timestamp
+from m14_position_ledger import contract_value, contracts, money, summarize, timestamp
 
 CENTRAL = ZoneInfo("America/Chicago")
 ZERO = Decimal("0")
@@ -42,7 +42,7 @@ def metrics(ledger, events, start, end):
             "win_rate": str(Decimal(wins) / count) if count else None,
             "loss_rate": str(Decimal(losses) / count) if count else None,
             "completed_position_pnl_usd": str(total(completed, "realized_pnl_usd")),
-            "early_exit_events": len(early), "early_exit_contracts": sum(row["quantity"] for row in early),
+            "early_exit_events": len(early), "early_exit_contracts": contract_value(sum((contracts(row["quantity"]) for row in early), ZERO)),
             "early_exit_realized_pnl_usd": str(total(early, "realized_pnl_usd")),
             "profit_by_market_usd": {key: str(value) for key, value in sorted(markets.items())}}
 
@@ -83,9 +83,9 @@ def verify_review(review, history_hash, end, actual):
         result = {}
         for row in rows:
             key = (row["market_ticker"], row["side"])
-            if key in result or type(row["quantity"]) is not int or row["quantity"] <= 0:
+            if key in result:
                 raise ValueError("Invalid reconciliation inventory")
-            result[key] = (row["quantity"], money(row["basis_usd"]))
+            result[key] = (contracts(row["quantity"]), money(row["basis_usd"]))
         return result
     if inventory(expected_open) != inventory(actual["open_positions"]):
         raise ValueError("Independent open inventory does not reconcile")

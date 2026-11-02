@@ -1,0 +1,28 @@
+name: M14 results connection-only test
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: m14-results-connection-test
+  cancel-in-progress: false
+jobs:
+  connection-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Send one labeled connection test (no financial data)
+        env:
+          STATRALLY_RESULTS_DISCORD_WEBHOOK: ${{ secrets.STATRALLY_RESULTS_DISCORD_WEBHOOK }}
+        run: >-
+          python src/m14_results_publish.py
+          --database "$RUNNER_TEMP/m14-results-connection-test.sqlite"
+          --test-message --send
+      - name: Record limited verification
+        run: |
+          echo 'Connection-only test accepted by Discord; visually confirm #btts-results.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'No account records, financial results, scheduled publishing or trading were enabled.' >> "$GITHUB_STEP_SUMMARY"

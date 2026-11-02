@@ -56,3 +56,20 @@ class CLITests(unittest.TestCase):
         for module in ("m14_position_ledger", "m14_import", "m14_performance", "m14_results_publish"):
             with self.subTest(module=module):
                 self.assertIn("usage:", self.invoke(module, "--help").stdout)
+
+    def test_current_rest_import_and_all_report_periods(self):
+        from m14_rest_samples import integration_snapshot
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory)
+            snapshot, database = path / "synthetic-rest.json", path / "rest.sqlite"
+            snapshot.write_text(json.dumps(integration_snapshot()))
+            self.invoke("m14_import", "--snapshot", snapshot, "--database", database)
+            repeated = self.invoke("m14_import", "--snapshot", snapshot, "--database", database)
+            self.assertEqual(json.loads(repeated.stdout)["new_source_records"], 0)
+            for period in ("daily", "weekly", "cumulative"):
+                report = json.loads(self.invoke("m14_performance", "--database", database, "--period", period, "--through", "2026-11-02").stdout)
+                self.assertEqual(report["verification"], "unverified")
+                self.assertEqual(report["metrics"]["completed_positions"], 0)
+                payload = json.loads(self.invoke("m14_results_publish", "--database", database, "--period", period, "--through", "2026-11-02").stdout)
+                self.assertEqual(payload["status"], "dry_run")
+                self.assertIn("TEST — SYNTHETIC", payload["payload"]["content"])

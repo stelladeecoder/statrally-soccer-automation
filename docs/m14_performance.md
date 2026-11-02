@@ -6,6 +6,12 @@ engine changes, order placement, live account requests or live reporting schedul
 are included. Synthetic tests establish software behavior, not trading performance.
 M13 delivery verification, IFTTT and M15 remain separate work.
 
+**Current REST input:** use the new versioned `kalshi-rest-3.35.0` adapter described
+in [Current REST schemas and history coverage](m14_current_rest.md). It consumes
+source-provided fill fees and fractional fixed-point counts. The SDK 3.2.0 input
+format below remains available only for legacy offline calculations; it cannot
+authorize live results delivery. Current and legacy histories use separate stores.
+
 ## Architecture
 
 - `m14_position_ledger.py`: existing Decimal FIFO ledger, now allocating entry fees
@@ -13,6 +19,8 @@ M13 delivery verification, IFTTT and M15 remain separate work.
 - `m14_import.py`: offline SDK-response normalization, source deduplication,
   settlement checks, atomic SQLite persistence. Raw sources and normalized events
   occupy separate tables with source references.
+- `m14_kalshi_rest.py`: current REST/OpenAPI 3.35.0 fill, settlement, live/historical
+  position and archive-cutoff validation; source captures remain separate from events.
 - `m14_performance.py`: daily, week-to-date and cumulative metrics, private
   market-level details, a sparse daily cumulative series and reconciliation gate.
 - `m14_results_publish.py`: dedicated results formatter, test/confirmation steps
@@ -31,7 +39,7 @@ pagination, repeat imports, atomic conflicts, empty/open histories, ROI and
 win/loss definitions, DST boundaries, reconciliation, payload privacy,
 concurrent delivery reservations, crashes/timeouts, and CLI execution.
 
-## Supported input and schema evidence
+## Legacy SDK 3.2.0 format and schema evidence (offline only)
 
 The adapter is deliberately versioned `kalshi-sdk-3.2.0`. Its schema evidence is
 Kalshi's published **kalshi-python-sync 3.2.0** SDK, generated from its OpenAPI
@@ -84,8 +92,8 @@ reconcile exactly. The adapter conservatively interprets `fee_cost` as the
 market's aggregate trading fees and compares it to explicit fill fee evidence;
 it never charges that aggregate again as a settlement fee. If provider basis or
 fee conventions differ, the import fails for review; do not relabel values to
-force a match. Scalar/void/refund records, settlement revisions, fractional
-counts and opposite-side netting are unsupported and rejected. A BUY on the
+force a match. In this legacy adapter, scalar/void/refund records, settlement
+revisions, fractional counts and opposite-side netting are rejected. A BUY on the
 opposite side while a position is open needs separately verified exchange
 netting semantics; this adapter will not invent a SELL or hold fictitious hedges.
 SELL fills without sufficient preceding BUY fills are rejected.
@@ -145,7 +153,8 @@ rebuilding so already delivered periods cannot be reposted.
 ## Accounting and metric definitions
 
 - Monetary input uses Decimal strings or integer cents, never binary floats.
-  Quantities are positive integers up to signed 64-bit range. Prices are USD per
+  Quantities are positive integers or two-place Decimal strings (0.01-contract
+  granularity), bounded by signed 64-bit magnitude. Prices are USD per
   contract in [0,1]; binary settlement payouts must be 0 or 1. Monetary inputs
   support up to 18 decimal places; individual fees must be below $10^18.
 - Entry fees remain in the lot's open basis. Closing contracts consume FIFO
@@ -258,6 +267,8 @@ The send API requires the review evidence itself, rechecks source/event integrit
 rebuilds the report from stored history and compares it with the proposed payload
 while holding the same write lock used to reserve delivery. Caller-supplied
 verification flags, changed metrics and stale histories cannot authorize a send.
+Only current REST source stores can authorize live results, and their capture
+time must cover the report's complete cutoff period. Legacy inputs remain previews.
 
 The outbox reserves each destination/period/cutoff **before** making a request.
 Equivalent date spellings normalize to one ISO date and one receipt key.
@@ -295,3 +306,13 @@ Until these operational checks are satisfied, M14 remains **in progress**.
 - The current [historical fills endpoint](https://docs.kalshi.com/api-reference/historical/get-historical-fills) is required for older fills; current [historical positions endpoint](https://docs.kalshi.com/api-reference/historical/get-historical-positions) has its own schema and needs separate reviewed handling. The live settlements endpoint does not return archived settlements.
 
 Required next engineering task: implement a **new versioned adapter** for current documented fields, exact decimal string counts/prices, source-provided fill fees, and archived-history reconciliation; do not silently coerce fractional positions, assume archived settlements exist, or bypass independent accounting evidence. Maintain old SDK adapter only as explicitly legacy and unverified. Add official-schema-shaped synthetic tests for each endpoint and negative cases. Keep real results publishing disabled until authenticated read-only verification against independent account statements succeeds.
+
+### Follow-up implementation
+
+The new versioned adapter and regression tests now implement those field and
+history requirements using the generated OpenAPI models and documentation in
+Kalshi's maintained TypeScript SDK 3.35.0. See [the current REST guide](m14_current_rest.md)
+for exact source evidence, supported scope, archive requirements and limitations.
+This resolves the legacy-field implementation gap; it does **not** establish
+authenticated live-account acceptance. Direct web documentation access in this
+runtime and actual account/fee/netting verification remain outstanding.

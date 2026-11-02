@@ -1,4 +1,4 @@
-"""Offline Kalshi SDK 3.2.0 response adapter and private transactional store.
+"""Offline current REST / legacy SDK adapters and private transactional store.
 
 Only GET response data is consumed. No API credentials or order endpoints.
 """
@@ -14,6 +14,7 @@ import sqlite3
 from m14_position_ledger import money, summarize, timestamp
 
 SCHEMA = "kalshi-sdk-3.2.0"
+CURRENT_SCHEMA = "kalshi-rest-3.35.0"
 FILL_FIELDS = frozenset(("fill_id", "trade_id", "order_id", "client_order_id", "ticker",
                         "market_ticker", "side", "action", "count", "price", "yes_price",
                         "no_price", "yes_price_fixed", "no_price_fixed", "is_taker", "created_time", "ts"))
@@ -68,6 +69,7 @@ def connect(path):
             record TEXT NOT NULL, FOREIGN KEY(source_id) REFERENCES sources(source_id));
         CREATE TABLE IF NOT EXISTS outbox (report_key TEXT PRIMARY KEY, payload_hash TEXT NOT NULL,
             state TEXT NOT NULL CHECK(state IN ('pending','delivered','uncertain')));
+        CREATE TABLE IF NOT EXISTS rest_snapshots (snapshot_hash TEXT PRIMARY KEY, record TEXT NOT NULL);
     """)
     return db
 
@@ -121,6 +123,9 @@ def _normalize_snapshot(bundle):
     Fee evidence and bundle/page wrappers are StatRally input contracts, NOT
     invented Kalshi API fields. See docs/m14_performance.md for schema sources.
     """
+    if isinstance(bundle, dict) and bundle.get("schema") == CURRENT_SCHEMA:
+        from m14_kalshi_rest import normalize_current
+        return normalize_current(bundle)
     if not isinstance(bundle, dict) or bundle.get("schema") != SCHEMA:
         raise ValueError("Unsupported input schema")
     kind = bundle.get("data_kind")
@@ -283,6 +288,22 @@ def import_snapshot(db, bundle):
         label = db.execute("SELECT value FROM metadata WHERE key='data_kind'").fetchone()
         if label and label[0] != normalized["data_kind"]:
             raise ValueError("Synthetic and live data require separate stores")
+        input_schema = bundle["schema"]
+        saved_schema = db.execute("SELECT value FROM metadata WHERE key='input_schema'").fetchone()
+        # Stores predating schema metadata contain only the legacy adapter.
+        previous_schema = saved_schema[0] if saved_schema else SCHEMA if label else None
+        if previous_schema and previous_schema != input_schema:
+            raise ValueError("Current REST and legacy SDK histories require separate reviewed stores")
+        if input_schema == CURRENT_SCHEMA:
+            scope = canonical(normalized["scope"])
+            saved_scope = db.execute("SELECT value FROM metadata WHERE key='account_scope'").fetchone()
+            if saved_scope and saved_scope[0] != scope:
+                raise ValueError("Account/subaccount/shard scope changed")
+            db.execute("INSERT OR REPLACE INTO metadata VALUES ('account_scope',?)", (scope,))
+            snapshot = canonical(bundle)
+            db.execute("INSERT OR IGNORE INTO rest_snapshots VALUES (?,?)", (digest(bundle), snapshot))
+            db.execute("INSERT OR REPLACE INTO metadata VALUES ('current_snapshot',?)", (digest(bundle),))
+        db.execute("INSERT OR REPLACE INTO metadata VALUES ('input_schema',?)", (input_schema,))
         db.execute("INSERT OR REPLACE INTO metadata VALUES ('data_kind',?)", (normalized["data_kind"],))
         for key, record in sources.items():
             db.execute("INSERT OR IGNORE INTO sources VALUES (?,?)", (key, record))
@@ -315,10 +336,23 @@ def _load_history(db):
         raise ValueError("Import a complete snapshot first")
     source_records = dict(db.execute("SELECT source_id,record FROM sources"))
     records = {key: json.loads(value) for key, value in source_records.items()}
-    bundle = {"schema": SCHEMA, "data_kind": label[0], "history_from_inception": True,
+    input_schema = db.execute("SELECT value FROM metadata WHERE key='input_schema'").fetchone()
+    if input_schema and input_schema[0] == CURRENT_SCHEMA:
+        selected = db.execute("SELECT value FROM metadata WHERE key='current_snapshot'").fetchone()
+        snapshot = db.execute("SELECT record FROM rest_snapshots WHERE snapshot_hash=?", (selected[0],)).fetchone() if selected else None
+        if not snapshot:
+            raise ValueError("Current REST snapshot evidence missing")
+        bundle = json.loads(snapshot[0])
+        saved_scope = db.execute("SELECT value FROM metadata WHERE key='account_scope'").fetchone()
+        if digest(bundle) != selected[0] or bundle.get("data_kind") != label[0] or not saved_scope or canonical(bundle.get("scope")) != saved_scope[0]:
+            raise ValueError("REST snapshot metadata does not reconcile")
+    elif not input_schema or input_schema[0] == SCHEMA:
+        bundle = {"schema": SCHEMA, "data_kind": label[0], "history_from_inception": True,
               "fills_pages": [{"request_cursor": "", "response": {"fills": [value for key, value in records.items() if key.startswith("fill:")], "cursor": ""}}],
               "settlements_pages": [{"request_cursor": "", "response": {"settlements": [value for key, value in records.items() if key.startswith("settlement:")], "cursor": ""}}],
               "fill_fees": [value for key, value in records.items() if key.startswith("fee:")]}
+    else:
+        raise ValueError("Unsupported stored input schema")
     normalized = normalize_snapshot(bundle)
     if normalized["sources"] != source_records:
         raise ValueError("Stored sources do not match their identities")

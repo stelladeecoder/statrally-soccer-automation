@@ -14,6 +14,7 @@ from m14_position_ledger import summarize
 from m14_results_publish import (confirm_channel, dollars, percent, render_results, report_key,
                                  send_results, test_webhook as connection_test)
 from m14_samples import bundle, event, fill, settlement
+from m14_rest_samples import add_open_fill
 from test_m14_performance import history
 from test_m14_results_publish import WEBHOOK, Response, live_snapshot, reconciled_store
 
@@ -90,8 +91,7 @@ class FinalVerificationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory, connect(Path(directory) / "ledger.sqlite") as db:
             report, review = self.prepare(db)
             changed = live_snapshot()
-            changed["fills_pages"][0]["response"]["fills"].append(fill("additional", ticker="SYNTHETIC-OTHER", when="2026-11-02T13:00:00Z"))
-            changed["fill_fees"].append({"fill_id": "additional", "fee_usd": "0"})
+            add_open_fill(changed)
             import_snapshot(db, changed)
             with self.assertRaises(ValueError):
                 send_results(db, report, WEBHOOK, self.never_send, review=review)
@@ -100,7 +100,7 @@ class FinalVerificationTests(unittest.TestCase):
     def test_stored_event_mutation_rejected_against_raw_sources(self):
         with tempfile.TemporaryDirectory() as directory, connect(Path(directory) / "ledger.sqlite") as db:
             report, review = self.prepare(db)
-            key, record = db.execute("SELECT event_id,record FROM events WHERE source_id='fill:synthetic-buy'").fetchone()
+            key, record = db.execute("SELECT event_id,record FROM events WHERE source_id='rest-fill:0:synthetic-buy'").fetchone()
             altered = json.loads(record)
             altered["price"] = "0.3"
             with db:
@@ -111,8 +111,8 @@ class FinalVerificationTests(unittest.TestCase):
                 send_results(db, report, WEBHOOK, self.never_send, review=review)
 
     def test_missing_event_and_mismatched_source_reference_rejected(self):
-        for mutation in ("DELETE FROM events WHERE source_id='fill:synthetic-buy'",
-                         "UPDATE events SET source_id='fee:synthetic-buy' WHERE source_id='fill:synthetic-buy'"):
+        for mutation in ("DELETE FROM events WHERE source_id='rest-fill:0:synthetic-buy'",
+                         "UPDATE events SET source_id='rest-fill:0:synthetic-sell' WHERE source_id='rest-fill:0:synthetic-buy'"):
             with self.subTest(mutation=mutation), tempfile.TemporaryDirectory() as directory, connect(Path(directory) / "ledger.sqlite") as db:
                 reconciled_store(db)
                 with db:
@@ -139,3 +139,26 @@ class FinalVerificationTests(unittest.TestCase):
                     return build_report(*args, **kwargs)
                 with patch("m14_results_publish.build_report", side_effect=under_lock):
                     self.assertEqual(send_results(db, report, WEBHOOK, lambda *a, **kw: Response(), review=review), "delivered")
+
+    def test_reconciliation_cannot_extend_capture_or_authorize_legacy_sources(self):
+        from test_m14_performance import attestation
+        with tempfile.TemporaryDirectory() as directory, connect(Path(directory) / "current.sqlite") as db:
+            report, review = self.prepare(db)
+            events, kind = load_history(db)
+            preview = build_report(events, kind, "daily", "2026-11-06")
+            future_review = attestation(preview)
+            future = build_report(events, kind, "daily", "2026-11-06", future_review)
+            with self.assertRaisesRegex(ValueError, "cutoff exceeds"):
+                send_results(db, future, WEBHOOK, self.never_send, review=future_review)
+        with tempfile.TemporaryDirectory() as directory, connect(Path(directory) / "legacy.sqlite") as db:
+            data = bundle([fill()], [settlement()])
+            data["data_kind"] = "live"
+            import_snapshot(db, data)
+            connection_test(db, WEBHOOK, lambda *a, **kw: Response())
+            confirm_channel(db, WEBHOOK)
+            events, kind = load_history(db)
+            preview = build_report(events, kind, "daily", "2026-11-02")
+            review = attestation(preview)
+            reconciled = build_report(events, kind, "daily", "2026-11-02", review)
+            with self.assertRaisesRegex(ValueError, "Legacy SDK histories"):
+                send_results(db, reconciled, WEBHOOK, self.never_send, review=review)

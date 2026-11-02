@@ -41,6 +41,7 @@ The fixture watchlist is **independent** of the gated M12 scanner so a research-
 - `docs/m13_discord_publishing.md`: development log and acceptance notes.
 - `src/m14_position_ledger.py`: Decimal FIFO positions, fee allocation and realized closures.
 - `src/m14_import.py`: versioned Kalshi response adapter and private transactional store.
+- `src/m14_kalshi_rest.py`: current fixed-point/dollar REST schemas and historical-data coverage.
 - `src/m14_performance.py`: daily, weekly and cumulative actual-event metrics.
 - `src/m14_results_publish.py`: separate, dry-run-by-default `#btts-results` reporting.
 - [M14 architecture, input contracts and limitations](docs/m14_performance.md).
@@ -83,10 +84,13 @@ Reports distinguish partial exits from completed position cycles and define ROI
 as net realized P&L divided by fee-inclusive entry cost of the contracts closed.
 Unrealized P&L stays unknown without mark prices.
 
-The offline importer supports a conservative subset of Kalshi SDK 3.2.0 fill and
-binary-settlement responses with explicit per-fill fee evidence, complete-history
-pagination and reconciliation checks. It rejects ambiguous ordering, unsupported
-netting and inconsistent records. It does not fetch account data or place orders.
+The offline importer supports current REST/OpenAPI 3.35.0 fixed-point fills,
+source-provided fees and dollar-denominated binary settlements, with fractional
+contract quantities, scoped netting, live/historical pagination and position
+coverage checks. Archived summaries never become invented settlement events;
+missing closure records and inconsistent histories reject the import. The older
+SDK 3.2.0 adapter remains for offline legacy calculations only. The importer does
+not fetch account data or place orders. See the [current REST input guide](docs/m14_current_rest.md).
 Raw sources, personal transaction data and delivery receipts belong in durable
 private storage **outside this public checkout**.
 
@@ -100,6 +104,10 @@ M14 remains in progress pending current live schema/fee validation, actual accou
 reconciliation, and authorized results-webhook testing and deployment. See the
 [M14 operating guide](docs/m14_performance.md) for input formats, metric definitions,
 tests and remaining acceptance requirements. M13 and M15 are separate work.
+
+A manual-only M14 results connection-test workflow is prepared. It sends a labeled
+connection message with no financial figures; it has no scheduled or push trigger.
+No connection test or live financial publication is activated by preparing it.
 
 ## Safety and scope
 

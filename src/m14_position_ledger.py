@@ -5,6 +5,7 @@ from decimal import Context, Decimal, InvalidOperation, localcontext
 from pathlib import Path
 import argparse
 import json
+import re
 
 def money(value):
     if isinstance(value, (bool, float)) or value is None:
@@ -28,6 +29,24 @@ def timestamp(value):
     if parsed.tzinfo is None or parsed.utcoffset() is None:
         raise ValueError("Timezone-aware timestamp required")
     return parsed.astimezone(timezone.utc)
+
+
+def contracts(value, *, zero=False, signed=False):
+    """Integer legacy quantities or exact two-place REST count strings."""
+    if type(value) is int:
+        result = Decimal(value)
+    elif isinstance(value, str) and re.fullmatch(r"-?(?:0|[1-9][0-9]*)\.[0-9]{2}", value):
+        result = Decimal(value)
+    else:
+        raise ValueError("Contract count must be an integer or two-place fixed-point string")
+    if result.copy_abs() > 2**63 - 1 or (not signed and result < 0) or (not zero and result == 0):
+        raise ValueError("Contract count out of range")
+    return result
+
+
+def contract_value(value):
+    """JSON-safe quantity, preserving fractional hundredths without floats."""
+    return int(value) if value == int(value) else format(value, ".2f")
 
 def summarize(events):
     # Ample headroom for bounded inputs and 18-place fee allocation.
@@ -80,9 +99,7 @@ def _summarize(events):
         if when is not None and previous_time is not None and when < previous_time:
             raise ValueError("Events must be chronological")
         previous_time = when
-        quantity = event.get("quantity")
-        if type(quantity) is not int or not 0 < quantity <= 2**63 - 1:
-            raise ValueError("Quantity must be a positive integer")
+        quantity = contracts(event.get("quantity"))
         price = money(event.get("price"))
         fee = money(event.get("fee_usd"))
         if any(value.as_tuple().exponent < -18 for value in (price, fee)) or fee >= Decimal("1e18"):
@@ -134,7 +151,7 @@ def _summarize(events):
             if action == "SELL":
                 cycles[key]["early_exit_contracts"] += quantity
             closures.append({"event_id": eid, "market_ticker": ticker, "side": side,
-                             "cycle": cycle_counts[key], "action": action, "quantity": quantity,
+                             "cycle": cycle_counts[key], "action": action, "quantity": contract_value(quantity),
                              "timestamp": when.isoformat() if when else None,
                              "entry_cost_usd": str(basis + matched_entry_fees),
                              "exit_fee_usd": str(fee), "entry_fee_usd": str(matched_entry_fees),
@@ -142,6 +159,7 @@ def _summarize(events):
             if not positions[key]:
                 cycle = cycles.pop(key)
                 cycle["closed_at"] = when.isoformat() if when else None
+                cycle["early_exit_contracts"] = contract_value(cycle["early_exit_contracts"])
                 completed.append({k: str(v) if isinstance(v, Decimal) else v for k, v in cycle.items()})
         total_fills += 1
     result = []
@@ -150,7 +168,7 @@ def _summarize(events):
         open_fees = sum((lot[2] for lot in positions[key]), Decimal("0"))
         open_basis = sum((lot[0] * lot[1] for lot in positions[key]), Decimal("0"))
         result.append({"market_ticker": key[0], "side": key[1],
-                       "open_contracts": remaining,
+                       "open_contracts": contract_value(remaining),
                        "open_cost_basis_usd": str(open_basis),
                        "open_entry_fees_usd": str(open_fees),
                        "open_total_basis_usd": str(open_basis + open_fees),

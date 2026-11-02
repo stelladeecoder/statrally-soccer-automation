@@ -13,9 +13,9 @@ import re
 import sqlite3
 from urllib.request import Request, urlopen
 
-from m14_import import canonical, connect, digest, load_history, read_json
+from m14_import import CURRENT_SCHEMA, canonical, connect, digest, load_history, read_json
 from m14_performance import build_report
-from m14_position_ledger import money
+from m14_position_ledger import contracts, money, timestamp
 
 
 class DeliveryUncertain(RuntimeError):
@@ -46,9 +46,10 @@ def render_results(report):
     label = "RECONCILED RESULTS" if verified else "TEST — SYNTHETIC" if kind == "synthetic" else "UNVERIFIED PREVIEW — DO NOT PUBLISH"
     metrics = report["metrics"]
     cumulative = report["cumulative"]
-    for field in ("completed_positions", "wins", "losses", "breakeven", "early_exit_contracts"):
+    for field in ("completed_positions", "wins", "losses", "breakeven"):
         if type(metrics.get(field)) is not int or metrics[field] < 0:
             raise ValueError("Nonnegative numeric report counts required")
+    contracts(metrics.get("early_exit_contracts"), zero=True)
     lines = [f"**StatRally | {label}**", f"{period.title()} through {through} (America/Chicago)",
              f"Realized net P&L: ${dollars(metrics['realized_net_pnl_usd'])}",
              f"Fees paid in period: ${dollars(metrics['fees_paid_usd'])}",
@@ -114,6 +115,12 @@ def send_results(db, report, webhook, opener=urlopen, *, review=None):
         # holding the SAME write lock as the durable reservation. Never trust
         # caller-supplied verification flags or stale report metrics.
         events, kind = load_history(db)
+        schema = db.execute("SELECT value FROM metadata WHERE key='input_schema'").fetchone()
+        if not schema or schema[0] != CURRENT_SCHEMA:
+            raise ValueError("Legacy SDK histories cannot authorize current live results")
+        snapshot = db.execute("SELECT record FROM rest_snapshots WHERE snapshot_hash=(SELECT value FROM metadata WHERE key='current_snapshot')").fetchone()
+        if not snapshot or timestamp(report["cutoff_exclusive"]) > timestamp(json.loads(snapshot[0])["captured_at"]):
+            raise ValueError("Report cutoff exceeds captured source history")
         current = build_report(events, kind, report["period"], report["through"], review)
         if current["verification"] != "operator_reconciled" or canonical(current) != canonical(report):
             raise ValueError("Report changed or does not match reconciled stored history")

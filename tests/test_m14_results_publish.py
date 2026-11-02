@@ -11,7 +11,7 @@ from m14_performance import build_report
 from m14_results_publish import (DeliveryUncertain, confirm_channel, deliver_once, render_results,
                                  send_results, test_webhook as send_connection_test, webhook_identity)
 from test_m14_performance import attestation, history
-from m14_samples import bundle, fill, settlement
+from m14_rest_samples import add_open_fill, integration_snapshot
 
 # Nonfunctional synthetic token used exclusively with injected fake HTTP transport.
 WEBHOOK = "https://discord.com/api/webhooks/123/SYNTHETIC_TEST_TOKEN"
@@ -32,10 +32,7 @@ def reconciled_report():
 
 def live_snapshot():
     # All records remain synthetic; the live label exercises the live-only gate.
-    data = bundle([fill("synthetic-buy", count=4),
-                   fill("synthetic-sell", action="sell", count=1, yes="0.6000", no="0.4000", when="2026-11-02T12:00:00Z")],
-                  [settlement(yes_count=3, yes_cost=120, revenue=300, fee="0.06", when="2026-11-03T12:00:00Z")],
-                  {"synthetic-buy": "0.04", "synthetic-sell": "0.02"})
+    data = integration_snapshot()
     data["data_kind"] = "live"
     return data
 
@@ -109,8 +106,7 @@ class ResultsTests(unittest.TestCase):
             report, review = reconciled_store(db)
             send_results(db, report, WEBHOOK, opener, review=review)
             snapshot = live_snapshot()
-            snapshot["fills_pages"][0]["response"]["fills"].append(fill("additional", ticker="SYNTHETIC-OTHER", when="2026-11-02T13:00:00Z"))
-            snapshot["fill_fees"].append({"fill_id": "additional", "fee_usd": "0"})
+            add_open_fill(snapshot)
             changed, changed_review = reconciled_store(db, snapshot)
             self.assertNotEqual(changed["history_sha256"], report["history_sha256"])
             self.assertEqual(send_results(db, changed, WEBHOOK, opener, review=changed_review), "already_delivered")
@@ -179,3 +175,26 @@ class ResultsTests(unittest.TestCase):
             with self.assertRaises(DeliveryUncertain):
                 send_connection_test(db, WEBHOOK, lambda *a, **kw: BadResponse())
             self.assertEqual(db.execute("SELECT state FROM outbox").fetchone()[0], "uncertain")
+
+    def test_connection_only_message_never_loads_account_history(self):
+        from unittest.mock import patch
+        calls = []
+        def opener(request, **kwargs):
+            calls.append(json.loads(request.data))
+            return Response()
+        with tempfile.TemporaryDirectory() as directory, connect(Path(directory) / "ledger.sqlite") as db:
+            reconciled_store(db)  # Populated synthetic store must not affect the test payload.
+            with patch("m14_results_publish.load_history", side_effect=AssertionError("Account reads forbidden")):
+                self.assertEqual(send_connection_test(db, WEBHOOK, opener), "delivered")
+            content = calls[0]["content"]
+            self.assertIn("CONNECTION TEST", content)
+            self.assertNotIn("$", content)
+            self.assertNotIn("SYNTHETIC", content)
+
+    def test_fractional_counts_are_safe_numeric_payloads(self):
+        report = reconciled_report()
+        report["metrics"]["early_exit_contracts"] = "0.50"
+        self.assertIn("Early exit contracts: 0.50", render_results(report)["content"])
+        report["metrics"]["early_exit_contracts"] = "PRIVATE_ACCOUNT"
+        with self.assertRaises(ValueError):
+            render_results(report)
