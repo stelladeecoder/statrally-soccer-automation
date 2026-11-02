@@ -7,10 +7,11 @@ import json
 import os
 from urllib.request import Request, urlopen
 from urllib.parse import quote
-from m13_beta_signals import render_beta
+from m13_beta_signals import render_beta, signal_identity, signal_proof
 from m13_discord_publish import publish
 
 API="https://api.github.com"
+DELIVERY_MESSAGE="Discord delivery returned success. Paper signal posted; outcome pending."
 
 def github(method,path,token,data=None):
     request=Request(API+path,
@@ -23,7 +24,8 @@ def github(method,path,token,data=None):
     return json.loads(raw) if raw else None
 
 def process(envelope,repo,token,webhook):
-    signals=envelope.get("signals",[])
+    render_beta(envelope, allow_empty=True)
+    signals=envelope["signals"]
     if not signals:
         print("BETA_NO_ELIGIBLE_SIGNALS")
         return 0
@@ -41,9 +43,24 @@ def process(envelope,repo,token,webhook):
         raise RuntimeError("Issue history exceeds checked pages; refusing possible duplicate")
     done=0
     for signal in signals:
-        identity=signal["market_ticker"]+"|"+signal["side"]+"|"+signal["kickoff_utc"]
+        identity=signal_identity(signal)
+        proof=signal_proof(signal)
         marker="statrally-beta-id:"+identity
-        if any(marker in issue.get("body","") for issue in existing):
+        def matches(issue):
+            body=issue.get("body") or ""
+            for line in body.splitlines():
+                if line.startswith("statrally-beta-id:"):
+                    try:
+                        ticker,side,kickoff=line.removeprefix("statrally-beta-id:").split("|",2)
+                        if signal_identity({"market_ticker":ticker,"side":side,"kickoff_utc":kickoff})==identity:
+                            return True
+                    except ValueError:
+                        # An ambiguous matching ticker/side is a conservative
+                        # duplicate block, never permission to send again.
+                        if line.startswith("statrally-beta-id:"+signal["market_ticker"]+"|"+signal["side"]+"|"):
+                            return True
+            return False
+        if any(matches(issue) for issue in existing):
             print("BETA_ALREADY_RECORDED")
             continue
         item=dict(envelope,signals=[signal])
@@ -53,10 +70,13 @@ def process(envelope,repo,token,webhook):
               +"\n\nState: reserved before Discord delivery. Outcome: pending; no trade.")
         issue=github("POST",f"/repos/{repo}/issues",token,
                      {"title":"BETA PAPER | "+signal["market_ticker"]+" | "+signal["side"],"body":body})
+        if not isinstance(issue,dict) or type(issue.get("number")) is not int or issue["number"]<=0:
+            raise RuntimeError("Durable reservation confirmation missing; refusing delivery")
+        existing.append({"body":body})
         # Issue reservation is durable: failed/ambiguous Discord POST is NOT retried.
-        publish(payload,webhook)
+        publish(render_beta(item),webhook)
         github("POST",f"/repos/{repo}/issues/{issue['number']}/comments",token,
-               {"body":"Discord delivery returned success. Paper signal posted; outcome pending."})
+               {"body":DELIVERY_MESSAGE+"\nstatrally-beta-delivery-proof:"+proof})
         done+=1
     print("BETA_DELIVERED_COUNT="+str(done))
     return done

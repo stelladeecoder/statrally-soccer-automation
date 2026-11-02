@@ -3,7 +3,7 @@ from m13_beta_grading import grade, aggregate
 SIGNAL={"league":"epl","espn_event_id":"123","home_team":"Alpha","away_team":"Beta","side":"YES",
         "kickoff_utc":"2026-11-02T20:00:00+00:00","model_probability":"0.60","market_price":"0.55"}
 def fixture(h=2,a=1,complete=True):
-    return {"events":[{"id":"123","date":SIGNAL["kickoff_utc"],"status":{"type":{"completed":complete}},
+    return {"events":[{"id":"123","date":SIGNAL["kickoff_utc"],"status":{"type":{"completed":complete,"name":"STATUS_FULL_TIME"}},
       "competitions":[{"competitors":[{"homeAway":"home","team":{"displayName":"Alpha"},"score":str(h)},
                                      {"homeAway":"away","team":{"displayName":"Beta"},"score":str(a)}]}]}]}
 class GradingTests(unittest.TestCase):
@@ -22,4 +22,14 @@ class GradingTests(unittest.TestCase):
         x=aggregate([{"status":"graded","result":"WIN","side":"YES","model_probability":"0.6","btts_yes":True}])
         self.assertEqual(x["brier_score"],"0.16")
     def test_empty(self):self.assertIsNone(aggregate([])["hit_rate"])
+    def test_cancelled_or_extra_time_game_is_not_a_regulation_result(self):
+        for name in ("STATUS_CANCELED","STATUS_FINAL_AET","STATUS_FINAL_PEN",None):
+            feed=fixture();feed["events"][0]["status"]["type"]["name"]=name
+            with self.subTest(name=name):self.assertEqual(grade(SIGNAL,feed)["status"],"pending")
+    def test_ambiguous_competitors_rejected(self):
+        feed=fixture();feed["events"][0]["competitions"][0]["competitors"].append({"homeAway":"other"})
+        with self.assertRaises(ValueError):grade(SIGNAL,feed)
+    def test_invalid_probability_cannot_crash_or_invent_brier_score(self):
+        report=aggregate([{"status":"graded","result":"WIN","side":"YES","model_probability":"invalid","btts_yes":True}])
+        self.assertIsNone(report["brier_score"])
 if __name__=="__main__":unittest.main()

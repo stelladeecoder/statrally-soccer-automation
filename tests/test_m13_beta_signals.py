@@ -5,7 +5,7 @@ from m13_beta_signals import render_beta
 NOW=datetime(2026,11,2,17,0,tzinfo=timezone.utc)
 def sample():
     return {"schema_version":1,"status":"experimental_paper","trades_placed":0,
-            "signals":[{"fixture_verified":True,"quote_verified":True,"market_ticker":"SAMPLE-MARKET","home_team":"Home","away_team":"Away",
+            "signals":[{"fixture_verified":True,"quote_verified":True,"market_ticker":"SAMPLE-MARKET","home_team":"Home","away_team":"Away","league":"epl","espn_event_id":"123",
                         "side":"YES","kickoff_utc":(NOW+timedelta(hours=2)).isoformat(),
                         "observed_at_utc":(NOW-timedelta(minutes=3)).isoformat(),
                         "model_probability":"0.58","market_price":"0.53"}]}

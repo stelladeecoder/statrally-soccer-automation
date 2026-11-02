@@ -7,7 +7,7 @@ from m13_beta_dispatch import process
 NOW=datetime.now(timezone.utc)
 def envelope():
     return {"schema_version":1,"status":"experimental_paper","trades_placed":0,
-      "signals":[{"market_ticker":"TEST-MARKET","side":"YES","home_team":"Home","away_team":"Away",
+      "signals":[{"market_ticker":"TEST-MARKET","side":"YES","home_team":"Home","away_team":"Away","league":"epl","espn_event_id":"123",
         "kickoff_utc":(NOW+timedelta(hours=2)).isoformat(),
         "observed_at_utc":NOW.isoformat(),
         "model_probability":"0.58","market_price":"0.52",
@@ -42,4 +42,24 @@ class BetaPipelineTests(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 process(envelope(),"owner/repo","token","https://discord.com/api/webhooks/1/test")
             send.assert_not_called()
+    def test_equivalent_utc_date_cannot_bypass_duplicate_reservation(self):
+        e=envelope()
+        old=e["signals"][0]["kickoff_utc"].replace("+00:00","Z")
+        with patch("m13_beta_dispatch.github",return_value=[{"body":"statrally-beta-id:TEST-MARKET|YES|"+old}]),patch("m13_beta_dispatch.publish") as send:
+            self.assertEqual(process(e,"owner/repo","token","synthetic-webhook"),0)
+            send.assert_not_called()
+    def test_missing_durable_reservation_number_blocks_discord(self):
+        with patch("m13_beta_dispatch.github",side_effect=[[],{}]),patch("m13_beta_dispatch.publish") as send:
+            with self.assertRaises(RuntimeError):process(envelope(),"owner/repo","token","synthetic-webhook")
+            send.assert_not_called()
+    def test_failed_envelope_cannot_be_reported_as_no_eligible_signals(self):
+        with patch("m13_beta_dispatch.github") as api,patch("m13_beta_dispatch.publish") as send:
+            with self.assertRaises(ValueError):process({"status":"failed","signals":[]},"owner/repo","token","synthetic-webhook")
+            api.assert_not_called()
+            send.assert_not_called()
+    def test_unknown_private_fields_are_rejected_before_public_issue_write(self):
+        e=envelope();e["signals"][0]["private_account_data"]="SYNTHETIC-PRIVATE"
+        with patch("m13_beta_dispatch.github") as api,patch("m13_beta_dispatch.publish") as send:
+            with self.assertRaises(ValueError):process(e,"owner/repo","token","synthetic-webhook")
+            api.assert_not_called();send.assert_not_called()
 if __name__=="__main__":unittest.main()
