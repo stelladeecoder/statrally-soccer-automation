@@ -1,0 +1,24 @@
+name: Verify beta picks and results code
+on:
+  pull_request:
+    branches: [main]
+    paths: [.github/workflows/m13-dual-channel-once.yml]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile publisher and grader
+        run: python -m py_compile src/m13_beta_grade_issues.py src/m13_beta_dispatch.py src/m13_beta_grading.py
+      - name: Run beta regression tests
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests -p 'test_m13_beta*.py' -v
