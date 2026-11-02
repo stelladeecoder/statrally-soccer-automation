@@ -26,7 +26,8 @@ class M14LedgerTests(unittest.TestCase):
     def test_open_position_not_counted_as_win(self):
         r=summarize([event("a","BUY",3,"0.50","0.03")])
         self.assertEqual(r["positions"][0]["open_contracts"],3)
-        self.assertEqual(Decimal(r["total_realized_pnl_usd"]),Decimal("-0.03"))
+        self.assertEqual(Decimal(r["total_realized_pnl_usd"]),Decimal("0"))
+        self.assertEqual(Decimal(r["positions"][0]["open_total_basis_usd"]),Decimal("1.53"))
     def test_over_sell_rejected(self):
         with self.assertRaises(ValueError):
             summarize([event("a","BUY",1,"0.40"),event("b","SELL",2,"0.70")])

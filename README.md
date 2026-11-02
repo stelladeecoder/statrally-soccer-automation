@@ -4,7 +4,7 @@
 
 Public GitHub Actions and Discord-delivery infrastructure for **StatRally**, a soccer **Both Teams to Score (BTTS) Yes/No** research project.
 
-> **Status (November 1, 2026):** Milestones **1–12 complete**; **M13 (Discord automation) in progress**. The daily fixture workflow is committed and scheduled, and both Discord webhooks have been tested. **The first unattended daily watchlist post has not yet been verified.** No live betting recommendations or automated trades are authorized.
+> **Status (November 2, 2026):** Milestones **1–12 complete**; **M13 (Discord automation) and M14 (performance tracking) in progress**. M14 has local accounting, SDK-shaped response importing, performance reports and a guarded results publisher tested with synthetic data. Live account reconciliation and results-channel activation remain unverified. **The first unattended daily watchlist post has not yet been verified.** No live betting recommendations or automated trades are authorized.
 
 ## What this public repository does
 
@@ -20,7 +20,7 @@ The watchlist is **fixtures only**, with no EV, odds, No Bet decisions, or playe
 | Repository | Responsibility | Visibility |
 | --- | --- | --- |
 | `stelladeecoder/statrally-soccer-btts` | Research data, model/validation, odds and Kalshi EV logic, fixture collection | Private |
-| `stelladeecoder/statrally-soccer-automation` | Public-safe workflows, Discord formatting, guarded publishing, tests | Public |
+| `stelladeecoder/statrally-soccer-automation` | Public-safe workflows, Discord formatting, guarded publishing, M14 accounting/importing/performance code, tests | Public |
 
 The current research model is **not approved to claim a profitable betting edge**. This repository does not place or execute trades.
 
@@ -39,6 +39,11 @@ The fixture watchlist is **independent** of the gated M12 scanner so a research-
 - `src/m13_discord_publish.py`: watchlist formatter, guarded research reporting, picks formatting, webhook transport.
 - `tests/test_m13_discord_publish.py`: safety and formatting regression tests.
 - `docs/m13_discord_publishing.md`: development log and acceptance notes.
+- `src/m14_position_ledger.py`: Decimal FIFO positions, fee allocation and realized closures.
+- `src/m14_import.py`: versioned Kalshi response adapter and private transactional store.
+- `src/m14_performance.py`: daily, weekly and cumulative actual-event metrics.
+- `src/m14_results_publish.py`: separate, dry-run-by-default `#btts-results` reporting.
+- [M14 architecture, input contracts and limitations](docs/m14_performance.md).
 
 Run the offline unit suite with Python 3.12:
 
@@ -48,6 +53,10 @@ PYTHONPATH=src python -m unittest discover -s tests -v
 
 **Verified:** all **17 tests passed** in GitHub Actions run [41363527302](https://github.com/stelladeecoder/statrally-soccer-automation/actions/runs/41363527302). A controlled message to `#btts-picks` was also confirmed by the server owner. These checks do **not** establish a validated betting edge.
 
+The expanded M14 suite runs locally with the same command. All new account and
+performance examples are **synthetic**, and Discord transport is mocked. Local
+validation does not establish live account compatibility or real financial results.
+
 ## Development roadmap
 
 | Milestone | Scope | Status |
@@ -56,7 +65,7 @@ PYTHONPATH=src python -m unittest discover -s tests -v
 | M11 | Historical evaluation and fee-aware odds/EV research | Complete |
 | M12 | Read-only live Kalshi integration | Complete |
 | **M13** | Multi-league Discord watchlist and guarded picks-channel integration | **In progress** |
-| M14 | Actual settled positions, fees, win/loss, profit/loss and ROI; `#btts-results` | Planned |
+| **M14** | Actual settled positions, fees, win/loss, profit/loss and ROI; `#btts-results` | **In progress — synthetic/local validation; live reconciliation and activation pending** |
 | M15 | Mobile-friendly public dashboard with Discord and referral links, hosted on GitHub Pages | Planned |
 
 ### M13 remaining acceptance
@@ -65,6 +74,31 @@ PYTHONPATH=src python -m unittest discover -s tests -v
 2. Keep real `#btts-picks` selections **disabled** until the private engine provides independently validated, qualified recommendations and an approved publishing workflow.
 
 **Future enhancement:** team crests, league logos, and richer Discord embeds after reliable plain-text delivery is confirmed.
+
+### M14 development status
+
+The migrated ledger now keeps entry fees in open FIFO basis until contracts close.
+Reports distinguish partial exits from completed position cycles and define ROI
+as net realized P&L divided by fee-inclusive entry cost of the contracts closed.
+Unrealized P&L stays unknown without mark prices.
+
+The offline importer supports a conservative subset of Kalshi SDK 3.2.0 fill and
+binary-settlement responses with explicit per-fill fee evidence, complete-history
+pagination and reconciliation checks. It rejects ambiguous ordering, unsupported
+netting and inconsistent records. It does not fetch account data or place orders.
+Raw sources, personal transaction data and delivery receipts belong in durable
+private storage **outside this public checkout**.
+
+The separate results publisher produces daily, week-to-date and cumulative
+summaries. Sending real results requires an independently reconciled live history,
+a tested dedicated results webhook, visual channel confirmation and explicit
+delivery. A durable outbox prevents automatic duplicate retries, including after
+uncertain network outcomes. **No results schedule or live publishing is enabled.**
+
+M14 remains in progress pending current live schema/fee validation, actual account
+reconciliation, and authorized results-webhook testing and deployment. See the
+[M14 operating guide](docs/m14_performance.md) for input formats, metric definitions,
+tests and remaining acceptance requirements. M13 and M15 are separate work.
 
 ## Safety and scope
 
