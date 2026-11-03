@@ -18,7 +18,7 @@ jobs:
         with:
           repository: stelladeecoder/statrally-soccer-btts
           ref: main
-          token: \${{ secrets.STAT_RALLY_PRIVATE_READ_TOKEN }}
+          token: ${{ secrets.STAT_RALLY_PRIVATE_READ_TOKEN }}
           path: engine
           persist-credentials: false
       - uses: actions/setup-python@v5
