@@ -5,6 +5,8 @@ on:
     # Avoid the busiest top-of-hour scheduling window.
     - cron: "17 4 * * *"
       timezone: "America/Chicago"
+    # Temporary read-only scheduler verification.
+    - cron: "*/5 * * * *"
 permissions:
   contents: read
   issues: write
@@ -12,7 +14,15 @@ concurrency:
   group: statrally-daily-watchlist
   cancel-in-progress: false
 jobs:
+  scheduler-check:
+    if: github.event_name == 'schedule' && github.event.schedule == '*/5 * * * *'
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - name: Verify unattended schedule trigger
+        run: echo "Scheduled event received for $GITHUB_WORKFLOW at $(date -u +%FT%TZ)"
   post:
+    if: github.event_name != 'schedule' || github.event.schedule != '*/5 * * * *'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
