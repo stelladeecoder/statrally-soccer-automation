@@ -109,10 +109,10 @@ class TestAdminMonitor(unittest.TestCase):
     def test_missing_window_only_flagged_after_rollout(self):
         day = date(2026, 11, 4)
         completed = {expected_windows(day)[0]}
-        body = "\\n".join(window_status_lines(day, completed))
+        body = "\n".join(window_status_lines(day, completed))
         self.assertIn("1/5", body)
         self.assertIn("Missed/unconfirmed windows: 4", body)
-        old = "\\n".join(window_status_lines(date(2026, 11, 3), set()))
+        old = "\n".join(window_status_lines(date(2026, 11, 3), set()))
         self.assertIn("historical / not verified", old)
         self.assertNotIn("missed / no receipt", old)
 
@@ -139,17 +139,17 @@ class TestAdminMonitor(unittest.TestCase):
         records = {
             4: [
                 {"created_at": "2026-11-04T13:00:00Z", "user": {"login": "github-actions[bot]"},
-                 "body": "Discord delivery returned success.\\nstatrally-beta-delivery-proof:abc"},
+                 "body": "Discord delivery returned success.\nstatrally-beta-delivery-proof:abc"},
                 {"created_at": "2026-11-04T23:59:00Z", "user": {"login": "github-actions[bot]"},
                  "body": "statrally-beta-results-delivered:abc"},
                 {"created_at": "2026-11-05T13:00:00Z", "user": {"login": "github-actions[bot]"},
-                 "body": "Discord delivery returned success.\\nstatrally-beta-delivery-proof:later"},
+                 "body": "Discord delivery returned success.\nstatrally-beta-delivery-proof:later"},
             ],
             5: [
                 {"created_at": "2026-11-04T14:00:00Z", "user": {"login": "github-actions[bot]"},
-                 "body": "statrally-watchlist-page-delivered:1/2\\nDiscord accepted this page."},
+                 "body": "statrally-watchlist-page-delivered:1/2\nDiscord accepted this page."},
                 {"created_at": "2026-11-04T14:01:00Z", "user": {"login": "github-actions[bot]"},
-                 "body": "statrally-watchlist-page-delivered:2/2\\nDiscord accepted this page."},
+                 "body": "statrally-watchlist-page-delivered:2/2\nDiscord accepted this page."},
             ],
         }
         def fake(method, repo, path, data=None):
