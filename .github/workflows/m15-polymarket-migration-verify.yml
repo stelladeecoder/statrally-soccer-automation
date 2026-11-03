@@ -35,7 +35,7 @@ jobs:
         working-directory: automation
         env:
           PYTHONPATH: src
-        run: python -m unittest discover -s tests -p test_m15_polymarket_public_pipeline.py
+        run: python -m unittest discover -s tests -v
       - name: Run live Polymarket US exporter (read-only, no Discord)
         working-directory: engine
         env:
