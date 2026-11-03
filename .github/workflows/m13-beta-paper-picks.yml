@@ -13,7 +13,7 @@ concurrency:
 jobs:
   beta:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
@@ -34,7 +34,7 @@ jobs:
         working-directory: engine
         env:
           PYTHONPATH: ../automation/src:src
-        run: python src/m15_polymarket_beta_export.py --output "$RUNNER_TEMP/beta.json"
+        run: python src/m15_polymarket_beta_export.py --discover --days 7 --output "$RUNNER_TEMP/beta.json"
       - name: Persist Polymarket US paper log and post eligible beta signals
         env:
           PYTHONPATH: automation/src
@@ -42,3 +42,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           STATRALLY_PICKS_DISCORD_WEBHOOK: ${{ secrets.STATRALLY_PICKS_DISCORD_WEBHOOK }}
         run: python automation/src/m13_beta_dispatch.py
+

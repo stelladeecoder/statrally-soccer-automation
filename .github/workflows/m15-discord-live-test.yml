@@ -1,0 +1,60 @@
+name: Polymarket all-league Discord live-data test
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/m15-discord-live-test.yml
+permissions:
+  contents: read
+concurrency:
+  group: statrally-discord-live-test
+  cancel-in-progress: false
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: automation
+      - uses: actions/checkout@v4
+        with:
+          repository: stelladeecoder/statrally-soccer-btts
+          ref: main
+          token: ${{ secrets.STAT_RALLY_PRIVATE_READ_TOKEN }}
+          persist-credentials: false
+          path: engine
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install research dependencies
+        run: python -m pip install pandas polymarket-us
+      - name: Test public validation and Discord test formatting
+        working-directory: automation
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests -v
+      - name: Test private all-league discovery and fixture dates
+        working-directory: engine
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests -p 'test_m15*.py' -v
+      - name: Fetch today's actual 13-league Central Time match list
+        working-directory: engine
+        env:
+          PYTHONPATH: src
+        run: python src/m13_daily_fixtures.py > "$RUNNER_TEMP/fixtures-test.json"
+      - name: Send labeled match-list test to watchlist channel
+        env:
+          STATRALLY_DISCORD_WEBHOOK: ${{ secrets.STATRALLY_DISCORD_WEBHOOK }}
+        run: python automation/src/m15_discord_live_test.py --mode watchlist --input "$RUNNER_TEMP/fixtures-test.json"
+      - name: Scan actual Polymarket BTTS markets across all 13 leagues
+        working-directory: engine
+        env:
+          PYTHONPATH: src
+        run: python src/m15_polymarket_beta_export.py --discover --days 7 --output "$RUNNER_TEMP/picks-test.json" --diagnostics "$RUNNER_TEMP/coverage-test.json"
+      - name: Send labeled actual picks and league coverage test
+        env:
+          STATRALLY_PICKS_DISCORD_WEBHOOK: ${{ secrets.STATRALLY_PICKS_DISCORD_WEBHOOK }}
+        run: python automation/src/m15_discord_live_test.py --mode picks --input "$RUNNER_TEMP/picks-test.json" --diagnostics "$RUNNER_TEMP/coverage-test.json"
