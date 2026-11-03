@@ -1,12 +1,17 @@
 # M13 — Experimental BTTS beta publishing
 
+> **Current audit:** see [schedule, delivery and genuine lifecycle evidence](m13_operational_audit.md).
+> Pick times are **8:23 AM and 2:23 PM Central**. No unattended scheduled execution
+> or completed prediction-result lifecycle has been verified. The audit branch
+> expands grading to all 13 competitions; older pipeline details below are historical.
+
 > **Current source update — November 2, 2026:** The scheduled M13 BTTS paper-picks workflow now uses the **Polymarket US** private exporter, not the Kalshi export path described below. The legacy M12 Kalshi scan schedule is disabled. Private live read-only exporter verification passed for one explicitly reviewed EPL fixture, and public full-suite validation passed **80 tests**. A controlled actual scheduled-workflow dispatch [run #41562467939](https://github.com/stelladeecoder/statrally-soccer-automation/actions/runs/41562467939) completed successfully: it recorded **BETA_ALREADY_RECORDED**, so no second Discord post was sent for the same previously published fixture. New Polymarket-to-Discord delivery for a different fixture remains unverified. **Historical Kalshi sections below document previous M12/M13 behavior and must not be read as current provider configuration.** No trading is enabled.
 
 **November 2, 2026:** Scheduled *paper-only* dispatch is committed to the public repository. Manual real-source beta delivery and a separate results connection test now have successful Actions runs and durable delivery evidence (see the latest verification below). This is not a production betting recommendation system; unattended scheduled posting and a completed beta outcome remain unverified.
 
 ## Pipeline
 
-1. Public Actions workflow `.github/workflows/m13-beta-paper-picks.yml` runs at **08:23, 11:23 and 14:23 America/Chicago**, plus manual dispatch.
+1. Public Actions workflow `.github/workflows/m13-beta-paper-picks.yml` is configured for **08:23 and 14:23 America/Chicago**, plus manual dispatch.
 2. It checks out the public automation and private model repositories. Public `src/m13_beta_capture.py` calls the existing private exporter/discovery/evaluator, with a consistent conservative scan clock and observed provider responses. The exporter uses **independently reviewed market-to-ESPN fixture mappings**, an uncalibrated historical Poisson probability, and current verified Kalshi order-book asks. It requires a live pre-kickoff fixture and a quote no older than 15 minutes. Source transport/schema/pagination failures cannot masquerade as a successful zero-signal scan.
 3. It emits only model-generated YES/NO paper signals for eligible verified fixtures; **0 signals is normal and posts nothing**. There is no fabricated fallback or forced daily pick. The existing private reviewed mapping manifest may contain very few upcoming matches; additional independently reviewed fixture mappings are required for broad coverage.
 4. Public `src/m13_beta_signals.py` validates price, probability, identities, fixture start, quote freshness, and an explicit experimental, no-trades contract.

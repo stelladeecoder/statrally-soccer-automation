@@ -57,7 +57,6 @@ def process(envelope,repo,token,webhook):
                         if (isinstance(prior,dict)
                             and prior.get("espn_event_id")==signal.get("espn_event_id")
                             and prior.get("league")==signal.get("league")
-                            and prior.get("side")==signal.get("side")
                             and parse_time(prior.get("kickoff_utc"))==parse_time(signal.get("kickoff_utc"))):
                             return True
                     except (ValueError,TypeError,KeyError):
@@ -65,7 +64,7 @@ def process(envelope,repo,token,webhook):
                 if line.startswith("statrally-beta-id:"):
                     try:
                         ticker,side,kickoff=line.removeprefix("statrally-beta-id:").split("|",2)
-                        if signal_identity({"market_ticker":ticker,"side":side,"kickoff_utc":kickoff})==identity:
+                        if ticker==signal["market_ticker"] and parse_time(kickoff)==parse_time(signal["kickoff_utc"]):
                             return True
                     except ValueError:
                         # An ambiguous matching ticker/side is a conservative
@@ -88,8 +87,10 @@ def process(envelope,repo,token,webhook):
         existing.append({"body":body})
         # Issue reservation is durable: failed/ambiguous Discord POST is NOT retried.
         publish(render_beta(item),webhook)
-        github("POST",f"/repos/{repo}/issues/{issue['number']}/comments",token,
-               {"body":DELIVERY_MESSAGE+"\nstatrally-beta-delivery-proof:"+proof})
+        receipt=github("POST",f"/repos/{repo}/issues/{issue['number']}/comments",token,
+                       {"body":DELIVERY_MESSAGE+"\nstatrally-beta-delivery-proof:"+proof})
+        if not isinstance(receipt,dict) or type(receipt.get("id")) is not int or receipt["id"]<=0:
+            raise RuntimeError("Discord accepted the post but durable receipt is unconfirmed; no automatic resend")
         done+=1
     print("BETA_DELIVERED_COUNT="+str(done))
     return done
@@ -101,7 +102,10 @@ def main():
     webhook=os.environ.get("STATRALLY_PICKS_DISCORD_WEBHOOK","")
     if not all((path,repo,token,webhook)):
         raise SystemExit("Missing beta dispatch configuration")
-    with open(path,encoding="utf-8") as f:
-        process(json.load(f),repo,token,webhook)
+    try:
+        with open(path,encoding="utf-8") as f:
+            process(json.load(f),repo,token,webhook)
+    except Exception:
+        raise SystemExit("Beta dispatch failed; durable reservations retained. No automatic resend.") from None
 
 if __name__=="__main__":main()

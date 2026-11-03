@@ -64,8 +64,12 @@ def render_beta(envelope, now=None, *, allow_empty=False):
         if not isinstance(s,dict) or s.get("fixture_verified") is not True or s.get("quote_verified") is not True:
             raise ValueError("Independent fixture and quote verification required")
         fields=("market_ticker","home_team","away_team","side","kickoff_utc","observed_at_utc","league","espn_event_id")
-        if set(s)-set(fields)-{"model_probability","market_price","fixture_verified","quote_verified"}:
+        if set(s)-set(fields)-{"model_probability","market_price","fixture_verified","quote_verified","espn_home_team_id","espn_away_team_id"}:
             raise ValueError("Unreviewed signal fields must not enter public paper logs")
+        ids=(s.get("espn_home_team_id"),s.get("espn_away_team_id"))
+        if any(value is not None for value in ids):
+            if any(not isinstance(value,str) or not value.isascii() or not value.isdigit() for value in ids) or ids[0]==ids[1]:
+                raise ValueError("Both distinct ESPN team IDs are required")
         if any(not isinstance(s.get(k),str) or not s[k].strip() for k in fields):
             raise ValueError("Missing signal identity")
         if s["side"] not in ("YES","NO") or s["market_ticker"] in seen:
