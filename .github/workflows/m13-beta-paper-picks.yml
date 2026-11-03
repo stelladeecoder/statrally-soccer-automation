@@ -2,8 +2,8 @@ name: StatRally beta paper picks
 on:
   workflow_dispatch:
   schedule:
-    # Temporary UTC-only, read-only scheduler verification.
-    - cron: "*/5 * * * *"
+    - cron: "23 5,8,14 * * *"
+      timezone: "America/Chicago"
 permissions:
   contents: read
   issues: write
@@ -11,15 +11,7 @@ concurrency:
   group: statrally-beta-paper-picks
   cancel-in-progress: false
 jobs:
-  scheduler-check:
-    if: github.event_name == 'schedule' && github.event.schedule == '*/5 * * * *'
-    runs-on: ubuntu-latest
-    timeout-minutes: 1
-    steps:
-      - name: Verify unattended schedule trigger
-        run: echo "Scheduled event received for $GITHUB_WORKFLOW at $(date -u +%FT%TZ)"
   beta:
-    if: github.event_name != 'schedule' || github.event.schedule != '*/5 * * * *'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
