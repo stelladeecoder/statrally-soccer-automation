@@ -80,7 +80,7 @@ def run(repo, token, *, now=None, webhook=None):
     now = now or datetime.now(timezone.utc)
     webhook = os.environ.get("STATRALLY_RESULTS_DISCORD_WEBHOOK", "") if webhook is None else webhook
     all_issues = records(f"/repos/{repo}/issues?state=all", token)
-    outcomes, cache, seen = [], {}, {}
+    outcomes, cache, seen, prepared = [], {}, {}, []
     counts = {"unconfirmed": 0, "invalid_records": 0, "source_failures": 0,
               "results_delivered": 0, "already_reserved": 0, "results_delivery_unconfirmed": 0,
               "duplicate_records": 0}
@@ -106,6 +106,15 @@ def run(repo, token, *, now=None, webhook=None):
                 counts["duplicate_records"] += 1
                 continue
             seen[identity_key] = signal_proof(signal)
+            prepared.append((issue, comments, signal))
+        except (ValueError, KeyError, TypeError, OSError):
+            counts["source_failures"] += 1
+            outcomes.append({"status": "pending"})
+    # Check every delivered reservation for a conflicting duplicate before
+    # grading, writing outcome comments or sending any Discord result.
+    for issue, comments, signal in prepared:
+        try:
+            kickoff = parse_time(signal["kickoff_utc"])
             if kickoff >= now:
                 outcomes.append({"status": "pending"})
                 continue

@@ -62,6 +62,19 @@ class IssueGradingTests(unittest.TestCase):
         self.assertEqual(report["snapshot"]["graded"],1)
         self.assertEqual(report["checks"]["duplicate_records"],1)
         send.assert_called_once()
+
+    def test_conflicting_delivered_duplicates_block_all_outcome_writes_and_sends(self):
+        api=FakeAPI()
+        other=dict(api.signal,side="NO")
+        issue=dict(api.issues[0],number=8,
+                   body="statrally-beta-id:"+signal_identity(other)+"\nstatrally-beta-data:"+json.dumps(other))
+        proof=dict(api.comments[0],id=2,body=DELIVERED+"\nstatrally-beta-delivery-proof:"+signal_proof(other))
+        api.issues.append(issue);api.comments.append(proof)
+        with patch("m13_beta_grade_issues.github",side_effect=api),patch("m13_beta_grade_issues.fetch_scoreboard") as fetch,patch("m13_beta_grade_issues.publish") as send:
+            with self.assertRaisesRegex(RuntimeError,"Conflicting delivered predictions"):
+                run("owner/repo","token",now=NOW,webhook="synthetic")
+        self.assertEqual(api.writes,[])
+        fetch.assert_not_called();send.assert_not_called()
     def setUp(self):
         # Synthetic accuracy figures must not look like live deployment output.
         output=redirect_stdout(StringIO())
