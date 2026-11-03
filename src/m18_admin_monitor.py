@@ -286,7 +286,7 @@ def recent_failure_details(repo, run_id, call=api):
         else:
             meaning = "Scheduled job failed; inspect steps"
         lines.append(f"- {name}: {meaning}")
-    return lines or ["- Scheduler run did not finish successfully; inspect its jobs"]
+    return lines or ["- No failed job details available. The workflow may have been cancelled before jobs started; inspect the run and watchdog receipts"]
 
 
 def watch(repo, webhook, *, now, paused=False, call=api, sender=send):
@@ -345,6 +345,30 @@ def watch(repo, webhook, *, now, paused=False, call=api, sender=send):
             print("STATRALLY_DAILY_REPORT_SENT", day.isoformat())
 
 
+
+def is_superseded_push_cancellation(repo, run, call=api):
+    """Ignore only jobless push cancellations replaced by active scheduler checks.
+
+    A separate watchdog still detects missing posting receipts and heartbeat gaps.
+    """
+    if run.get("conclusion") != "cancelled" or run.get("event") != "push":
+        return False
+    result = call("GET", repo, f"/actions/runs/{int(run['id'])}/jobs?per_page=100")
+    if not isinstance(result, dict) or result.get("total_count", 0) != 0 or result.get("jobs"):
+        return False
+    cancelled_start = datetime.fromisoformat(run["created_at"].replace("Z", "+00:00"))
+    for candidate in scheduler_runs(repo, since=cancelled_start, call=call):
+        if candidate.get("id") == run["id"]:
+            continue
+        started = datetime.fromisoformat(candidate["created_at"].replace("Z", "+00:00"))
+        if (started >= cancelled_start and
+            candidate.get("event") == "workflow_dispatch" and
+            (candidate.get("status") == "in_progress" or
+             candidate.get("conclusion") == "success")):
+            return True
+    return False
+
+
 def failure(repo, webhook, run_id, *, now, call=api, sender=send):
     run = call("GET", repo, f"/actions/runs/{int(run_id)}")
     if run.get("head_branch") != "main" or run.get("conclusion") == "success":
@@ -352,6 +376,9 @@ def failure(repo, webhook, run_id, *, now, call=api, sender=send):
         return
     if run.get("conclusion") not in ("failure", "timed_out", "cancelled", "action_required"):
         print("STATRALLY_ADMIN_SILENT_UNFINISHED")
+        return
+    if is_superseded_push_cancellation(repo, run, call):
+        print("STATRALLY_ADMIN_SILENT_SUPERSEDED_CANCEL", run_id)
         return
     rows = list(issues(repo, call))
     number, data = state(repo, rows, call)
