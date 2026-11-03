@@ -32,7 +32,20 @@ jobs:
         working-directory: engine
         env:
           PYTHONPATH: ../automation/src:src
-        run: python src/m15_polymarket_beta_export.py --discover --days 1 --output "$RUNNER_TEMP/beta.json"
+        run: python src/m15_polymarket_beta_export.py --discover --days 1 --output "$RUNNER_TEMP/beta.json" --diagnostics "$RUNNER_TEMP/coverage.json"
+      - name: Report schedule and BTTS market eligibility separately
+        env:
+          PYTHONPATH: automation/src
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from m17_coverage_status import summarize_beta_diagnostics
+          from pathlib import Path
+          data = json.loads((Path(os.environ["RUNNER_TEMP"]) / "coverage.json").read_text())
+          report = summarize_beta_diagnostics(data)
+          print("STATRALLY_COVERAGE_STATUS=" + json.dumps(report, sort_keys=True))
+          PY
       - name: Persist Polymarket US paper log and post eligible beta signals
         env:
           PYTHONPATH: automation/src
