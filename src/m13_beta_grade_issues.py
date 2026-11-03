@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 from m13_beta_dispatch import DELIVERY_MESSAGE, github
 from m13_beta_signals import parse_time, render_beta, signal_identity, signal_proof
 from m13_discord_publish import publish
+from m13_discord_embeds import render_paper_result
 from m13_beta_grading import grade, aggregate, fetch_scoreboard, LEAGUES
 
 BOT = "github-actions[bot]"
@@ -129,6 +130,9 @@ def run(repo, token, *, now=None, webhook=None):
         if result["status"] != "graded":
             outcomes.append({"status": "pending"})
             continue
+        payload = render_paper_result(signal, result)
+        if payload is None:
+            raise RuntimeError("Verified graded result presentation required")
         identity = signal_identity(signal)
         marker = "statrally-beta-grade:" + identity
         result_line = "Paper outcome: **" + result["result"] + "** | Final " + str(result["home_goals"]) + "-" + str(result["away_goals"]) + " | No trade."
@@ -150,10 +154,6 @@ def run(repo, token, *, now=None, webhook=None):
             if not webhook:
                 raise RuntimeError("Results webhook is missing; verified outcome retained without delivery")
             comment(repo, issue["number"], token, reserved)
-            payload = {"content": "**StatRally | BETA PAPER RESULT — EXPERIMENTAL**\n" +
-                       signal["home_team"] + " vs " + signal["away_team"] + " | BTTS " + signal["side"] +
-                       " | " + result["result"] + " | Final " + str(result["home_goals"]) + "-" + str(result["away_goals"]) +
-                       "\nPaper prediction only. No financial P&L.", "allowed_mentions": {"parse": []}}
             # These writes/sends deliberately sit OUTSIDE source-error handling.
             # A failure must fail the workflow, leaving the reservation intact.
             publish(payload, webhook)

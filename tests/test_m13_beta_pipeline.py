@@ -2,9 +2,13 @@ import unittest
 from unittest.mock import patch
 from datetime import datetime,timezone,timedelta
 from m13_beta_signals import render_beta
-from m13_beta_dispatch import process
+from m13_beta_dispatch import process as dispatch_process
+from m13_discord_embeds import payload_text
 
-NOW=datetime.now(timezone.utc)
+NOW=datetime(2026,11,3,14,tzinfo=timezone.utc)
+def process(*args,**kwargs):
+    return dispatch_process(*args,now=NOW,**kwargs)
+
 def envelope():
     return {"schema_version":1,"status":"experimental_paper","trades_placed":0,
       "signals":[{"market_ticker":"TEST-MARKET","side":"YES","home_team":"Home","away_team":"Away","league":"epl","espn_event_id":"123",
@@ -27,8 +31,8 @@ class BetaPipelineTests(unittest.TestCase):
                 process(envelope(),"owner/repo","token","synthetic-webhook")
             send.assert_called_once()
     def test_render_has_real_newlines(self):
-        self.assertIn(chr(10),render_beta(envelope())["content"])
-        self.assertNotIn(chr(92)+"n",render_beta(envelope())["content"])
+        self.assertIn(chr(10),payload_text(render_beta(envelope(),now=NOW)))
+        self.assertNotIn(chr(92)+"n",payload_text(render_beta(envelope(),now=NOW)))
     def test_durable_reservation_before_send(self):
         calls=[]
         def api(method,path,token,data=None):

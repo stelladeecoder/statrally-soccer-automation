@@ -3,11 +3,17 @@ import json
 import unittest
 from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
-from m13_beta_dispatch import process
+from m13_beta_dispatch import process as dispatch_process
+from m13_discord_embeds import payload_text
 from m13_beta_signals import render_beta
 
+NOW=datetime(2026,11,3,14,tzinfo=timezone.utc)
+
+def process(*args,**kwargs):
+    return dispatch_process(*args,now=NOW,**kwargs)
+
 def envelope(provider="polymarket"):
-    now=datetime.now(timezone.utc)
+    now=NOW
     ticker=("astatc-epl-mnu-ast-2026-11-08-btts"
             if provider=="polymarket" else "KXEPLBTTS-26NOV08MUNAVL-BTTS")
     return {"schema_version":1,"status":"experimental_paper","trades_placed":0,
@@ -20,7 +26,7 @@ def envelope(provider="polymarket"):
 
 class PolymarketPublicTests(unittest.TestCase):
     def test_polymarket_price_label(self):
-        content=render_beta(envelope())["content"]
+        content=payload_text(render_beta(envelope(),now=NOW))
         self.assertIn("Polymarket US quote",content)
         self.assertNotIn("Kalshi quote",content)
 
@@ -44,7 +50,7 @@ class PolymarketPublicTests(unittest.TestCase):
             self.assertEqual(process(envelope(),"owner/repo","token","synthetic-webhook"),1)
             self.assertEqual(events,["GET","POST","POST"])
             send.assert_called_once()
-            self.assertIn("Polymarket US quote",send.call_args.args[0]["content"])
+            self.assertIn("Polymarket US quote",payload_text(send.call_args.args[0]))
 
 if __name__=="__main__":
     unittest.main()

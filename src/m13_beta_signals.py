@@ -4,6 +4,7 @@ from decimal import Decimal, InvalidOperation
 from zoneinfo import ZoneInfo
 import hashlib
 import json
+from m13_discord_embeds import CENTRAL, pick_card, validate_payload
 
 def number(value):
     if type(value) not in (str,int,float) or isinstance(value,bool):
@@ -42,7 +43,7 @@ def signal_proof(signal):
     return hashlib.sha256(json.dumps(snapshot, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()).hexdigest()
 
 
-def render_beta(envelope, now=None, *, allow_empty=False):
+def render_beta(envelope, now=None, *, allow_empty=False, require_current_day=False):
     if not isinstance(envelope,dict) or envelope.get("schema_version")!=1 or envelope.get("status")!="experimental_paper":
         raise ValueError("Experimental paper schema required")
     if type(envelope.get("trades_placed")) is not int or envelope["trades_placed"]!=0:
@@ -58,8 +59,7 @@ def render_beta(envelope, now=None, *, allow_empty=False):
     if now.tzinfo is None:
         raise ValueError("Aware clock required")
     seen=set()
-    lines=["**StatRally | BETA PAPER PICKS — EXPERIMENTAL**",
-           "Unvalidated model • No verified betting edge • No trades placed"]
+    embeds=[]
     for s in candidates:
         if not isinstance(s,dict) or s.get("fixture_verified") is not True or s.get("quote_verified") is not True:
             raise ValueError("Independent fixture and quote verification required")
@@ -90,11 +90,8 @@ def render_beta(envelope, now=None, *, allow_empty=False):
         q=number(s.get("market_price"))
         if not Decimal("0")<=p<=Decimal("1") or not Decimal("0")<q<Decimal("1"):
             raise ValueError("Invalid probability or executable price")
-        local=kickoff.astimezone(ZoneInfo("America/Chicago"))
-        lines.append(f"• {s['home_team']} vs {s['away_team']} | BTTS {s['side']} | {local:%b %d %I:%M %p} CT")
-        provider = "Polymarket US" if s["market_ticker"].startswith("astatc-") else "Kalshi"
-        lines.append(f"  Model estimate {p:.1%} | {provider} quote ${q:.2f} | PAPER ONLY")
-    payload={"content":"\n".join(lines),"allowed_mentions":{"parse":[]}}
-    if len(payload["content"])>2000:
-        raise ValueError("Discord message too long")
-    return payload
+        if require_current_day and kickoff.astimezone(CENTRAL).date() != now.astimezone(CENTRAL).date():
+            raise ValueError("New paper picks must kick off on the current Central calendar day")
+        embeds.append(pick_card(s))
+    return validate_payload({"content":"Experimental paper picks · Unvalidated model · No verified betting edge · No trades placed.",
+                             "embeds":embeds,"allowed_mentions":{"parse":[]}})

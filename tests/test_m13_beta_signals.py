@@ -1,6 +1,7 @@
 import unittest
 from datetime import datetime, timezone, timedelta
 from m13_beta_signals import render_beta
+from m13_discord_embeds import payload_text
 
 NOW=datetime(2026,11,2,17,0,tzinfo=timezone.utc)
 def sample():
@@ -12,9 +13,9 @@ def sample():
 class BetaTests(unittest.TestCase):
     def test_valid_beta_has_clear_label(self):
         result=render_beta(sample(),NOW)
-        self.assertIn("BETA PAPER PICKS",result["content"])
-        self.assertIn("BTTS YES",result["content"])
-        self.assertIn("No trades placed",result["content"])
+        self.assertIn("Experimental paper pick",payload_text(result))
+        self.assertIn("BTTS YES",payload_text(result))
+        self.assertIn("No trades placed",payload_text(result))
     def test_stale_quote_rejected(self):
         s=sample();s["signals"][0]["observed_at_utc"]=(NOW-timedelta(minutes=16)).isoformat()
         with self.assertRaises(ValueError):render_beta(s,NOW)

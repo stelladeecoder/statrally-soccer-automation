@@ -93,7 +93,7 @@ class IssueGradingTests(unittest.TestCase):
         self.assertEqual(second["checks"]["already_reserved"], 1)
         self.assertEqual(second["snapshot"]["wins"], 1)
         self.assertEqual(len(events), 1)
-        self.assertIn("BETA PAPER RESULT", events[0]["content"])
+        self.assertIn("Experimental paper result", events[0]["content"])
         self.assertIn("No financial P&L", events[0]["content"])
         dashboard = next(i for i in api.issues if i.get("number") == 88)
         self.assertIn("\n", dashboard["body"])

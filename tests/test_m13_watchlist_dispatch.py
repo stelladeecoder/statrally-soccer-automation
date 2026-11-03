@@ -6,6 +6,7 @@ import unittest
 from unittest.mock import patch
 
 from m13_discord_publish import render_watchlist_pages
+from m13_discord_embeds import payload_text, validate_payload
 from m13_watchlist_dispatch import process
 
 
@@ -17,17 +18,23 @@ def scan(count=1):
 
 
 class WatchlistTests(unittest.TestCase):
+    def test_old_plaintext_reservation_blocks_new_embed_resend(self):
+        old={'number':42,'body':'statrally-watchlist-day:2026-11-08\nPayload SHA256: LEGACY-PAYLOAD-HASH\nPages: 2'}
+        receipts=[{'user':{'login':'github-actions[bot]'},'body':f'statrally-watchlist-page-delivered:{i}/2\nDiscord accepted this page. Payload SHA256: LEGACY-PAYLOAD-HASH'} for i in (1,2)]
+        with patch('m13_watchlist_dispatch.records',side_effect=[[old],receipts]),patch('m13_watchlist_dispatch.publish') as send:
+            self.assertEqual(process(scan(),'owner/repo','token','synthetic'),0)
+        send.assert_not_called()
     def setUp(self):
         self.output=redirect_stdout(StringIO())
         self.output.__enter__()
         self.addCleanup(self.output.__exit__,None,None,None)
 
     def test_pagination_never_silently_omits_fixtures_or_allows_mentions(self):
-        pages=render_watchlist_pages(scan(100))
+        pages=render_watchlist_pages(scan(300))
         self.assertGreater(len(pages),1)
-        content="\n".join(p["content"] for p in pages)
-        for i in range(100):self.assertIn(f"SYNTHETIC Home {i} vs SYNTHETIC Away {i}\n",content+"\n")
-        self.assertTrue(all(len(p["content"])<=2000 and p["allowed_mentions"]=={"parse":[]} for p in pages))
+        content="\n".join(payload_text(p) for p in pages)
+        for i in range(300):self.assertIn(f"SYNTHETIC Home {i} vs SYNTHETIC Away {i}**",content+"\n")
+        self.assertTrue(all(validate_payload(p) and p["allowed_mentions"]=={"parse":[]} for p in pages))
 
     def test_reservation_precedes_delivery_and_repeat_is_blocked(self):
         issues=[]
