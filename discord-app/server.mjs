@@ -75,7 +75,7 @@ export async function editDeferred(applicationId, token, content, fetcher = fetc
     const response = await fetcher(
       `https://discord.com/api/v10/webhooks/${applicationId}/${token}/messages/@original`,
       { method: "PATCH", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(textResponse(content)), signal: controller.signal });
+        body: JSON.stringify({ content: textResponse(content).content, allowed_mentions: { parse: [] } }), signal: controller.signal });
     if (!response.ok) throw new Error("Deferred response delivery failed");
   } finally { clearTimeout(timeout); }
 }
