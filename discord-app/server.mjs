@@ -83,6 +83,10 @@ export async function editDeferred(applicationId, token, content, fetcher = fetc
 
 export function createApp({ publicKey, applicationId, guildId = "", channelId = "", fetcher = fetch,
                             clock = () => new Date(), logger = console } = {}) {
+  const configured = /^[a-fA-F0-9]{64}$/.test(publicKey || "") &&
+    /^\d{15,22}$/.test(applicationId || "") &&
+    /^\d{15,22}$/.test(guildId || "") &&
+    /^\d{15,22}$/.test(channelId || "");
   const seen = new Map();
   return http.createServer(async (req, res) => {
     const reply = (status, payload) => {
@@ -90,11 +94,15 @@ export function createApp({ publicKey, applicationId, guildId = "", channelId = 
       res.end(JSON.stringify(payload));
     };
     if (req.method === "GET" && req.url === "/health") {
-      reply(200, { status: "ready", mode: "read_only", credentials_required: false });
+      reply(200, { status: configured ? "ready" : "configuration_pending", mode: "read_only", discord_connected: false });
       return;
     }
     if (req.method !== "POST" || req.url !== "/interactions") {
       reply(404, { error: "Not found" });
+      return;
+    }
+    if (!configured) {
+      reply(503, { error: "Discord application configuration pending" });
       return;
     }
     let chunks = [], size = 0;
@@ -163,13 +171,9 @@ export function createApp({ publicKey, applicationId, guildId = "", channelId = 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const { DISCORD_PUBLIC_KEY: publicKey, DISCORD_APPLICATION_ID: applicationId,
           STAT_RALLY_COMMAND_CHANNEL_ID: channelId, STAT_RALLY_GUILD_ID: guildId, PORT = "3000" } = process.env;
-  if (!/^[a-fA-F0-9]{64}$/.test(publicKey || "") ||
-      !/^\d{15,22}$/.test(applicationId || "") ||
-      !/^\d{15,22}$/.test(guildId || "") ||
-      !/^\d{15,22}$/.test(channelId || "")) {
-    console.error("Valid Discord public key, application ID, StatRally guild ID and #bot-commands channel ID are required");
-    process.exit(1);
-  }
+  // The public staging endpoint starts in a safe, non-interactive mode.
+  // Without verified Discord settings, all POST /interactions calls return 503.
+  // This allows hosting checks without dummy keys or publicly enabled commands.
   const server = createApp({ publicKey, applicationId, guildId, channelId });
   server.listen(Number(PORT), "0.0.0.0", () => console.log("StatRally interaction endpoint listening"));
 }
