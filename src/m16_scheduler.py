@@ -91,6 +91,35 @@ def complete(repo, slots, results, run_url, call=api):
             response = call("POST", f"/repos/{repo}/issues", data)
         if not isinstance(response, dict) or not response.get("number"):
             raise RuntimeError("Scheduler receipt was not confirmed")
+        # Maintain an append-only per-window completion audit in bot-authored comments.
+        # The issue body alone only preserves the newest successful slot.
+        issue_number = response["number"]
+        comments = []
+        for page in range(1, 11):
+            batch = call("GET", f"/repos/{repo}/issues/{issue_number}/comments?per_page=100&page={page}")
+            if not isinstance(batch, list):
+                raise RuntimeError("Slot audit comments unavailable")
+            comments.extend(batch)
+            if len(batch) < 100:
+                break
+        else:
+            raise RuntimeError("Slot audit comments exceed checked pages")
+        audit_marker = "statrally-scheduler-slot-v1:"
+        audit_record = {"task": task, "completed_slot": slot, "run_url": run_url}
+        for comment in comments:
+            body = comment.get("body") or ""
+            if not body.startswith(audit_marker):
+                continue
+            if comment.get("user", {}).get("login") != "github-actions[bot]":
+                raise RuntimeError("Untrusted slot audit comment")
+            existing = json.loads(body[len(audit_marker):])
+            if existing.get("task") == task and existing.get("completed_slot") == slot:
+                break
+        else:
+            logged = call("POST", f"/repos/{repo}/issues/{issue_number}/comments",
+                          {"body": audit_marker + json.dumps(audit_record, sort_keys=True)})
+            if not isinstance(logged, dict) or not logged.get("id"):
+                raise RuntimeError("Slot audit receipt was not confirmed")
         print("Completed slot:", task, slot)
 
 
