@@ -1,8 +1,8 @@
 """Regression tests for the private alert monitor. No live calls or messages."""
 import unittest
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, date
 from zoneinfo import ZoneInfo
-from m18_admin_monitor import due_slots, alert, failure, watch, CENTRAL
+from m18_admin_monitor import due_slots, alert, failure, watch, CENTRAL, expected_windows, window_status_lines, completed_window_audit
 
 
 class TestAdminMonitor(unittest.TestCase):
@@ -95,6 +95,38 @@ class TestAdminMonitor(unittest.TestCase):
                   sender=lambda webhook, content: delivered.append(content))
         self.assertEqual(len(delivered), 1)
         self.assertIn("picks", delivered[0])
+
+
+    def test_expected_windows_show_all_five_daily_slots(self):
+        day = date(2026, 11, 4)
+        windows = expected_windows(day)
+        self.assertEqual(len(windows), 5)
+        self.assertEqual({(name, slot.strftime("%H:%M")) for name, slot in windows},
+                         {("watchlist", "04:17"), ("picks", "05:23"),
+                          ("picks", "08:23"), ("picks", "14:23"),
+                          ("grading", "23:55")})
+
+    def test_missing_window_only_flagged_after_rollout(self):
+        day = date(2026, 11, 4)
+        completed = {expected_windows(day)[0]}
+        body = "\\n".join(window_status_lines(day, completed))
+        self.assertIn("4/5", body)
+        self.assertIn("missed / no receipt", body)
+        old = "\\n".join(window_status_lines(date(2026, 11, 3), set()))
+        self.assertIn("historical / not verified", old)
+        self.assertNotIn("missed / no receipt", old)
+
+    def test_completed_window_audit_uses_verified_bot_comments(self):
+        issue = {"number": 34, "user": {"login": "github-actions[bot]"},
+                 "body": 'statrally-scheduler-checkpoint-v1:{"task":"picks","completed_slot":"2026-11-04T08:23:00-06:00"}'}
+        calls = []
+        def fake(method, repo, path, data=None):
+            calls.append(path)
+            return [{"user": {"login": "github-actions[bot]"},
+                     "body": 'statrally-scheduler-slot-v1:{"task":"picks","completed_slot":"2026-11-04T05:23:00-06:00"}'}]
+        seen = completed_window_audit("owner/repo", [issue], fake)
+        self.assertEqual(len(seen), 2)
+        self.assertEqual(len(calls), 1)
 
 
 if __name__ == "__main__":
