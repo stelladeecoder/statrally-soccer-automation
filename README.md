@@ -7,7 +7,7 @@
 
 ![Stage: Live beta](https://img.shields.io/badge/Stage-Live%20beta-16a34a?style=for-the-badge)
 ![Model: Experimental](https://img.shields.io/badge/Model-Experimental-f59e0b?style=for-the-badge)
-![Cost: Free](https://img.shields.io/badge/Access-Free-0891b2?style=for-the-badge)
+![Access: Free public beta](https://img.shields.io/badge/Access-Free%20public%20beta-0891b2?style=for-the-badge)
 ![Coverage: 13 competitions](https://img.shields.io/badge/Competition%20IDs-13-7c3aed?style=for-the-badge)
 
 **[Get StatRally on Discord](https://discord.com/oauth2/authorize?client_id=1567283370419814472) · [How it works](#-how-statrally-works) · [Slash commands](#-on-demand-discord-commands) · [Milestones](#-milestone-tracker) · [Roadmap](#-what-comes-next)**
@@ -24,12 +24,22 @@ I couldn't find a soccer analysis tool that gave me the **Both Teams to Score (B
 
 So I started building StatRally: a data analytics project connecting soccer research, controlled prediction publishing, match verification, and performance tracking.
 
-**My goal:** a free, practical research experience where I can explore BTTS trends and see exactly what the automation posted, when it posted it, and what happened afterward.
+**My goal:** an accessible soccer research experience where I can explore BTTS trends and see exactly what the automation posted, when it posted it, and what happened afterward.
 
-**What exists today is an experimental beta, not a proven betting system.** The on-demand Discord app is functioning for saved records, while the richer historical BTTS trend engine is still planned. The prediction/research engine is maintained separately in a private repository.
+**StatRally is currently a free public beta, not a proven betting system.** The on-demand Discord app is functioning for saved records, while the richer historical BTTS trend engine is still planned. The prediction/research engine is maintained separately in a private repository.
 
 > [!IMPORTANT]
 > **No validated betting edge or realized profit is claimed.** Model probabilities and paper picks are research outputs, not betting recommendations. StatRally does not place trades or wagers, connect to a user's betting account, or generate extra official picks when a slash command runs.
+
+## 🌱 Free public beta and future plans
+
+**StatRally's Discord community, Discord slash-command app, and planned web app are free to access during the public beta.** There's no subscription or payment required to try the current features.
+
+**Pricing after beta has not been decided.** I may introduce optional paid features in the future, such as deeper historical analysis, custom filters, or advanced team comparisons. Those are **ideas, not launched products or promised subscriptions**. The features, price, timing, and long-term free offering will depend on data quality, reliable operation, user feedback, and demonstrated demand.
+
+If monetization is introduced, I plan to explain **what stays free, what is new or paid, and when any changes take effect** before charging anyone. No one is automatically subscribed or billed by joining this beta.
+
+The **private Trade Desk** is a separate owner-only project, not part of the public beta or a paid Discord offering.
 
 ## ✨ What works right now
 
@@ -175,7 +185,7 @@ Milestone labels distinguish **code complete**, **operationally verified**, **pa
 3. **Finish Discord end-to-end acceptance:** live-test **/match** and **/performance**, test independent user installation, publish/pin the guide in **#bot-commands**, and test response time after Render has idled.
 4. **Prove operational performance:** monitor unattended windows, confirm durable Discord delivery counts, and complete at least one real saved-pick → independently verified result → recorded grading cycle.
 5. **Validate the full Polymarket US market-mapping footprint:** improve coverage and handle uncertain or absent markets without making unsupported availability claims.
-6. **Build the free, mobile-friendly public experience:** BTTS trends, verified outcomes, Discord access and clearly labeled signup links.
+6. **Build the mobile-friendly public beta website:** BTTS trends, verified outcomes, Discord access and clearly labeled signup links. Keep beta access free; evaluate optional premium analytics only after measuring value, reliability and demand.
 7. **Prepare wider Discord distribution:** the [Terms of Service](docs/TERMS_OF_SERVICE.md) and [Privacy Policy](docs/PRIVACY_POLICY.md) are published; **the owner still needs to enter these URLs in Discord**, [create/transfer to a Developer Team](https://github.com/stelladeecoder/statrally-soccer-automation/issues/53), and [verify developer email and set up 2FA](https://github.com/stelladeecoder/statrally-soccer-automation/issues/54). Wider app verification itself remains pending.
 
 **Owner to-do:** [Discord team ownership · Issue #53](https://github.com/stelladeecoder/statrally-soccer-automation/issues/53) · [Email verification and 2FA · Issue #54](https://github.com/stelladeecoder/statrally-soccer-automation/issues/54)
@@ -217,6 +227,6 @@ A successful offline test suite verifies expected code behavior; it does **not**
 
 **Built from a real research problem. Developed with automation, validation, and measurable evidence.**
 
-*Free experimental soccer research. No guaranteed outcomes. No trades.*
+*Free during public beta. Experimental soccer research. No guaranteed outcomes. No trades.*
 
 </div>
