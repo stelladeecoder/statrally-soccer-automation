@@ -35,6 +35,7 @@ jobs:
           import json
           from datetime import datetime, timezone
           from m15_polymarket_auto_discovery import discover
+          from m17_coverage_status import classify_report
           from m15_polymarket_beta_export import export, paced_requests, cached_read
           from polymarket_us import PolymarketUS
           from kalshi_espn_fixtures import fetch_scoreboard
@@ -100,6 +101,7 @@ jobs:
               "discord_posts": 0,
               "github_issues_created": 0
           }
+          result["coverage_status"] = classify_report(result["per_league"], scan_complete=discovered["scan_complete"])
           print("SEVEN_DAY_COVERAGE_SUMMARY=" + json.dumps(result, sort_keys=True))
           if not discovered["scan_complete"]:
               raise SystemExit("INCOMPLETE_AUDIT: see aggregate diagnostics, do not claim comprehensive coverage")
