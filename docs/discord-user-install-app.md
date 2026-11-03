@@ -1,6 +1,6 @@
 # StatRally Discord slash-command app: implementation and deployment
 
-**Stage: code + offline tests; not yet registered, hosted or installed.** The free interaction app is independent of the existing GitHub Actions scheduled webhook workflows. It does not access the private Trade Desk, execute orders, create new picks, or change Discord channels automatically.
+**Stage: Discord application installed, endpoint hosted on Render, registration and live slash-command verification pending.** The free interaction app is independent of the existing GitHub Actions scheduled webhook workflows. It does not access the private Trade Desk, execute orders, create new picks, or change Discord channels automatically.
 
 ## Shipped source
 
@@ -20,7 +20,7 @@ The app currently returns **existing official paper records only**. `/picks` and
 1. **Create/review a Discord application** in the [Developer Portal](https://discord.com/developers/applications). In *Installation*, enable appropriate **Guild Install** and **User Install** types and set the allowed scopes for application commands. Configure contexts to permit guild, bot DM and private channel as allowed by Discord. Discord may require installing/authorizing the bot separately for server administration; keep permissions minimal.
 2. **Host the interaction endpoint** on a reachable HTTPS service that accepts POST at `/interactions` continuously (or on a serverless platform with compatible request handling). GitHub Actions does not provide this HTTP hosting. Set `DISCORD_PUBLIC_KEY` (application public key), `DISCORD_APPLICATION_ID`, required `STAT_RALLY_GUILD_ID` (the StatRally server ID) and `STAT_RALLY_COMMAND_CHANNEL_ID` (the numeric ID of `#bot-commands`), and `PORT` on the host. The endpoint validates raw request bytes with Ed25519 and rejects unknown/expired signatures. Do **not** expose a secret in this repository.
 3. Set the Discord application's **Interactions Endpoint URL** to `https://YOUR_HOST/interactions`; pass Discord's PING/signature validation in the Developer Portal.
-4. To explicitly register global commands, temporarily set `DISCORD_APPLICATION_ID` and **`DISCORD_BOT_TOKEN` only in a secure operator environment**, then run `node discord-app/register.mjs`. Never commit or paste the token into Issues/chat. This calls Discord's command registration API once; CI does not register commands.
+4. To explicitly register global commands, use the **manual GitHub Actions workflow** described below with `STATRALLY_DISCORD_BOT_TOKEN` saved as an Actions secret; alternatively use `node discord-app/register.mjs` from a secure operator environment with `DISCORD_APPLICATION_ID` and `DISCORD_BOT_TOKEN`. The registration job never runs automatically as part of builds or scheduler triggers.
 5. Create `#bot-commands` in the server, copy its numeric ID into `STAT_RALLY_COMMAND_CHANNEL_ID`, and **pin** the command guide from `discord-app/commands.mjs` (the exported `GUIDE` constant). This repo cannot create a channel or pin a guide through webhooks.
 6. Install the application in your StatRally server, verify commands inside `#bot-commands`, verify normal commands are restricted in scheduled announcement channels, then independently test **User Install** contexts if approved. Slash commands themselves cannot be pinned, only the guide.
 7. Validate interaction latency, actual saved-data freshness, null/missing data, install permissions, privacy/ephemeral behavior and a controlled rollback. Keep the app disabled until hosting/installation end-to-end tests are confirmed.
@@ -47,6 +47,23 @@ To copy IDs in Discord: enable **User Settings → Advanced → Developer Mode**
 When a trusted HTTPS hosting service has been provisioned, inspect `GET /health`, set the application's Interactions Endpoint URL to `https://YOUR_HOST/interactions` and pass Discord's signature/PING validation. Register the global commands only through the explicit script in an authorized operator environment. Set Discord's channel/role permissions, install the app, and manually pin the guide below. Keep the scheduled webhook channels untouched.
 
 **Status:** Configuration prepared only; service creation, application installation, token-based registration, channel pinning and real Discord end-to-end tests remain outstanding.
+
+## Register slash commands after Discord installation
+
+The app owner confirmed installing StatRally in Discord. The **four slash commands are not usable until Discord registers them**. The public repository includes a dedicated GitHub Actions workflow for this, so you don't need to run code on your computer.
+
+**One owner-only step is required to authorize registration safely:**
+
+1. In the [Discord Developer Portal](https://discord.com/developers/applications/1567283370419814472/bot), open the **Bot** page. Find the bot token or use **Reset Token** if Discord only offers regeneration. Treat this as a **secret**: never paste it into chat, a screenshot, GitHub Issues, a commit, or Render's public configuration. Never expose it to the public.
+2. In your [public StatRally GitHub repository](https://github.com/stelladeecoder/statrally-soccer-automation/settings/secrets/actions), choose **New repository secret**. Set **Name** to `STATRALLY_DISCORD_BOT_TOKEN`, paste the token into GitHub's encrypted **Secret** field, then save. The secret is read only by the manually triggered registration workflow. Existing scheduled webhook jobs do not need this token.
+3. Open [Register StatRally Discord commands](https://github.com/stelladeecoder/statrally-soccer-automation/actions/workflows/register-discord-commands.yml) in GitHub Actions and choose **Run workflow**, branch **main**. This runs the offline tests before making authorized Discord API calls.
+4. Inspect the completed run for **Registered/Updated /btts, /match, /picks, /performance** and the final **Verified four registered global StatRally commands** line. A green workflow alone is insufficient if the commands were not read back. If any step fails, inspect the error; no claims of registration are made.
+5. In Discord's `#bot-commands`, type `/picks` and select **StatRally**. Confirm a private response comes back. Then check `/match`, `/btts`, and `/performance`. Verify these commands are blocked in the scheduled announcement channels of the **StatRally server**. Commands run as a user installation in other servers or DMs follow those contexts' Discord permissions independently.
+6. Post the guide from this document into `#bot-commands` and **pin the message**. A channel and its message pin are owner-side Discord actions; installing the app doesn't automatically pin anything.
+
+The workflow registers **only** the four specified global commands, using Discord command upserts and then reading them back. It does **not** bulk-delete unrelated commands, change the three-per-day paper-pick cap, publish messages in public channels, or request trade permissions.
+
+**Caution:** The currently deployed Render **free-plan** service may spin down after inactivity. Discord requires a fast interaction response; cold starts can make slash commands fail even with successful registration. Before sharing the app widely, validate repeated live requests after inactivity or move to hosting that reliably meets Discord's response deadline. The slash-command endpoint URL remains `https://statrally-discord-interactions.onrender.com/interactions`.
 
 ## Local offline verification
 

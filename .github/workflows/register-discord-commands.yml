@@ -1,0 +1,31 @@
+name: Register StatRally Discord commands
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  register:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: discord-command-registration
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Validate slash-command implementation before registration
+        run: |
+          node --check discord-app/register.mjs
+          node --test discord-app/tests/*.test.mjs
+      - name: Register four global Discord commands (manual only)
+        env:
+          DISCORD_APPLICATION_ID: "1567283370419814472"
+          DISCORD_BOT_TOKEN: ${{ secrets.STATRALLY_DISCORD_BOT_TOKEN }}
+        run: |
+          if [ -z "$DISCORD_BOT_TOKEN" ]; then
+            echo "::error::Missing STATRALLY_DISCORD_BOT_TOKEN Actions secret. Add it through repository Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+          node discord-app/register.mjs
