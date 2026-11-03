@@ -1,83 +1,102 @@
-# StatRally | Soccer Automation
+# StatRally | Soccer BTTS Automation
 
 **The Edge Is in the Data.**
 
-Public GitHub Actions and Discord-delivery infrastructure for **StatRally**, a soccer **Both Teams to Score (BTTS) Yes/No** research project.
+StatRally is a **soccer Both Teams to Score (BTTS) YES/NO research and paper-tracking project** with a private modeling engine and public-safe GitHub Actions / Discord automation. **It does not place trades, promise positive expected value, or recommend wagering on an unvalidated model.**
 
-> **Status (November 1, 2026):** Milestones **1–12 complete**; **M13 (Discord automation) in progress**. The daily fixture workflow is committed and scheduled, and both Discord webhooks have been tested. **The first unattended daily watchlist post has not yet been verified.** No live betting recommendations or automated trades are authorized.
+> **Status — November 2, 2026:** The M13 experimental Discord beta is operating with scheduled fixture, picks and grading workflows. **Polymarket US is the selected next primary market-data provider**, but the current Discord beta still uses Kalshi until an end-to-end Polymarket replacement passes validation. M14 real-account Kalshi reconciliation is a separate **draft, unmerged** pull request and real-money financial reporting remains off.
 
-## What this public repository does
+## Daily Discord schedule
 
-- **Daily match watchlist:** fetches fixtures for the Premier League, La Liga, Bundesliga, Serie A, Ligue 1, MLS, Liga MX, and UEFA Champions League.
-- **Discord #match-watchlist:** groups matches by league and displays kickoff times in **America/Chicago**. The dedicated workflow runs at **7:05 AM Central daily**, subject to GitHub Actions scheduling delays.
-- **Discord #btts-picks:** a *separate* webhook is connected and its **one-time test message was visually confirmed in Discord**. A guarded formatter for verified selections exists, but **real picks publishing is not enabled**. The private research scanner cannot currently produce approved selections.
-- **Read-only research scans:** the separate Kalshi scanner workflow remains gated by the `ENABLE_STAT_RALLY_SCANS` repository variable. Running a scan does not mean placing a bet.
+All times are **America/Chicago (Central)**. GitHub Actions may start scheduled jobs later than their nominal times. A scan or grading check may produce **no message** if nothing new qualifies.
 
-The watchlist is **fixtures only**, with no EV, odds, No Bet decisions, or player recommendations. Not every competition has games every day. Discord team/league logos and richer embeds are deferred to a later enhancement.
+| Time | Channel | Behavior |
+| --- | --- | --- |
+| **7:17 AM** | `#match-watchlist` | Lists the day's soccer fixtures from the configured eight-league watchlist |
+| **8:23 AM** | `#btts-picks` | Morning experimental BTTS paper scan |
+| **2:23 PM** | `#btts-picks` | Afternoon experimental BTTS paper scan, with duplicate suppression |
+| **11:55 PM** | `#btts-results` | Checks independently confirmed final scores and grades outstanding paper predictions |
 
-## Experimental beta paper picks (M13)
+The watchlist covers **Premier League, La Liga, Bundesliga, Serie A, Ligue 1, MLS, Liga MX, and UEFA Champions League**. The private research configuration defines **13 competitions**, which is broader than the current eight-league watchlist and broader than the current Kalshi beta market allowlist.
 
-The separate [beta paper picks workflow](.github/workflows/m13-beta-paper-picks.yml) is scheduled at **08:23, 11:23 and 14:23 America/Chicago**. It runs the private read-only research exporter and publishes only eligible, independently fixture-mapped experimental BTTS YES/NO signals to the existing picks channel. **No verified edge, automated trading, or real-money picks are enabled.** The model remains uncalibrated.
+## What is operational
 
-A public GitHub Issue is reserved before each Discord attempt to record and deduplicate paper signals. Outcomes remain pending until independently checked. No qualified signal means **no post**. Manual live verification on November 2 produced one experimental paper signal and a confirmed Discord-acceptance receipt in [Issue #20](https://github.com/stelladeecoder/statrally-soccer-automation/issues/20). The results channel also accepted one labeled connection test. Current reviewed mappings are limited; unattended scheduled delivery and a completed real beta outcome remain separate acceptance checks. See [beta deployment notes](docs/m13_beta_publishing.md).
+- **M13 fixtures:** automated daily match watchlist in Central Time; provider/API failures can lead to partial or empty fixture coverage.
+- **M13 experimental picks:** scheduled read-only beta exporter with pre-kickoff fixture verification, current quote checks, up to three signals per export and persistent GitHub Issue reservations to prevent duplicate paper picks.
+- **M13 grading:** independently checks regulation-time final scores; pending matches stay pending; only newly verified paper outcomes are eligible for posting. **Paper win rate and Brier scores are not real-money P&L.**
+- **Discord integration:** separate watchlist, picks and results channels and controlled publishing safeguards.
+- **Safety:** no order execution, auto-sell, automatic funding, or unattended real-money betting.
 
-## Beta grading and accuracy tracking
+The initial documented experimental paper prediction is [Issue #20](https://github.com/stelladeecoder/statrally-soccer-automation/issues/20): **Manchester United vs Aston Villa, November 8, BTTS YES**, model probability **62.9%**, observed Kalshi quote **$0.64**. This is **not** an approved positive-EV betting recommendation. Publishing and deduplication were tested; one successful test does not establish sustained unattended reliability or predictive profitability.
 
-The [paper grading workflow](.github/workflows/m13-beta-grading.yml) checks verified regulation-time ESPN finals for bot-reserved, pre-kickoff delivered predictions and adds verified BTTS outcomes to their Issues. Delivery receipts bind the original prediction by hash, so postgame edits cannot become predictions. The public **StatRally BETA | experimental paper performance** Issue tracks pending signals, wins, losses, hit rate and Brier score. Failed or uncertain results deliveries retain reservations and require review rather than automatic reposting. These are **paper prediction metrics, not real transaction P&L**. Actual Kalshi performance accounting remains in M14.
+### Model limitations
 
-The [beta scan](.github/workflows/m13-beta-paper-picks.yml) now attempts strict Kalshi-to-ESPN fixture discovery for the **currently allowlisted EPL, MLS and Liga MX BTTS series**, and uses explicit manually reviewed fixture mappings as well. Team roles, exact names, event IDs and kickoff proximity must agree. Other watchlist leagues require separately verified BTTS market identifiers and supported historical models. A scheduled workflow does **not** guarantee eligible picks or prove Discord delivery; the first unattended beta prediction has not yet been independently confirmed.
+The private BTTS forecasting work remains **research-only**. A historical chronological calibration test on EPL data showed a simple constant-probability baseline had a **lower Brier score** than raw Poisson, sigmoid-calibrated and isotonic alternatives in that test. Consequently, calibrated profitable performance has **not** been validated; future Discord signals are explicitly experimental.
+
+## Market providers: Kalshi now, Polymarket US in development
+
+| Platform | Status | Current use |
+| --- | --- | --- |
+| **Kalshi** | Existing M12/M13 beta integration | Current source of experimental paper quotes for the Discord picks pipeline; current reviewed BTTS discovery covers EPL, MLS and Liga MX series |
+| **Polymarket US** (`polymarket.us`) | **Preferred future source; integration under validation** | Private read-only SDK research, event-detail BTTS discovery and live best-bid/offer verification |
+| Novig | Deferred | No active integration |
+
+**Verified Polymarket US proof:** the private research workflow successfully fetched **two open, full-match BTTS YES/NO markets** with market identities and available BBO quotes: Nottingham Forest vs Manchester City (Nov 7) and Manchester United vs Aston Villa (Nov 8). Its initial league keyword searches returned no verified contracts because nested match-event prop markets were not being found; **a green keyword-search workflow did not establish league coverage**. Read-only event-level discovery was then implemented. This evidence **does not establish BTTS contract coverage, executable depth, or settlement compatibility for all 13 leagues**.
+
+For future research only, first-half and second-half BTTS contracts have also been observed in event data. **They are excluded from the current full-match beta**, and would need separate models and calibration.
+
+**Polymarket migration acceptance gates:** verify the actual full-match contract across supported fixtures; independently reconcile team identity and kickoff; validate side-specific executable prices, size and fees; integrate an appropriate pre-kickoff model forecast; pass paper-publishing and grading tests; and only then switch the scheduled `#btts-picks` source. Until then the existing Kalshi beta is intentionally unchanged.
+
+Public market discovery does **not** require a user's trading credentials; the private repository holds implementation research, not secrets.
+
+## M14: financial reconciliation is not deployed
+
+[Draft PR #13](https://github.com/stelladeecoder/statrally-soccer-automation/pull/13) contains **read-only Kalshi account reconciliation work**, historical fill/fee/settlement handling, private manual authentication, and regression tests. It is **not merged**. A prior authentication test failed input validation before contacting Kalshi; the API credentials were subsequently corrected and an authentication rerun was requested. **Do not infer successful real-account reconciliation from implementation or unit tests.**
+
+No live financial Discord messages, recurring financial publishing, or trading permissions have been enabled. M14 records, when eventually independently reconciled, are **separate** from M13 paper outcomes. Polymarket preference does not retroactively turn Kalshi transactions into Polymarket account history.
 
 ## Repository boundaries
 
-| Repository | Responsibility | Visibility |
+| Repository | Visibility | Responsibility |
 | --- | --- | --- |
-| `stelladeecoder/statrally-soccer-btts` | Research data, model/validation, odds and Kalshi EV logic, fixture collection | Private |
-| `stelladeecoder/statrally-soccer-automation` | Public-safe workflows, Discord formatting, guarded publishing, tests | Public |
+| `stelladeecoder/statrally-soccer-btts` | **Private** | Historical league data, forecasts, calibration, market discovery and price-validation research, Kalshi and Polymarket US provider adapters |
+| `stelladeecoder/statrally-soccer-automation` | **Public** | GitHub Actions schedules, guarded Discord delivery, paper-pick issue ledger and result grading, public-safe tests and documentation |
 
-The current research model is **not approved to claim a profitable betting edge**. This repository does not place or execute trades.
+Private research code, API keys, account statements, webhook values and personal transactions should **never** be copied into this public repository.
 
 ## Workflows
 
-| Workflow | Purpose | Operational state |
-| --- | --- | --- |
-| [Daily soccer fixture watchlist](.github/workflows/m13-daily-watchlist.yml) | Retrieves multi-league fixtures from the private engine and posts the schedule to Discord | Scheduled daily at 7:05 AM America/Chicago; first unattended post pending verification |
-| [M12 Kalshi scanner](.github/workflows/m12-kalshi-scanner.yml) | Bounded, read-only research scan and dry-run publisher checks | Requires `ENABLE_STAT_RALLY_SCANS=true`; does not publish actionable selections |
-| [M13 picks webhook smoke test](.github/workflows/m13-picks-webhook-smoke.yml) | One-time Discord connectivity message, explicitly labeled **NOT A BETTING PICK** | Test message confirmed in `#btts-picks`; not a daily picks publisher |
+| Workflow | Purpose |
+| --- | --- |
+| [Daily watchlist](.github/workflows/m13-daily-watchlist.yml) | 7:17 AM Central fixture posts |
+| [M13 experimental paper picks](.github/workflows/m13-beta-paper-picks.yml) | 8:23 AM and 2:23 PM Central guarded scans |
+| [M13 paper grading](.github/workflows/m13-beta-grading.yml) | 11:55 PM Central final-score grading |
+| [M12 Kalshi scanner](.github/workflows/m12-kalshi-scanner.yml) | Separately gated read-only research scanner using `ENABLE_STAT_RALLY_SCANS` |
+| [Picks webhook test](.github/workflows/m13-picks-webhook-smoke.yml) | One-time labeled connectivity test, not a prediction |
 
-The fixture watchlist is **independent** of the gated M12 scanner so a research-scanner error does not prevent the day's schedule.
+Latest runs and their actual outcomes are visible under [GitHub Actions](https://github.com/stelladeecoder/statrally-soccer-automation/actions). Scheduled times are not delivery guarantees.
 
-## Code and local tests
+## Tests
 
-- `src/m13_discord_publish.py`: watchlist formatter, guarded research reporting, picks formatting, webhook transport.
-- `tests/test_m13_discord_publish.py`: safety and formatting regression tests.
-- `docs/m13_discord_publishing.md`: development log and acceptance notes.
-
-Run the offline unit suite with Python 3.12:
+The public repository uses Python 3.12 for local offline regression testing:
 
 ```bash
 PYTHONPATH=src python -m unittest discover -s tests -v
 ```
 
-**Verified:** all **17 tests passed** in GitHub Actions run [41363527302](https://github.com/stelladeecoder/statrally-soccer-automation/actions/runs/41363527302). A controlled message to `#btts-picks` was also confirmed by the server owner. These checks do **not** establish a validated betting edge.
+Passing synthetic/offline tests is **not** the same as a validated live API session, profitable BTTS model, independent account reconciliation, or successful end-to-end Discord publishing.
 
-## Development roadmap
+## Roadmap
 
-| Milestone | Scope | Status |
+| Milestone | Focus | Current status |
 | --- | --- | --- |
-| M1–M10 | Soccer data pipelines, feature engineering, model research and validation | Complete |
-| M11 | Historical evaluation and fee-aware odds/EV research | Complete |
-| M12 | Read-only live Kalshi integration | Complete |
-| **M13** | Multi-league Discord watchlist and guarded picks-channel integration | **In progress** |
-| M14 | Actual settled positions, fees, win/loss, profit/loss and ROI; `#btts-results` | Planned |
-| M15 | Mobile-friendly public dashboard with Discord and referral links, hosted on GitHub Pages | Planned |
+| M1–M12 | Private soccer data/model research, odds research and initial Kalshi scanner | Historical development complete; model profitability still unvalidated |
+| **M13** | Scheduled Discord fixtures, paper predictions, independent result grading | **Beta operating; unattended and long-run validation ongoing** |
+| **M14** | Account fills, fees, settlements, realized P&L and independent reconciliation | **Implemented in draft PR #13; real-account sign-off pending** |
+| **Polymarket US migration** | Broader full-match BTTS discovery and provider replacement | **In progress; only specific live contracts verified** |
+| **M15 web app** | Mobile-first dashboard, Discord tab and referral-links section | **Planned**, separate from the provider-migration work |
+| Future | First-half and second-half BTTS research | **Deferred; separate modeling and validation required** |
 
-### M13 remaining acceptance
+## Responsible use
 
-1. Verify the **first unattended** scheduled `#match-watchlist` post and its fixture/time accuracy.
-2. Keep real `#btts-picks` selections **disabled** until the private engine provides independently validated, qualified recommendations and an approved publishing workflow.
-
-**Future enhancement:** team crests, league logos, and richer Discord embeds after reliable plain-text delivery is confirmed.
-
-## Safety and scope
-
-StatRally is a research and decision-support project, **not** a guarantee of profitability. Historical accuracy alone is not evidence of positive expected value. Private model code, tokens, webhook URLs, and individual account/trading details must never be exposed through this public repository.
+StatRally is an evidence-oriented research, automation and portfolio project. A model probability is not a verified edge; market prices must be evaluated against independent calibration, liquidity, trading costs and operational risk. No bet is required simply because a scan runs or a daily posting slot exists.
