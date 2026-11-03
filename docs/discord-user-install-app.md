@@ -18,14 +18,35 @@ The app currently returns **existing official paper records only**. `/picks` and
 ### What must happen before people can use it
 
 1. **Create/review a Discord application** in the [Developer Portal](https://discord.com/developers/applications). In *Installation*, enable appropriate **Guild Install** and **User Install** types and set the allowed scopes for application commands. Configure contexts to permit guild, bot DM and private channel as allowed by Discord. Discord may require installing/authorizing the bot separately for server administration; keep permissions minimal.
-2. **Host the interaction endpoint** on a reachable HTTPS service that accepts POST at `/interactions` continuously (or on a serverless platform with compatible request handling). GitHub Actions does not provide this HTTP hosting. Set `DISCORD_PUBLIC_KEY` (application public key), `DISCORD_APPLICATION_ID`, optional `STAT_RALLY_COMMAND_CHANNEL_ID` (the actual numeric ID of `#bot-commands`), and `PORT` on the host. The endpoint validates raw request bytes with Ed25519 and rejects unknown/expired signatures. Do **not** expose a secret in this repository.
+2. **Host the interaction endpoint** on a reachable HTTPS service that accepts POST at `/interactions` continuously (or on a serverless platform with compatible request handling). GitHub Actions does not provide this HTTP hosting. Set `DISCORD_PUBLIC_KEY` (application public key), `DISCORD_APPLICATION_ID`, required `STAT_RALLY_GUILD_ID` (the StatRally server ID) and `STAT_RALLY_COMMAND_CHANNEL_ID` (the numeric ID of `#bot-commands`), and `PORT` on the host. The endpoint validates raw request bytes with Ed25519 and rejects unknown/expired signatures. Do **not** expose a secret in this repository.
 3. Set the Discord application's **Interactions Endpoint URL** to `https://YOUR_HOST/interactions`; pass Discord's PING/signature validation in the Developer Portal.
 4. To explicitly register global commands, temporarily set `DISCORD_APPLICATION_ID` and **`DISCORD_BOT_TOKEN` only in a secure operator environment**, then run `node discord-app/register.mjs`. Never commit or paste the token into Issues/chat. This calls Discord's command registration API once; CI does not register commands.
 5. Create `#bot-commands` in the server, copy its numeric ID into `STAT_RALLY_COMMAND_CHANNEL_ID`, and **pin** the command guide from `discord-app/commands.mjs` (the exported `GUIDE` constant). This repo cannot create a channel or pin a guide through webhooks.
 6. Install the application in your StatRally server, verify commands inside `#bot-commands`, verify normal commands are restricted in scheduled announcement channels, then independently test **User Install** contexts if approved. Slash commands themselves cannot be pinned, only the guide.
 7. Validate interaction latency, actual saved-data freshness, null/missing data, install permissions, privacy/ephemeral behavior and a controlled rollback. Keep the app disabled until hosting/installation end-to-end tests are confirmed.
 
-**Critical:** Set the real `STAT_RALLY_COMMAND_CHANNEL_ID` before enabling guild usage. If it is unset, the application does **not** enforce a server-side channel restriction; Discord administrator permissions can restrict commands separately. The app permits user-install contexts independently.
+**Critical:** Set the real `STAT_RALLY_COMMAND_CHANNEL_ID` before enabling guild usage. The service now refuses startup if either the guild or channel ID is unset or malformed; Discord administrator permissions can restrict commands separately. The app permits user-install contexts independently.
+
+## Channel created: deployment preparation checkpoint
+
+**Owner-reported:** The StatRally Discord server now has a `#bot-commands` channel. The channel has **not** yet been verified through Discord's API, and the pinned guide, slash-command installation and live interaction endpoint have not been verified.
+
+A [Render Blueprint](../render.yaml) is available as an **optional deployment configuration**. Adding it does not create a service, authorize charges or make the Discord app live. The blueprint disables auto-deploy and requires these environment variables:
+
+| Variable | Source | Handling |
+|---|---|---|
+| `DISCORD_APPLICATION_ID` | Discord Developer Portal, General Information | Public ID |
+| `DISCORD_PUBLIC_KEY` | Discord Developer Portal, General Information | Public verification key, **not bot token** |
+| `STAT_RALLY_GUILD_ID` | Numeric StatRally server ID from Discord | Public ID |
+| `STAT_RALLY_COMMAND_CHANNEL_ID` | Numeric `#bot-commands` channel ID from Discord | Public ID |
+
+The server now **refuses startup** when these four values are missing or malformed. This avoids silently running without the intended home-server channel restriction. User installs elsewhere remain independently supported by the command definitions.
+
+To copy IDs in Discord: enable **User Settings → Advanced → Developer Mode**, right-click the server and choose **Copy Server ID**, then right-click `#bot-commands` and choose **Copy Channel ID**. Do not share any bot token, client secret or private key.
+
+When a trusted HTTPS hosting service has been provisioned, inspect `GET /health`, set the application's Interactions Endpoint URL to `https://YOUR_HOST/interactions` and pass Discord's signature/PING validation. Register the global commands only through the explicit script in an authorized operator environment. Set Discord's channel/role permissions, install the app, and manually pin the guide below. Keep the scheduled webhook channels untouched.
+
+**Status:** Configuration prepared only; service creation, application installation, token-based registration, channel pinning and real Discord end-to-end tests remain outstanding.
 
 ## Local offline verification
 

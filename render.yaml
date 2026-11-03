@@ -1,0 +1,22 @@
+# Optional Render Blueprint for the public, read-only Discord interaction service.
+# This file does NOT deploy anything or register Discord commands.
+services:
+  - type: web
+    name: statrally-discord-interactions
+    runtime: node
+    branch: main
+    autoDeployTrigger: off
+    buildCommand: node --check discord-app/server.mjs && node --test discord-app/tests/*.test.mjs
+    startCommand: node discord-app/server.mjs
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: DISCORD_APPLICATION_ID
+        sync: false
+      - key: DISCORD_PUBLIC_KEY
+        sync: false
+      - key: STAT_RALLY_GUILD_ID
+        sync: false
+      - key: STAT_RALLY_COMMAND_CHANNEL_ID
+        sync: false
