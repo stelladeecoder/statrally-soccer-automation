@@ -110,8 +110,8 @@ class TestAdminMonitor(unittest.TestCase):
         day = date(2026, 11, 4)
         completed = {expected_windows(day)[0]}
         body = "\\n".join(window_status_lines(day, completed))
-        self.assertIn("4/5", body)
-        self.assertIn("missed / no receipt", body)
+        self.assertIn("1/5", body)
+        self.assertIn("Missed/unconfirmed windows: 4", body)
         old = "\\n".join(window_status_lines(date(2026, 11, 3), set()))
         self.assertIn("historical / not verified", old)
         self.assertNotIn("missed / no receipt", old)
