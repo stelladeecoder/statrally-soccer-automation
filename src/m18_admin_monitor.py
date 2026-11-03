@@ -5,7 +5,7 @@ This monitor never auto-retries uncertain Discord deliveries or public picks.
 import json
 import os
 import sys
-from datetime import datetime, timedelta, time, timezone
+from datetime import datetime, timedelta, time, timezone, date
 from urllib.request import Request, urlopen
 from urllib.parse import urlencode, urlsplit, urlunsplit, parse_qsl
 from zoneinfo import ZoneInfo
@@ -155,6 +155,68 @@ def due_slots(now):
     return result
 
 
+
+def expected_windows(day):
+    """All Central-time posting windows on one calendar day."""
+    return [(task, datetime.combine(day, time(hour, minute), CENTRAL))
+            for task, times in SLOT_TIMES.items() for hour, minute in times]
+
+
+def completed_window_audit(repo, rows, call=api):
+    """Read durable completion comments; never treat an absent record as success."""
+    prefix = "statrally-scheduler-checkpoint-v1:"
+    comment_prefix = "statrally-scheduler-slot-v1:"
+    recorded = set()
+    for issue in rows:
+        body = issue.get("body") or ""
+        if not body.startswith(prefix):
+            continue
+        if issue.get("user", {}).get("login") != BOT:
+            raise RuntimeError("Untrusted scheduler checkpoint")
+        latest = json.loads(body[len(prefix):])
+        recorded.add((latest["task"], datetime.fromisoformat(latest["completed_slot"])))
+        for page in range(1, 11):
+            comments = call("GET", repo,
+                f"/issues/{issue['number']}/comments?per_page=100&page={page}")
+            if not isinstance(comments, list):
+                raise RuntimeError("Scheduler completion history unavailable")
+            for comment in comments:
+                content = comment.get("body") or ""
+                if not content.startswith(comment_prefix):
+                    continue
+                if comment.get("user", {}).get("login") != BOT:
+                    raise RuntimeError("Untrusted scheduler completion comment")
+                item = json.loads(content[len(comment_prefix):])
+                if item.get("task") not in SLOT_TIMES:
+                    raise RuntimeError("Malformed scheduler completion comment")
+                recorded.add((item["task"], datetime.fromisoformat(item["completed_slot"])))
+            if len(comments) < 100:
+                break
+        else:
+            raise RuntimeError("Scheduler completion history exceeds checked pages")
+    return recorded
+
+
+def window_status_lines(day, completed, *, audit_start=date(2026, 11, 4)):
+    """Avoid labeling pre-rollout historical windows as misses."""
+    windows = expected_windows(day)
+    verified = [(task, when) for task, when in windows if (task, when) in completed]
+    missing = [(task, when) for task, when in windows if (task, when) not in completed]
+    def format_slot(task, when):
+        return f"{when.strftime('%I:%M %p').lstrip('0')} {task}"
+    lines = ["Posting windows (Central):"]
+    for task, when in windows:
+        status = ("complete" if (task, when) in completed else
+                  "historical / not verified" if day < audit_start else "missed / no receipt")
+        lines.append(f"- {format_slot(task, when)}: {status}")
+    if day < audit_start:
+        lines.append(f"Verified windows: {len(verified)}/{len(windows)} | "
+                     "Unverified historical windows: " + str(len(missing)))
+    else:
+        lines.append(f"Verified windows: {len(verified)}/{len(windows)} | "
+                     "Missed/unconfirmed windows: " + str(len(missing)))
+    return lines
+
 def recent_failure_details(repo, run_id, call=api):
     result = call("GET", repo, f"/actions/runs/{int(run_id)}/jobs?per_page=100")
     jobs = result.get("jobs", []) if isinstance(result, dict) else []
@@ -227,16 +289,19 @@ def watch(repo, webhook, *, now, paused=False, call=api, sender=send):
                 if any((c.get("body") or "").startswith("Discord delivery returned success.")
                        and c.get("user", {}).get("login") == BOT for c in comments):
                     delivered += 1
+            verified_windows = completed_window_audit(repo, rows, call)
+            window_lines = window_status_lines(day, verified_windows)
             data["report_day"] = day.isoformat()
             save(repo, number, data, call)
             sender(webhook,
                    f"**StatRally Admin | Daily health report — {day.isoformat()} CT**\n"
-                   f"Scheduler runs: {len(daily)} | successful: {successes} | failed/cancelled: {failures}\n"
-                   f"Paper signals confirmed delivered: {delivered}\n"
-                   f"Paper reservations: {len(paper)}\n"
-                   "No-pick and duplicate scans are intentionally silent. "
-                   "The report counts scheduler executions, not unique posting windows.\n"
-                   f"https://github.com/{repo}/actions")
+                   + "\n".join(window_lines) + "\n"
+                   + f"Scheduler executions: {len(daily)} | successful: {successes} | failed/cancelled: {failures}\n"
+                   + f"Discord paper signals confirmed delivered: {delivered}\n"
+                   + f"Paper reservations: {len(paper)}\n"
+                   + "Silent: no new picks, duplicates, successful routine checks. "
+                   + "A completed window does not necessarily mean a new pick was posted.\n"
+                   + f"https://github.com/{repo}/actions")
             print("STATRALLY_DAILY_REPORT_SENT", day.isoformat())
 
 
