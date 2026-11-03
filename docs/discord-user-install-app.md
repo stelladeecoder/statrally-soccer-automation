@@ -38,7 +38,7 @@ No extra npm dependencies are required. To start the hosted HTTP service once pr
 
 ```bash
 DISCORD_APPLICATION_ID=<app_id> DISCORD_PUBLIC_KEY=<public_key_hex> \
-STAT_RALLY_COMMAND_CHANNEL_ID=<numeric_channel_id> PORT=3000 \
+STAT_RALLY_GUILD_ID=<numeric_guild_id> STAT_RALLY_COMMAND_CHANNEL_ID=<numeric_channel_id> PORT=3000 \
 node discord-app/server.mjs
 ```
 
