@@ -1,10 +1,6 @@
 name: StatRally beta paper picks
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/m13-beta-paper-picks.yml"
   schedule:
     - cron: "23 8,14 * * *"
       timezone: "America/Chicago"
