@@ -1,0 +1,68 @@
+name: M14 private read-only Kalshi validation
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Authentication only, or reconcile with independent private evidence
+        type: choice
+        options: [auth-only, reconcile]
+        default: auth-only
+        required: true
+  workflow_call:
+    inputs:
+      mode:
+        type: string
+        default: auth-only
+    secrets:
+      KALSHI_API_KEY_ID:
+        required: true
+      KALSHI_PRIVATE_KEY:
+        required: true
+      M14_RECONCILIATION_EVIDENCE_URL:
+        required: false
+      M14_EVIDENCE_ACCESS_TOKEN:
+        required: false
+permissions:
+  contents: read
+concurrency:
+  group: m14-private-kalshi-validation
+  cancel-in-progress: false
+jobs:
+  private-validation:
+    # The reusable entry also rejects non-manual parent events.
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install pinned signature dependencies before injecting credentials
+        run: python -m pip install --no-cache-dir --require-hashes --only-binary=:all: -r requirements-m14-auth.txt
+      - name: Private read-only validation (sanitized status only)
+        env:
+          KALSHI_API_KEY_ID: ${{ secrets.KALSHI_API_KEY_ID }}
+          KALSHI_PRIVATE_KEY: ${{ secrets.KALSHI_PRIVATE_KEY }}
+          M14_RECONCILIATION_EVIDENCE_URL: ${{ secrets.M14_RECONCILIATION_EVIDENCE_URL }}
+          M14_EVIDENCE_ACCESS_TOKEN: ${{ secrets.M14_EVIDENCE_ACCESS_TOKEN }}
+          M14_VALIDATION_MODE: ${{ inputs.mode }}
+        run: python src/m14_private_reconcile.py --mode "$M14_VALIDATION_MODE" --runner-temp "$RUNNER_TEMP"
+      - name: Remove any remaining temporary private records
+        if: always()
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          import shutil
+          try:
+              for directory in Path(os.environ["RUNNER_TEMP"]).glob("statrally-m14-private-*"):
+                  if directory.is_dir() and not directory.is_symlink():
+                      shutil.rmtree(directory)
+              Path(os.environ["RUNNER_TEMP"], "statrally-m14-independent-evidence.json").unlink(missing_ok=True)
+          except OSError:
+              print('{"status":"failed","discrepancy_counts":{"temporary_cleanup":1}}')
+              raise SystemExit(2)
+          PY
