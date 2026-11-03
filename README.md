@@ -8,7 +8,7 @@
 ![Mode: Paper picks](https://img.shields.io/badge/Mode-Paper%20picks-8b5cf6?style=flat-square)
 ![Built with Python](https://img.shields.io/badge/Built%20with-Python-3776AB?style=flat-square&logo=python&logoColor=white)
 
-**[Why I built it](#-why-i-built-statrally) · [The experience](#-from-matchday-to-results) · [Project status](#-what-works-and-whats-next) · [Explore the code](#-explore-the-project)**
+**[Why I built it](#-why-i-built-statrally) · [The experience](#-statrally-discord-from-matchday-to-results) · [Project status](#-what-works-and-whats-next) · [Explore the code](#-explore-the-project)**
 
 </div>
 
@@ -32,11 +32,13 @@ The ambition is to connect BTTS analysis, daily pick generation, and outcome tra
 | Prediction | What it means | Example |
 | :--- | :--- | :--- |
 | 🟢 **BTTS YES** | Both teams score | 1–1 or 2–1 |
-| 🔵 **BTTS NO** | At least one team does not score | 2–0 or 0–0 |
+| 🔴 **BTTS NO** | At least one team does not score | 2–0 or 0–0 |
 
 Extra time and penalty shootouts are excluded. The grader leaves unsupported or unconfirmed outcomes pending.
 
-## 📬 From matchday to results
+## 📬 StatRally Discord: From matchday to results
+
+These updates are delivered to the channels in the **StatRally Discord server**. Watchlists and new picks cover only the current America/Chicago calendar day; earlier pending predictions remain eligible for grading.
 
 | Destination | The experience |
 | :--- | :--- |
