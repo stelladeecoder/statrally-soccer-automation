@@ -214,7 +214,7 @@ test("deferred error logging exposes sanitized HTTP status, never interaction to
   for (let i = 0; i < 100 && errors.length < 2; i++)
     await new Promise(resolve => setTimeout(resolve, 10));
   assert.equal(errors.length, 2);
-  assert.match(errors[0], /Public GitHub source unavailable \\(403\\)/);
-  assert.match(errors[1], /Deferred response delivery failed \\(Discord HTTP 404\\)/);
+  assert.match(errors[0], /Public GitHub source unavailable \(403\)/);
+  assert.match(errors[1], /Deferred response delivery failed \(Discord HTTP 404\)/);
   assert.equal(errors.join(" ").includes(token), false);
 });
