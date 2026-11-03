@@ -1,10 +1,6 @@
 name: Polymarket all-league Discord live-data test
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - .github/workflows/m15-discord-live-test.yml
 permissions:
   contents: read
 concurrency:
