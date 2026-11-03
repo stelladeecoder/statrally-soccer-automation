@@ -29,7 +29,7 @@ class SchedulerTests(unittest.TestCase):
         calls = []
         def fake(method, path, data=None):
             calls.append(method)
-            return [] if method == "GET" else {"number": 1}
+            return [] if method == "GET" else {"number": 1, "id": 5}
         slots = {"picks": "2026-11-03T05:23:00-06:00"}
         complete("owner/repo", slots, {"picks": "failure"}, "run", fake)
         self.assertEqual(calls, ["GET"])

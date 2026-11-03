@@ -74,6 +74,7 @@ def plan(now, saved):
 
 def complete(repo, slots, results, run_url, call=api):
     saved = checkpoints(repo, call)
+    audit_marker = "statrally-scheduler-slot-v1:"
     for task, slot in slots.items():
         if not slot or results.get(task) != "success":
             continue
@@ -85,14 +86,46 @@ def complete(repo, slots, results, run_url, call=api):
         data = {"title": "StatRally scheduler checkpoint | " + task,
                 "body": MARKER + json.dumps(record, sort_keys=True), "state": "closed"}
         if task in saved:
-            response = call("PATCH", f"/repos/{repo}/issues/{saved[task]['number']}", data)
+            issue_number = saved[task]["number"]
         else:
             data.pop("state")
-            response = call("POST", f"/repos/{repo}/issues", data)
-        if not isinstance(response, dict) or not response.get("number"):
-            raise RuntimeError("Scheduler receipt was not confirmed")
-        print("Completed slot:", task, slot)
+            created = call("POST", f"/repos/{repo}/issues", data)
+            if not isinstance(created, dict) or not created.get("number"):
+                raise RuntimeError("Scheduler receipt was not confirmed")
+            issue_number = created["number"]
 
+        # Append a per-slot audit before advancing the latest checkpoint. If the
+        # subsequent PATCH fails, the next scheduler attempt can safely resume.
+        comments = []
+        for page in range(1, 11):
+            batch = call("GET", f"/repos/{repo}/issues/{issue_number}/comments?per_page=100&page={page}")
+            if not isinstance(batch, list):
+                raise RuntimeError("Slot audit comments unavailable")
+            comments.extend(batch)
+            if len(batch) < 100:
+                break
+        else:
+            raise RuntimeError("Slot audit comments exceed checked pages")
+        for comment in comments:
+            body = comment.get("body") or ""
+            if not body.startswith(audit_marker):
+                continue
+            if comment.get("user", {}).get("login") != "github-actions[bot]":
+                raise RuntimeError("Untrusted slot audit comment")
+            previous = json.loads(body[len(audit_marker):])
+            if previous.get("task") == task and previous.get("completed_slot") == slot:
+                break
+        else:
+            logged = call("POST", f"/repos/{repo}/issues/{issue_number}/comments",
+                          {"body": audit_marker + json.dumps(record, sort_keys=True)})
+            if not isinstance(logged, dict) or not logged.get("id"):
+                raise RuntimeError("Slot audit receipt was not confirmed")
+
+        if task in saved:
+            updated = call("PATCH", f"/repos/{repo}/issues/{issue_number}", data)
+            if not isinstance(updated, dict) or updated.get("number") != issue_number:
+                raise RuntimeError("Latest scheduler checkpoint not confirmed")
+        print("Completed slot:", task, slot)
 
 def main():
     repo = os.environ["GITHUB_REPOSITORY"]
