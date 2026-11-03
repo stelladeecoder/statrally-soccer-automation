@@ -31,7 +31,7 @@ The ambition is to connect BTTS analysis, daily pick generation, and outcome tra
 
 The public application is still planned, not launched. Current working functionality centers on the scheduled watchlist, paper-pick validation/dispatch, and guarded results reporting. A **free, user-installable Discord analytics app** is planned so people can request stats on demand instead of waiting for scheduled posts. Its slash commands are **not implemented**. The research engine and model development are maintained separately in a private repository.
 
-**Development priorities:** strengthen provider coverage, daily automation reliability, and end-to-end result verification; then build a shared, verified analytics read layer for on-demand Discord commands and the mobile-friendly free dashboard. Public reporting does not place real-money orders.
+**Development priorities:** strengthen provider coverage, daily automation reliability, and end-to-end result verification; implement the free Discord interaction layer against existing verified records; then connect richer read-only analytics to Discord and the mobile-friendly free dashboard. Public reporting does not place real-money orders.
 
 ## 🎯 BTTS, explained
 
@@ -56,9 +56,9 @@ These updates are delivered to the channels in the **StatRally Discord server**.
 
 The beta publisher accepts **up to three paper signals per Central calendar day across all scheduled checks**, counting durable reservations even when delivery is uncertain. Some checks produce none: the system does not force a daily selection. Messages marked **TEST** are delivery checks, not official tracked predictions.
 
-## 💬 On-demand Discord analytics (planned)
+## 💬 On-demand Discord analytics (implementation in progress)
 
-**StatRally should work when the user is ready, not only when the scheduler runs.** The proposed free Discord app will support user installation alongside server installation, letting people request the latest available BTTS research using slash commands. This feature is **roadmap only**, not a deployed bot capability. See [Discord's user-installable app tutorial](https://docs.discord.com/developers/tutorials/developing-a-user-installable-app).
+**StatRally should work when the user is ready, not only when the scheduler runs.** The proposed free Discord app will support user installation alongside server installation, letting people request the latest available BTTS research using slash commands. An initial **offline-tested read-only interaction service** is being built, but the feature is **not deployed, registered or installed in Discord**. See [Discord's user-installable app tutorial](https://docs.discord.com/developers/tutorials/developing-a-user-installable-app).
 
 ### Which experience belongs where?
 
@@ -70,7 +70,7 @@ The beta publisher accepts **up to three paper signals per Central calendar day 
 | **Admin-only alerts:** missed/failed operations; no routine success or no-pick notifications | `/match`: detailed analysis for a requested fixture, distinct from an official paper pick |
 | No scheduled league-by-league commentary or repeated performance posts | Later options: `/results`, `/status`, league and history filters, once verified data exists |
 
-**Important:** These times are *configured scheduler targets*, not proof of guaranteed delivery. The commands and the split above are **proposed behavior**; no Discord application commands, user-install flow, new interactive backend or refresh service have been deployed by this README update.
+**Important:** These times are *configured scheduler targets*, not proof of guaranteed delivery. The commands and the split above are the target behavior. Code for signed interactions, four commands and a public-record reader is being added; **no hosted interaction endpoint, Discord command registration, user installation or live refresh is deployed yet**. See [Discord app implementation and deployment requirements](docs/discord-user-install-app.md).
 
 ### Proposed interaction rules
 

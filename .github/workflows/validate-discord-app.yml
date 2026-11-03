@@ -1,0 +1,31 @@
+name: Validate Discord interaction app
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "discord-app/**"
+      - ".github/workflows/validate-discord-app.yml"
+  push:
+    branches: [main]
+    paths:
+      - "discord-app/**"
+      - ".github/workflows/validate-discord-app.yml"
+permissions:
+  contents: read
+jobs:
+  discord-interactions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Syntax check
+        run: |
+          node --check discord-app/server.mjs
+          node --check discord-app/data.mjs
+          node --check discord-app/commands.mjs
+          node --check discord-app/register.mjs
+      - name: Run offline signed interaction tests
+        run: node --test discord-app/tests/*.test.mjs
