@@ -1,0 +1,42 @@
+name: Probe StatRally Discord public endpoint
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/probe-discord-endpoint.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Resolve public hostname and probe health / interaction routes
+        shell: bash
+        run: |
+          set -euo pipefail
+          HOST="statrally-discord-interactions.onrender.com"
+          echo "DNS entries:"
+          getent ahosts "$HOST" | head -8
+          echo "GET /health (must return 200 and ready JSON)"
+          curl --fail-with-body --show-error --silent --location --max-time 30 --retry 1 --retry-delay 2 \
+            --output /tmp/statrally-health.json \
+            --write-out "http_code=%{http_code} remote_ip=%{remote_ip} total_time=%{time_total}s\n" \
+            "https://$HOST/health"
+          cat /tmp/statrally-health.json
+          echo
+          python3 - <<'PY'
+          import json
+          with open("/tmp/statrally-health.json") as f:
+              body=json.load(f)
+          assert body.get("status")=="ready", f"Endpoint not configured: {body.get('status')}"
+          PY
+          echo "GET /interactions should return 404 (only POST accepted)"
+          code=$(curl --silent --location --max-time 20 --output /dev/null --write-out "%{http_code}" "https://$HOST/interactions")
+          echo "GET /interactions http_code=$code"
+          test "$code" = "404"
+          echo "POST without Discord signature must reject with 401"
+          code=$(curl --silent --location --max-time 20 --output /dev/null --write-out "%{http_code}" -X POST -H "Content-Type: application/json" -d '{}' "https://$HOST/interactions")
+          echo "unsigned POST /interactions http_code=$code"
+          test "$code" = "401"
