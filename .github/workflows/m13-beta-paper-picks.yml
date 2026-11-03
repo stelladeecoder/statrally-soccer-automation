@@ -2,9 +2,7 @@ name: StatRally beta paper picks
 on:
   workflow_dispatch:
   schedule:
-    - cron: "23 5,8,14 * * *"
-      timezone: "America/Chicago"
-    # Temporary read-only scheduler verification.
+    # Temporary UTC-only, read-only scheduler verification.
     - cron: "*/5 * * * *"
 permissions:
   contents: read
