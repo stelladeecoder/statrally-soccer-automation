@@ -1,0 +1,63 @@
+name: Validate Polymarket US public paper pipeline
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "src/m13_beta_signals.py"
+      - "src/m13_beta_dispatch.py"
+      - "tests/test_m15_polymarket_public_pipeline.py"
+      - ".github/workflows/m13-beta-paper-picks.yml"
+      - ".github/workflows/m15-polymarket-migration-verify.yml"
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: automation
+      - uses: actions/checkout@v4
+        with:
+          repository: stelladeecoder/statrally-soccer-btts
+          ref: main
+          token: ${{ secrets.STAT_RALLY_PRIVATE_READ_TOKEN }}
+          persist-credentials: false
+          path: engine
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install public research runtime
+        run: python -m pip install pandas polymarket-us
+      - name: Test public paper validation and guarded dispatch
+        working-directory: automation
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests -p test_m15_polymarket_public_pipeline.py
+      - name: Run live Polymarket US exporter (read-only, no Discord)
+        working-directory: engine
+        env:
+          PYTHONPATH: src
+        run: python src/m15_polymarket_beta_export.py --output "$RUNNER_TEMP/beta.json"
+      - name: Validate public-facing paper envelope without delivery
+        working-directory: automation
+        env:
+          PYTHONPATH: src
+        run: |
+          python - <<'PY'
+          import json, os
+          from m13_beta_signals import render_beta
+          with open(os.environ["RUNNER_TEMP"]+"/beta.json",encoding="utf-8") as f:
+              data=json.load(f)
+          if data["trades_placed"] != 0:
+              raise ValueError("Unexpected trade activity")
+          payload=render_beta(data,allow_empty=True)
+          print("Public Polymarket experimental signals:",len(data["signals"]))
+          if payload:
+              assert "Polymarket US quote" in payload["content"], "Wrong provider or unsupported schema"
+              print("Public formatter validated; no Discord message sent")
+          else:
+              print("No eligible experimental signals; no Discord message sent")
+          PY
