@@ -117,7 +117,7 @@ This repository shows how I turn analytical output into a repeatable, reviewable
 | **Discord webhooks** | Watchlist, paper-pick, and results delivery |
 | **Python unittest** | Offline regression tests for validation, publishing, grading, and duplicate handling |
 
-The scheduled paper-picks workflow currently invokes a **Polymarket US exporter in the private research repository**. Earlier Kalshi paths remain in the project history and code; older milestone notes describe previous configurations.
+The scheduled paper-picks workflow currently invokes a **Polymarket US exporter in the private research repository**. **Kalshi was retired from active StatRally development on November 3, 2026.** The unmerged Kalshi financial-reconciliation PR #13 was closed; no Kalshi account importer or Kalshi trading is part of the active pipeline. Legacy Kalshi code and historical notes may remain as archival research, not as active dependencies.
 
 The private research engine is required for the full scheduled pipeline. This public repository is not a standalone distribution of the prediction model or a public BTTS trend dashboard.
 
