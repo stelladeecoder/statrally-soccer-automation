@@ -132,7 +132,7 @@ export function createApp({ publicKey, applicationId, guildId = "", channelId = 
         reply(200, { type: 4, data: textResponse("This command is not supported.") });
         return;
       }
-      if (!allowedGuildChannel(interaction, channelId)) {
+      if (!allowedGuildChannel(interaction, guildId, channelId)) {
         reply(200, { type: 4, data: textResponse("Use this command in #bot-commands in the StatRally server.") });
         return;
       }
