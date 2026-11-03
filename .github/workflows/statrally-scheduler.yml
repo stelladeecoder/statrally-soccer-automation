@@ -1,0 +1,68 @@
+name: StatRally automatic posting scheduler
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/5 * * * *"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/statrally-scheduler.yml"
+      - "src/m16_scheduler.py"
+permissions:
+  contents: read
+  issues: write
+concurrency:
+  group: statrally-automatic-posting-scheduler
+  cancel-in-progress: false
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    outputs:
+      watchlist: ${{ steps.due.outputs.watchlist }}
+      picks: ${{ steps.due.outputs.picks }}
+      grading: ${{ steps.due.outputs.grading }}
+      slots: ${{ steps.due.outputs.slots }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Test Central-time scheduling and retry rules
+        env:
+          PYTHONPATH: src
+        run: python3 -m unittest discover -s tests -p 'test_m16_scheduler.py' -v
+      - name: Find due Central-time slots without completed receipts
+        id: due
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 src/m16_scheduler.py gate
+  watchlist:
+    needs: gate
+    if: needs.gate.outputs.watchlist == 'true'
+    uses: ./.github/workflows/m13-daily-watchlist.yml
+    secrets: inherit
+  picks:
+    needs: gate
+    if: needs.gate.outputs.picks == 'true'
+    uses: ./.github/workflows/m13-beta-paper-picks.yml
+    secrets: inherit
+  grading:
+    needs: gate
+    if: needs.gate.outputs.grading == 'true'
+    uses: ./.github/workflows/m13-beta-grading.yml
+    secrets: inherit
+  receipts:
+    needs: [gate, watchlist, picks, grading]
+    if: ${{ always() && needs.gate.result == 'success' && (needs.watchlist.result == 'success' || needs.picks.result == 'success' || needs.grading.result == 'success') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Record only successfully completed posting slots
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SLOTS: ${{ needs.gate.outputs.slots }}
+          RESULTS: '{"watchlist":"${{ needs.watchlist.result }}","picks":"${{ needs.picks.result }}","grading":"${{ needs.grading.result }}"}'
+        run: python3 src/m16_scheduler.py complete

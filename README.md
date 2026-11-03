@@ -94,7 +94,7 @@ Fixture feeds, reviewed market mappings, historical team data, and grading suppo
 
 ### ⏰ Configured daily schedule
 
-Times follow **America/Chicago (Central Time)**, as defined in the current workflow files.
+Times below are **America/Chicago (Central Time)** targets. The [automatic posting scheduler](.github/workflows/statrally-scheduler.yml) checks every five minutes using UTC cron, converts the current time to Central, and runs the latest due slot without a completed receipt. A delayed trigger can therefore catch up. Completed slots are recorded only after the posting workflow succeeds; existing Discord duplicate protection remains in force.
 
 | Time | Scheduled task |
 | :--- | :--- |
@@ -102,7 +102,7 @@ Times follow **America/Chicago (Central Time)**, as defined in the current workf
 | **5:23 AM, 8:23 AM & 2:23 PM** | [Check for new experimental paper picks](.github/workflows/m13-beta-paper-picks.yml) |
 | **11:55 PM** | [Check for confirmed paper outcomes](.github/workflows/m13-beta-grading.yml) |
 
-These are configured run times, not delivery guarantees. Updates can be delayed, and results remain pending until confirmed.
+These are target times, not delivery guarantees. GitHub can delay scheduled events. Failed slots remain eligible for the next heartbeat; a missed picks check catches up to the latest current-day slot instead of publishing stale earlier slots. Results remain pending until confirmed.
 
 ## 🛠️ Explore the project
 
