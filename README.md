@@ -44,9 +44,15 @@ The private BTTS forecasting work remains **research-only**. A historical chrono
 
 For future research only, first-half and second-half BTTS contracts have also been observed in event data. **They are excluded from the current full-match beta**, and would need separate models and calibration.
 
-**Provider switch:** The scheduled `#btts-picks` workflow now executes the Polymarket US exporter instead of the Kalshi exporter. It uses explicit reviewed provider-to-ESPN event mappings and the existing research-only private forecast. A successful read-only end-to-end dry run produced **one** experimental signal and passed public format and cross-provider duplicate tests ([validation run](https://github.com/stelladeecoder/statrally-soccer-automation/actions/runs/41562116197)). Existing Kalshi Issue records remain untouched, and duplicate paper signals for the same ESPN fixture and side are suppressed across providers. **The current reviewed mapping inventory is narrow (one fixture); all 13 leagues are not yet eligible for Polymarket paper picks.** Broader verified contract mapping, side-specific size/fees, calibrated probabilities, unattended Discord proof, and postgame outcomes remain open validation items.
+**Provider switch:** The scheduled `#btts-picks` workflow now executes the Polymarket US exporter instead of the Kalshi exporter. It automatically searches all 13 configured competitions over the next seven days, including per-fixture queries and paginated provider events. Unique ordered teams, ESPN event/team IDs and kickoff must agree; explicit reviewed mappings remain supported alongside automatic mappings. It then uses the existing research-only private forecast. A successful read-only end-to-end dry run produced **one** experimental signal and passed public format and cross-provider duplicate tests ([validation run](https://github.com/stelladeecoder/statrally-soccer-automation/actions/runs/41562116197)). Existing Kalshi Issue records remain untouched, and duplicate paper signals for the same ESPN fixture and side are suppressed across providers. **All 13 leagues are scanned for eligible paper picks; the bot is no longer restricted to the single manually reviewed fixture.** Actual picks still require a matching open full-match BTTS contract, a selected-side quote and sufficient exact historical team data. Provider market coverage and historical team identity gaps remain visible in per-league diagnostics. Side-specific size/fees, calibrated probabilities, unattended production delivery and postgame outcomes remain open validation items.
 
 Public market discovery does **not** require a user's trading credentials; the private repository holds implementation research, not secrets.
+
+### All-league live-data testing
+
+The [Discord live-data test workflow](.github/workflows/m15-discord-live-test.yml) fetches the actual Central Time day's match list and scans the next seven days across all 13 competitions. Its labeled test posts go to the existing watchlist and picks webhooks. Tests never fabricate a pick or enter test-only candidates into the graded prediction ledger. Large test watchlists are split across messages; both UTC dates spanning the Central day are fetched.
+
+[Run 41564103599](https://github.com/stelladeecoder/statrally-soccer-automation/actions/runs/41564103599) passed 84 public tests and 31 private migration tests, then received successful Discord responses for both channel tests on November 2, 2026 (Central). The initial scan evaluated all 13 feeds with zero feed failures and produced two valid paper candidates. This controlled delivery does not establish unattended scheduled reliability or picks in every league.
 
 ## M14: financial reconciliation is not deployed
 
@@ -93,7 +99,7 @@ Passing synthetic/offline tests is **not** the same as a validated live API sess
 | M1–M12 | Private soccer data/model research, odds research and initial Kalshi scanner | Historical development complete; model profitability still unvalidated |
 | **M13** | Scheduled Discord fixtures, paper predictions, independent result grading | **Beta operating; unattended and long-run validation ongoing** |
 | **M14** | Account fills, fees, settlements, realized P&L and independent reconciliation | **Implemented in draft PR #13; real-account sign-off pending** |
-| **Polymarket US migration** | Replace Kalshi in scheduled experimental BTTS picks; expand reviewed market/fixture/model coverage | **Scheduled provider switched; one live paper-export fixture verified, broader coverage and unattended posting not yet verified** |
+| **Polymarket US migration** | Replace Kalshi in scheduled experimental BTTS picks; expand reviewed market/fixture/model coverage | **All 13 leagues scanned; controlled match-list/picks Discord tests passed; provider/model coverage varies** |
 | **M15 web app** | Mobile-first dashboard, Discord tab and referral-links section | **Planned**, separate from the provider-migration work |
 | Future | First-half and second-half BTTS research | **Deferred; separate modeling and validation required** |
 
