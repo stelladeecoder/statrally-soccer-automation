@@ -178,3 +178,17 @@ test("command acknowledges before remote lookup, then edits private deferred res
   assert.match(JSON.parse(patch.body).content, /Home vs Away/);
   assert.deepEqual(JSON.parse(patch.body).allowed_mentions, { parse: [] });
 });
+
+test("unconfigured Render staging serves health but cannot accept interactions", async (t) => {
+  const app = createApp({});
+  app.listen(0, "127.0.0.1");
+  await once(app, "listening");
+  t.after(() => app.close());
+  const base = `http://127.0.0.1:${app.address().port}`;
+  const health = await fetch(base + "/health");
+  assert.equal(health.status, 200);
+  assert.equal((await health.json()).status, "configuration_pending");
+  const interaction = await fetch(base + "/interactions", { method: "POST", body: "{}" });
+  assert.equal(interaction.status, 503);
+  assert.match((await interaction.json()).error, /configuration pending/);
+});
