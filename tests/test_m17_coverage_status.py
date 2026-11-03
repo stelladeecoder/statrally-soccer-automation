@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-from m17_coverage_status import classify_league, classify_report
+from m17_coverage_status import classify_league, classify_report, summarize_beta_diagnostics
 
 
 class CoverageStatusTests(unittest.TestCase):
@@ -50,6 +50,17 @@ class CoverageStatusTests(unittest.TestCase):
     def test_reject_noninteger_counters(self):
         with self.assertRaises(ValueError):
             classify_league(self.row(fixtures=True))
+
+    def test_live_diagnostics_distinguish_idle_and_eligibility(self):
+        data = {"discovery": {"scan_complete": True, "leagues": {
+            "epl": self.row(),
+            "mls": self.row(fixtures=0, mapped=0, markets_found=0, fully_validated=0),
+            "europa_league": self.row(fully_validated=0)}},
+            "leagues": {"epl": {"validated": 3}, "europa_league": {"validated": 0}}}
+        report = summarize_beta_diagnostics(data)
+        self.assertEqual(report["leagues"]["mls"]["status"], "no_scheduled_fixtures")
+        self.assertEqual(report["leagues"]["europa_league"]["status"], "matched_markets_no_eligible_predictions")
+        self.assertEqual(report["leagues"]["epl"]["status"], "some_eligible_predictions")
 
     def test_report_labels_incomplete_scan(self):
         r = classify_report({"epl": self.row(), "mls": self.row(mapped=0, markets_found=0, fully_validated=0)}, scan_complete=False)
