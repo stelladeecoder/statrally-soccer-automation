@@ -5,6 +5,7 @@ import crypto from "node:crypto";
 import { pathToFileURL } from "node:url";
 import { commands, centralDay, optionsFor, PRIVATE_FLAGS, textResponse } from "./commands.mjs";
 import { deliveredRecords, renderPick, savedPerformance } from "./data.mjs";
+import { snapshotBackedFetch } from "./snapshot.mjs";
 
 export function verifyDiscord(body, timestamp, signature, publicKey, now = Date.now()) {
   if (!Buffer.isBuffer(body) || typeof timestamp !== "string" ||
@@ -90,7 +91,7 @@ function safeFailure(error) {
   return kind + (known.test(message) ? ": " + message : "");
 }
 
-export function createApp({ publicKey, applicationId, guildId = "", channelId = "", fetcher = fetch,
+export function createApp({ publicKey, applicationId, guildId = "", channelId = "", fetcher = snapshotBackedFetch,
                             clock = () => new Date(), logger = console } = {}) {
   const configured = /^[a-fA-F0-9]{64}$/.test(publicKey || "") &&
     /^\d{15,22}$/.test(applicationId || "") &&

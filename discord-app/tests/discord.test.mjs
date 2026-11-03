@@ -5,6 +5,7 @@ import { once } from "node:events";
 import { commands, centralDay, GUIDE } from "../commands.mjs";
 import { readGitHub, deliveredRecords, savedPerformance, renderPick } from "../data.mjs";
 import { allowedGuildChannel, commandText, createApp, verifyDiscord } from "../server.mjs";
+import { snapshotBackedFetch } from "../snapshot.mjs";
 
 const APP_ID = "123456789012345678";
 const CHANNEL_ID = "888888888888888888";
@@ -217,4 +218,26 @@ test("deferred error logging exposes sanitized HTTP status, never interaction to
   assert.match(errors[0], /Public GitHub source unavailable \(403\)/);
   assert.match(errors[1], /Deferred response delivery failed \(Discord HTTP 404\)/);
   assert.equal(errors.join(" ").includes(token), false);
+});
+
+test("GitHub HTTP 403 falls back to a recent, bot-only public snapshot", async () => {
+  const path = "https://api.github.com/repos/stelladeecoder/statrally-soccer-automation/issues?state=all&per_page=100&page=1";
+  const nowMs = Date.parse("2026-11-03T21:50:00Z");
+  const safe = { schema: 1, generated_at: "2026-11-03T21:45:00Z",
+    issues: [record, dashboard], comments: { "21": [receipt] } };
+  const seen = [];
+  const network = async (url) => {
+    seen.push(String(url));
+    if (String(url).includes("raw.githubusercontent.com"))
+      return new Response(JSON.stringify(safe), { status: 200 });
+    return new Response("rate limited", { status: 403 });
+  };
+  const issueResponse = await snapshotBackedFetch(path, {}, network, () => nowMs);
+  assert.equal(issueResponse.status, 200);
+  assert.equal((await issueResponse.json()).length, 2);
+  const commentResponse = await snapshotBackedFetch(
+    "https://api.github.com/repos/stelladeecoder/statrally-soccer-automation/issues/21/comments?per_page=100&page=1",
+    {}, network, () => nowMs);
+  assert.equal((await commentResponse.json())[0].body, receipt.body);
+  assert.equal(seen.filter(url => url.includes("raw.githubusercontent.com")).length, 1);
 });

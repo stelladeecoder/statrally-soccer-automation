@@ -1,0 +1,44 @@
+name: Publish public Discord read-only snapshot
+on:
+  push:
+    branches: [main]
+    paths:
+      - "discord-app/build-snapshot.mjs"
+      - ".github/workflows/publish-discord-snapshot.yml"
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+permissions:
+  contents: write
+  issues: read
+concurrency:
+  group: statrally-discord-snapshot
+  cancel-in-progress: false
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Generate public records from verified bot-authored issues
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node discord-app/build-snapshot.mjs
+      - name: Commit latest public snapshot only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add docs/discord-public-snapshot.json
+          if git diff --cached --quiet; then
+            echo "Public snapshot unchanged"
+            exit 0
+          fi
+          git -c user.name="github-actions[bot]" \
+              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit -m "data(discord): refresh public read-only records [skip ci]"
+          git push origin HEAD:main
