@@ -1,0 +1,46 @@
+name: StatRally private admin monitoring
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_run:
+    workflows: ["StatRally automatic posting scheduler"]
+    types: [completed]
+
+permissions:
+  contents: read
+  issues: write
+  actions: read
+
+jobs:
+  monitor:
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.head_branch == 'main' &&
+       github.event.workflow_run.conclusion != 'success')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    concurrency:
+      group: statrally-private-admin-alert-delivery
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Verify admin monitoring rules
+        env:
+          PYTHONPATH: src
+        run: python3 -m unittest discover -s tests -p 'test_m18_admin_monitor.py' -v
+      - name: Check missed runs and send one daily report, or alert on completed failure
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STATRALLY_ADMIN_DISCORD_WEBHOOK: ${{ secrets.STATRALLY_ADMIN_DISCORD_WEBHOOK }}
+          STATRALLY_SCHEDULER_PAUSED: ${{ vars.STATRALLY_SCHEDULER_PAUSED }}
+          FAILED_RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            python3 src/m18_admin_monitor.py failure
+          else
+            python3 src/m18_admin_monitor.py watch
+          fi

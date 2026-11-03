@@ -45,6 +45,8 @@ jobs:
           data = json.loads((Path(os.environ["RUNNER_TEMP"]) / "coverage.json").read_text())
           report = summarize_beta_diagnostics(data)
           print("STATRALLY_COVERAGE_STATUS=" + json.dumps(report, sort_keys=True))
+          if data.get("discovery", {}).get("provider_errors") or report.get("counts_by_status", {}).get("source_incomplete", 0):
+              raise SystemExit("STATRALLY_POLYMARKET_SOURCE_INCOMPLETE: check data export logs")
           PY
       - name: Persist Polymarket US paper log and post eligible beta signals
         env:
