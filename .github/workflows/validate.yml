@@ -14,7 +14,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: public-tests-${{ github.event.pull_request.number || github.ref }}
+  group: public-tests-${{ github.event.pull_request.number || github.ref }}-${{ inputs.m14_account_mode || 'offline-tests' }}
   cancel-in-progress: true
 jobs:
   smoke-test:
@@ -27,7 +27,8 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install hash-verified signature dependencies (no account credentials)
-        run: python -m pip install --no-cache-dir --require-hashes --only-binary=:all: -r requirements-m14-auth.txt
+        run: |
+          python -m pip install --no-cache-dir --require-hashes --only-binary=:all: -r requirements-m14-auth.txt
       - name: Run all public tests including M14 (synthetic data, mocked HTTP)
         env:
           PYTHONPATH: src

@@ -41,7 +41,8 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install pinned signature dependencies before injecting credentials
-        run: python -m pip install --no-cache-dir --require-hashes --only-binary=:all: -r requirements-m14-auth.txt
+        run: |
+          python -m pip install --no-cache-dir --require-hashes --only-binary=:all: -r requirements-m14-auth.txt
       - name: Private read-only validation (sanitized status only)
         env:
           KALSHI_API_KEY_ID: ${{ secrets.KALSHI_API_KEY_ID }}
