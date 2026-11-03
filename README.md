@@ -105,6 +105,22 @@ Times below are **America/Chicago (Central Time)** targets. The [automatic posti
 
 These are target times, not delivery guarantees. GitHub can delay scheduled events. Failed slots remain eligible for the next heartbeat; a missed picks check catches up to the latest current-day slot instead of publishing stale earlier slots. Results remain pending until confirmed.
 
+## 🧭 Public roadmap: Building the free StatRally experience
+
+The next goal is a dependable, mobile-friendly **free BTTS research experience**. The roadmap below is planned work, not a claim that the features are already live.
+
+| Milestone | Public goal | Definition of done |
+| :--- | :--- | :--- |
+| **M17 · Daily reliability** | End-to-end verification for the watchlist, up to three eligible daily BTTS paper picks, duplicate prevention, recovery, and confirmed results | Multiple verified daily cycles, a daily rather than per-check pick cap, and documented recovery tests |
+| **M18 · Free dashboard** | A browser-accessible home for today's fixtures, eligible YES/NO picks, probabilities, kickoff times, and Discord links | Usable public dashboard with correct freshness and eligibility labels |
+| **M19 · Results explorer** | Searchable historical paper picks, final scores, pending outcomes, hit rate, Brier score and baseline comparisons | Every result traceable to a timestamped original paper prediction and verified fixture |
+| **M20 · Mobile experience** | Responsive match cards, navigation, and an installable web-app experience | Mobile and desktop usability verified |
+| **M21 · Free beta launch** | Security, performance, data-integrity checks, documentation and public beta feedback | A tested free release with transparent coverage and limitations |
+
+**Selection policy:** the target is **up to three eligible daily picks**, not three guaranteed picks. A match that fails the model, market, freshness or data-quality checks should not be forced into the list.
+
+**Current boundary:** this is experimental paper-pick research, not a trading service. A published probability is not a guaranteed outcome; historical accuracy is not proof of a profitable edge.
+
 ## 🛠️ Explore the project
 
 This repository shows how I turn analytical output into a repeatable, reviewable workflow: validate inputs, automate delivery, preserve records, and evaluate outcomes.
