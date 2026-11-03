@@ -1,0 +1,106 @@
+name: One-time Polymarket US seven-day coverage audit
+on:
+  pull_request:
+    branches: [main]
+    paths: [".github/workflows/m17-seven-day-coverage-audit.yml"]
+permissions:
+  contents: read
+jobs:
+  read-only-coverage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: automation
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: stelladeecoder/statrally-soccer-btts
+          ref: main
+          token: \${{ secrets.STAT_RALLY_PRIVATE_READ_TOKEN }}
+          path: engine
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install private read-only runtime dependencies
+        run: python -m pip install pandas polymarket-us
+      - name: Audit seven days without any posts, issues, or orders
+        working-directory: engine
+        env:
+          PYTHONPATH: ../automation/src:src
+        run: |
+          python - <<'PY'
+          import json
+          from datetime import datetime, timezone
+          from m15_polymarket_auto_discovery import discover
+          from m15_polymarket_beta_export import export, paced_requests, cached_read
+          from polymarket_us import PolymarketUS
+          from kalshi_espn_fixtures import fetch_scoreboard
+          from kalshi_forecast_bridge import forecast_verified_fixture
+          from m15_polymarket_verified_btts import _dict
+          now = datetime.now(timezone.utc)
+          client = PolymarketUS(timeout=10.0, max_retries=0)
+          pace = paced_requests(1.1)
+          retrieve = cached_read(pace(client.events.retrieve_by_slug))
+          bbo = pace(client.markets.bbo)
+          scoreboard = cached_read(paced_requests(.15)(fetch_scoreboard), ttl=30)
+          try:
+              mappings, discovered = discover(
+                  list_events=pace(client.events.list),
+                  search=cached_read(pace(client.search.query)),
+                  retrieve_event=retrieve,
+                  scoreboard=scoreboard,
+                  days=7, now=now, max_details=600,
+                  max_fixture_searches=300)
+              envelope, eligible = export(
+                  mappings, retrieve_event=retrieve, bbo=bbo,
+                  scoreboard=scoreboard, forecast=forecast_verified_fixture,
+                  now=now)
+          finally:
+              client.close()
+          # Log aggregate counts only. Never print provider identifiers,
+          # match names, private predictions, raw snapshots, or credentials.
+          result = {
+              "audit": "seven_day_read_only_no_delivery",
+              "observed_at_utc": now.isoformat(),
+              "window_start_utc": discovered["window_start_utc"],
+              "window_end_utc": discovered["window_end_utc"],
+              "scan_complete": discovered["scan_complete"],
+              "pagination_complete": discovered["pagination_complete"],
+              "detail_limit_reached": discovered["detail_limit_reached"],
+              "fixture_search_limit_reached": discovered["fixture_search_limit_reached"],
+              "fixture_search_failures": discovered["fixture_search_failures"],
+              "search_pagination_failures": discovered["search_pagination_failures"],
+              "feed_failures_total": sum(x["feed_failures"] for x in discovered["leagues"].values()),
+              "btts_markets_found": discovered["btts_markets_found"],
+              "candidate_events": discovered["candidate_events"],
+              "mapped": discovered["mapped"],
+              "ambiguous": discovered["ambiguous"],
+              "unmatched": discovered["unmatched"],
+              "models_history_sufficient": eligible["history_sufficient"],
+              "contracts_verified": eligible["contracts_verified"],
+              "fully_validated": eligible["validated"],
+              "excluded": eligible["excluded"],
+              "per_league": {
+                  league: {
+                      "fixtures": base["fixtures"],
+                      "markets_found": base["markets_found"],
+                      "mapped": base["mapped"],
+                      "feed_failures": base["feed_failures"],
+                      "search_status": base["search_status"],
+                      "history_sufficient": eligible["leagues"].get(league,{}).get("history_sufficient",0),
+                      "contracts_verified": eligible["leagues"].get(league,{}).get("contracts_verified",0),
+                      "fully_validated": eligible["leagues"].get(league,{}).get("validated",0)
+                  }
+                  for league, base in discovered["leagues"].items()
+              },
+              "trades_placed": eligible["trades_placed"],
+              "discord_posts": 0,
+              "github_issues_created": 0
+          }
+          print("SEVEN_DAY_COVERAGE_SUMMARY=" + json.dumps(result, sort_keys=True))
+          if not discovered["scan_complete"]:
+              raise SystemExit("INCOMPLETE_AUDIT: see aggregate diagnostics, do not claim comprehensive coverage")
+          PY
