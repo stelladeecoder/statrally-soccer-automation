@@ -49,6 +49,7 @@ The fixture watchlist is **independent** of the gated M12 scanner so a research-
 Run the offline unit suite with Python 3.12:
 
 ```bash
+python -m pip install --no-cache-dir --require-hashes --only-binary=:all: -r requirements-m14-auth.txt
 PYTHONPATH=src python -m unittest discover -s tests -v
 ```
 
@@ -91,6 +92,9 @@ coverage checks. Archived summaries never become invented settlement events;
 missing closure records and inconsistent histories reject the import. The older
 SDK 3.2.0 adapter remains for offline legacy calculations only. The importer does
 not fetch account data or place orders. See the [current REST input guide](docs/m14_current_rest.md).
+An additional [manual read-only validation workflow](docs/m14_private_validation.md)
+tests Ed25519 authentication separately and blocks reconciliation until independent
+private account evidence is available. Pull-request tests never receive account credentials.
 Raw sources, personal transaction data and delivery receipts belong in durable
 private storage **outside this public checkout**.
 

@@ -274,7 +274,13 @@ def execute(mode, runner_temp, key_id, private_pem, evidence_raw="", *, client_f
             report["status"] = report["reconciliation"]
             return report, 0 if report["status"] == "passed" else 2
     except ReadOnlyError as error:
-        report["discrepancy_counts"][error.category] = 1
+        if error.category == "missing_credentials":
+            # Presence diagnostics only: never emit lengths or credential values.
+            for field, value in (("missing_api_key_id", key_id), ("missing_private_key", private_pem)):
+                if not value:
+                    report["discrepancy_counts"][field] = 1
+        else:
+            report["discrepancy_counts"][error.category] = 1
     except EvidenceError:
         report["discrepancy_counts"]["independent_evidence_invalid"] = 1
     except CoverageError:

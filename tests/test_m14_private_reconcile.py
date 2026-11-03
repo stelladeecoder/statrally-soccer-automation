@@ -70,6 +70,18 @@ class PrivateReconciliationTests(unittest.TestCase):
         self.assertEqual(report["reconciliation"], "not_run")
         self.assertEqual(client.calls, [("/portfolio/balance", None)])
 
+    def test_missing_secret_bindings_report_presence_only_before_any_requests(self):
+        for key_id, private, counts in (("", "", {"missing_api_key_id": 1, "missing_private_key": 1}),
+                                       ("", "SENSITIVE_PRIVATE_KEY", {"missing_api_key_id": 1}),
+                                       (KEY_ID, "", {"missing_private_key": 1})):
+            with tempfile.TemporaryDirectory() as root:
+                report, code = execute("auth-only", root, key_id, private)
+            self.assertEqual(code, 2)
+            self.assertEqual(report["discrepancy_counts"], counts)
+            self.assertEqual(report["authentication"], "failed")
+            self.assertNotIn("SENSITIVE", json.dumps(report))
+            self.assertNotIn(KEY_ID, json.dumps(report))
+
     def test_auth_failure_stops_before_evidence_or_transactions(self):
         client = FakeClient(failure="http_401")
         with tempfile.TemporaryDirectory() as directory:

@@ -2,8 +2,10 @@
 
 Status: current-format implementation tested with **synthetic fixtures**. Real
 account acceptance, independent statement reconciliation and financial publishing
-remain disabled/unverified. This is an offline response importer, not an account
-client. It performs no account HTTP requests, orders or trades.
+remain disabled/unverified. The response importer remains offline. A separate
+[manual-only read-only client](m14_private_validation.md) can test authentication
+and collect private records after independent-evidence validation. Neither component
+places orders or trades.
 
 ## Official schema evidence
 
@@ -39,9 +41,10 @@ Official web references:
 The current generated SDK's base URL is
 `https://external-api.kalshi.com/trade-api/v2`; paths below are relative to
 `/trade-api/v2`. Its signer supports RSA-PSS/SHA-256 **or Ed25519** API keys and
-emits the key, timestamp and signature headers. Use the official client's
-approved signing implementation for authorized collection; no signer/key handling
-is implemented by this offline importer. Some registered-partner endpoints also
+emits the key, timestamp and signature headers. The separate manual client uses
+the documented Ed25519 signature over timestamp + method + path, excluding query
+parameters. No signer/key handling is implemented by the offline importer itself.
+Some registered-partner endpoints also
 support explicitly scoped OAuth, which this direct-user adapter does not implement.
 
 ## Provider records and accounting

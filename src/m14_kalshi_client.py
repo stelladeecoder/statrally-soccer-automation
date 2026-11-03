@@ -23,7 +23,7 @@ ROUTES = {
     "/portfolio/positions": {"subaccount", "exchange_index", "settlement_status", "limit", "cursor"},
     "/historical/positions": {"subaccount", "limit", "cursor"},
 }
-CATEGORIES = frozenset(("missing_credentials", "invalid_ed25519_key", "forbidden_route", "invalid_query",
+CATEGORIES = frozenset(("missing_credentials", "invalid_api_key_id", "invalid_ed25519_key", "forbidden_route", "invalid_query",
                         "http_401", "http_403", "http_429", "http_5xx", "http_other", "redirect_refused",
                         "network_unavailable", "response_schema", "response_too_large"))
 MAX_RESPONSE_BYTES = 8 * 1024 * 1024
@@ -61,8 +61,10 @@ def json_object(raw):
 
 class KalshiReadOnly:
     def __init__(self, key_id, private_pem, *, opener=None, clock_ms=None):
-        if not isinstance(key_id, str) or not re.fullmatch(r"[A-Za-z0-9_-]{1,256}", key_id) or not private_pem:
+        if not key_id or not private_pem:
             raise ReadOnlyError("missing_credentials")
+        if not isinstance(key_id, str) or not re.fullmatch(r"[A-Za-z0-9_-]{1,256}", key_id):
+            raise ReadOnlyError("invalid_api_key_id")
         try:
             if not isinstance(private_pem, str) or len(private_pem) > 16384:
                 raise ValueError("Invalid key format")

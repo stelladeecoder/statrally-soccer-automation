@@ -91,6 +91,13 @@ class ClientTests(unittest.TestCase):
             self.assertEqual(str(raised.exception), category)
         self.assertEqual(output.getvalue() + errors.getvalue(), "")
 
+    def test_missing_and_malformed_key_id_are_distinct_preflight_failures(self):
+        for key_id, expected in (("", "missing_credentials"), ("SENSITIVE invalid id", "invalid_api_key_id")):
+            with self.subTest(category=expected), self.assertRaises(ReadOnlyError) as raised:
+                KalshiReadOnly(key_id, pem(), opener=lambda *a, **k: self.fail("No network allowed"))
+            self.assertEqual(raised.exception.category, expected)
+            self.assertNotIn("SENSITIVE", str(raised.exception))
+
     def test_redirect_handler_cannot_forward_authentication_headers(self):
         self.assertIsNone(NoRedirect().redirect_request(None, None, 302, "redirect", {}, "https://evil.invalid"))
 

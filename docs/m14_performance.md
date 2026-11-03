@@ -2,8 +2,10 @@
 
 Status: **in progress**. The public implementation extends the migrated M14 ledger;
 all M14 code, tests and public documentation stay in this repository. No private
-engine changes, order placement, live account requests or live reporting schedules
-are included. Synthetic tests establish software behavior, not trading performance.
+engine changes, order placement or live reporting schedules are included. A
+separate [manual account validator](m14_private_validation.md) permits read-only
+requests; reconciliation requires independent private evidence. Synthetic tests
+establish software behavior, not trading performance.
 M13 delivery verification, IFTTT and M15 remain separate work.
 
 **Current REST input:** use the new versioned `kalshi-rest-3.35.0` adapter described
@@ -25,10 +27,14 @@ authorize live results delivery. Current and legacy histories use separate store
   market-level details, a sparse daily cumulative series and reconciliation gate.
 - `m14_results_publish.py`: dedicated results formatter, test/confirmation steps
   and durable outbox. Dry-run by default; independent of M13 publisher modes.
+- `m14_kalshi_client.py` / `m14_private_reconcile.py`: Ed25519 GET-only collection,
+  private temporary storage, independent statement comparisons and sanitized status.
 
-Python 3.12 standard library only. Run the whole local suite:
+Python 3.12; offline accounting uses the standard library. The manual Ed25519
+client additionally requires the hash-pinned crypto dependencies. Run the whole suite:
 
 ```bash
+python3.12 -m pip install --no-cache-dir --require-hashes --only-binary=:all: -r requirements-m14-auth.txt
 PYTHONPATH=src python3.12 -m unittest discover -s tests -v
 ```
 
