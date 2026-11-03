@@ -197,6 +197,50 @@ def completed_window_audit(repo, rows, call=api):
     return recorded
 
 
+
+def delivery_counts(repo, rows, start, end, call=api):
+    """Count bot-confirmed Discord messages by receipt timestamp and channel type.
+
+    A reservation is not proof of delivery, and the count is deliberately bounded
+    by observable GitHub receipts rather than claimed webhook message totals.
+    """
+    counts = {"paper_picks": 0, "watchlist_pages": 0, "graded_results": 0}
+    for issue in rows:
+        if issue.get("user", {}).get("login") != BOT:
+            continue
+        title = issue.get("title", "")
+        if title.startswith("BETA PAPER | "):
+            kind = "paper"
+        elif title.startswith("StatRally watchlist | "):
+            kind = "watchlist"
+        else:
+            continue
+        for page in range(1, 11):
+            comments = call("GET", repo,
+                f"/issues/{issue['number']}/comments?per_page=100&page={page}")
+            if not isinstance(comments, list):
+                raise RuntimeError("Discord delivery receipt history unavailable")
+            for comment in comments:
+                if comment.get("user", {}).get("login") != BOT:
+                    continue
+                body = comment.get("body") or ""
+                if kind == "paper" and body.startswith("Discord delivery returned success.\n"):
+                    bucket = "paper_picks"
+                elif kind == "paper" and body.startswith("statrally-beta-results-delivered:"):
+                    bucket = "graded_results"
+                elif kind == "watchlist" and body.startswith("statrally-watchlist-page-delivered:"):
+                    bucket = "watchlist_pages"
+                else:
+                    continue
+                recorded = datetime.fromisoformat(comment["created_at"].replace("Z", "+00:00"))
+                if start <= recorded < end:
+                    counts[bucket] += 1
+            if len(comments) < 100:
+                break
+        else:
+            raise RuntimeError("Discord delivery receipt history exceeds checked pages")
+    return counts
+
 def window_status_lines(day, completed, *, audit_start=date(2026, 11, 4)):
     """Avoid labeling pre-rollout historical windows as misses."""
     windows = expected_windows(day)
@@ -282,13 +326,8 @@ def watch(repo, webhook, *, now, paused=False, call=api, sender=send):
             paper = [r for r in rows if r.get("title", "").startswith("BETA PAPER | ")
                      and r.get("user", {}).get("login") == BOT
                      and start <= datetime.fromisoformat(r["created_at"].replace("Z", "+00:00")) < end]
-            # Issues are reservations, not proof of Discord delivery.
-            delivered = 0
-            for issue in paper:
-                comments = call("GET", repo, f"/issues/{issue['number']}/comments?per_page=100")
-                if any((c.get("body") or "").startswith("Discord delivery returned success.")
-                       and c.get("user", {}).get("login") == BOT for c in comments):
-                    delivered += 1
+            # Count bot-confirmed delivery receipts, not just successful workflows.
+            delivery = delivery_counts(repo, rows, start, end, call)
             verified_windows = completed_window_audit(repo, rows, call)
             window_lines = window_status_lines(day, verified_windows)
             data["report_day"] = day.isoformat()
@@ -297,8 +336,9 @@ def watch(repo, webhook, *, now, paused=False, call=api, sender=send):
                    f"**StatRally Admin | Daily health report — {day.isoformat()} CT**\n"
                    + "\n".join(window_lines) + "\n"
                    + f"Scheduler executions: {len(daily)} | successful: {successes} | failed/cancelled: {failures}\n"
-                   + f"Discord paper signals confirmed delivered: {delivered}\n"
-                   + f"Paper reservations: {len(paper)}\n"
+                   + f"Confirmed Discord deliveries: {sum(delivery.values())} total\n"
+                   + f"  Picks: {delivery['paper_picks']} | Watchlist pages: {delivery['watchlist_pages']} | Graded results: {delivery['graded_results']}\n"
+                   + f"Paper reservations created: {len(paper)}\n"
                    + "Silent: no new picks, duplicates, successful routine checks. "
                    + "A completed window does not necessarily mean a new pick was posted.\n"
                    + f"https://github.com/{repo}/actions")
