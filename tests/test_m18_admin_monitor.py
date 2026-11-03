@@ -23,7 +23,7 @@ class TestAdminMonitor(unittest.TestCase):
         now = datetime(2026, 11, 3, 16, tzinfo=timezone.utc)
         data = {"alerts": {}, "report_day": ""}
         saved, delivered = [], []
-        fake = lambda method, repo, path, payload: saved.append(payload)
+        fake = lambda method, repo, path, payload: (saved.append(payload) or {"number": 99})
         sender = lambda webhook, message: delivered.append(message)
         for _ in range(2):
             alert("owner/repo", 99, data, "slot:picks:test", "An alert", "stub",
