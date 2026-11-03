@@ -7,7 +7,7 @@ import json
 import os
 from urllib.request import Request, urlopen
 from urllib.parse import quote
-from m13_beta_signals import render_beta, signal_identity, signal_proof
+from m13_beta_signals import render_beta, signal_identity, signal_proof, parse_time
 from m13_discord_publish import publish
 
 API="https://api.github.com"
@@ -49,6 +49,19 @@ def process(envelope,repo,token,webhook):
         def matches(issue):
             body=issue.get("body") or ""
             for line in body.splitlines():
+                # A provider change is not a new prediction for the same
+                # independently verified fixture, side and kickoff.
+                if line.startswith("statrally-beta-data:"):
+                    try:
+                        prior=json.loads(line.removeprefix("statrally-beta-data:"))
+                        if (isinstance(prior,dict)
+                            and prior.get("espn_event_id")==signal.get("espn_event_id")
+                            and prior.get("league")==signal.get("league")
+                            and prior.get("side")==signal.get("side")
+                            and parse_time(prior.get("kickoff_utc"))==parse_time(signal.get("kickoff_utc"))):
+                            return True
+                    except (ValueError,TypeError,KeyError):
+                        pass
                 if line.startswith("statrally-beta-id:"):
                     try:
                         ticker,side,kickoff=line.removeprefix("statrally-beta-id:").split("|",2)
