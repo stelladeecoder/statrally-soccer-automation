@@ -1,16 +1,18 @@
 <div align="center">
 
 # ⚽ StatRally
-### Soccer BTTS research. Scheduled updates today, interactive analytics next.
+### The Edge Is in the Data.
 
-![Focus: Soccer BTTS](https://img.shields.io/badge/Focus-Soccer%20BTTS-16a34a?style=flat-square)
-![Stage: Experimental](https://img.shields.io/badge/Stage-Experimental-f59e0b?style=flat-square)
-![Mode: Paper picks](https://img.shields.io/badge/Mode-Paper%20picks-8b5cf6?style=flat-square)
-![Built with Python](https://img.shields.io/badge/Built%20with-Python-3776AB?style=flat-square&logo=python&logoColor=white)
+**Soccer BTTS research • automated experimental paper picks • on-demand Discord lookups**
 
-**[Privacy Policy](docs/PRIVACY_POLICY.md) · [Terms of Service](docs/TERMS_OF_SERVICE.md)**
+![Stage: Live beta](https://img.shields.io/badge/Stage-Live%20beta-16a34a?style=for-the-badge)
+![Model: Experimental](https://img.shields.io/badge/Model-Experimental-f59e0b?style=for-the-badge)
+![Cost: Free](https://img.shields.io/badge/Access-Free-0891b2?style=for-the-badge)
+![Coverage: 13 competitions](https://img.shields.io/badge/Competition%20IDs-13-7c3aed?style=for-the-badge)
 
-**[Why I built it](#-why-i-built-statrally) · [Scheduled Discord](#-statrally-discord-from-matchday-to-results) · [Interactive Discord roadmap](#-on-demand-discord-analytics-planned) · [Project status](#-what-works-and-whats-next) · [Explore the code](#-explore-the-project)**
+**[Get StatRally on Discord](https://discord.com/oauth2/authorize?client_id=1567283370419814472) · [How it works](#-how-statrally-works) · [Slash commands](#-on-demand-discord-commands) · [Milestones](#-milestone-tracker) · [Roadmap](#-what-comes-next)**
+
+<sub>Project snapshot: November 3, 2026 • America/Chicago • Public automation repository</sub>
 
 </div>
 
@@ -18,176 +20,203 @@
 
 ## 💡 Why I built StatRally
 
-I couldn't find a soccer analysis tool that gave me the **Both Teams to Score (BTTS) trends** I wanted to help with my betting decisions. I also wanted to **automate daily picks**, instead of repeating the same research and selection process every day.
+I couldn't find a soccer analysis tool that gave me the **Both Teams to Score (BTTS) trends** I wanted for my own betting research. I also wanted to **automate daily picks**, rather than repeat the same manual research each morning.
 
-That frustration became StatRally: a project built around my own need for focused soccer research and a more consistent daily workflow.
+So I started building StatRally: a data analytics project connecting soccer research, controlled prediction publishing, match verification, and performance tracking.
 
-The ambition is to connect BTTS analysis, daily pick generation, and outcome tracking in one experience. The current public repository contains the **automation and reporting layer**: match watchlists, experimental paper-pick publishing, and guarded result grading. The underlying research and prediction engine remains private.
+**My goal:** a free, practical research experience where I can explore BTTS trends and see exactly what the automation posted, when it posted it, and what happened afterward.
 
-> [!NOTE]
-> **Current stage: experimental paper picks.** StatRally has no verified betting edge. A model estimate is a research hypothesis, and paper results do not represent actual betting profit.
+**What exists today is an experimental beta, not a proven betting system.** The on-demand Discord app is functioning for saved records, while the richer historical BTTS trend engine is still planned. The prediction/research engine is maintained separately in a private repository.
 
-## 🌱 Free and open to everyone
+> [!IMPORTANT]
+> **No validated betting edge or realized profit is claimed.** Model probabilities and paper picks are research outputs, not betting recommendations. StatRally does not place trades or wagers, connect to a user's betting account, or generate extra official picks when a slash command runs.
 
-**StatRally is a free soccer BTTS research project, not a subscription service.** There are no paid memberships, premium tiers, or customer trading products planned. The public experience focuses on useful BTTS trends, experimental YES/NO paper picks, transparent historical results, and a free Discord community.
+## ✨ What works right now
 
-The public application is still planned, not launched. Current working functionality centers on the scheduled watchlist, paper-pick validation/dispatch, and guarded results reporting. A **free, user-installable Discord analytics app** is planned so people can request stats on demand instead of waiting for scheduled posts. Its slash commands are **not implemented**. The research engine and model development are maintained separately in a private repository.
-
-**Development priorities:** strengthen provider coverage, daily automation reliability, and end-to-end result verification; implement the free Discord interaction layer against existing verified records; then connect richer read-only analytics to Discord and the mobile-friendly free dashboard. Public reporting does not place real-money orders.
-
-## 🎯 BTTS, explained
-
-**Both Teams to Score** asks whether each team scores at least one goal during regular match time, including stoppage time.
-
-| Prediction | What it means | Example |
+| Feature | Status | Actual behavior |
 | :--- | :--- | :--- |
-| 🟢 **BTTS YES** | Both teams score | 1–1 or 2–1 |
-| 🔴 **BTTS NO** | At least one team does not score | 2–0 or 0–0 |
+| 🗓️ Daily fixture watchlists | ✅ Implemented | Formats and publishes supported fixture data to the watchlist channel |
+| ⚽ Experimental BTTS paper picks | ✅ Implemented | Validates inputs, reserves durable records, and publishes **up to 3 per Central calendar day** |
+| 🔒 Duplicate protection | ✅ Implemented | Guards against repeated official picks and uncertain delivery |
+| 🧾 Results and performance tracking | ✅ Code built | Checks final scores and match identity; genuine completed pick-to-grade acceptance remains to be confirmed |
+| ⏰ Resilient scheduling | ✅ Implemented, monitored | Five-minute continuation mechanism with persisted checkpoints and UTC cron backup |
+| 🚨 Admin monitoring | ✅ Implemented | Reports missed/failed operations without routine no-pick or success alerts |
+| 💬 Discord slash-command app | ✅ Live beta | Hosted, installed, registered, and **/picks verified in a real Discord interaction** |
+| 🗃️ Public read-only record fallback | ✅ Deployed | Serves recent verified public snapshots if GitHub API returns HTTP 403/429 |
+| 📈 Full historical BTTS team analytics | 🔨 Not built | No live last-5/last-10, team, league or home/away trend exploration yet |
+| 📱 Mobile-friendly public dashboard | 🗺️ Planned | Web/mobile experience is a future phase |
 
-Extra time and penalty shootouts are excluded. The grader leaves unsupported or unconfirmed outcomes pending.
+The **implementation** of a feature is not proof of uninterrupted unattended operation. Live acceptance, statistical coverage, and profitability are separate questions.
 
-## 📬 StatRally Discord: From matchday to results
+## ⚽ BTTS in 30 seconds
 
-These updates are delivered to the channels in the **StatRally Discord server**. Watchlists and new picks cover only the current America/Chicago calendar day; earlier pending predictions remain eligible for grading.
+**Both Teams to Score (BTTS)** evaluates whether **both teams score at least once** in regular match time, including stoppage time. Extra time and penalty shootouts do not count in the current result-grading logic.
 
-| Destination | The experience |
-| :--- | :--- |
-| 🗓️ `#match-watchlist` | Soccer fixtures and kickoff times, grouped by competition. A listed match is not automatically a pick. |
-| ⚽ `#btts-picks` | Eligible experimental YES/NO paper picks with a model estimate, market quote, and kickoff time. |
-| 📊 `#btts-results` | Paper outcomes after the recorded match and final score pass verification. |
+| Market | Example result | Outcome |
+| :--- | :--- | :--- |
+| 🟢 BTTS YES | 1–1 or 2–1 | Both sides scored |
+| 🔴 BTTS NO | 2–0 or 0–0 | At least one side did not score |
 
-The beta publisher accepts **up to three paper signals per Central calendar day across all scheduled checks**, counting durable reservations even when delivery is uncertain. Some checks produce none: the system does not force a daily selection. Messages marked **TEST** are delivery checks, not official tracked predictions.
+A completed match is not graded merely because a score appears somewhere; StatRally also checks supported fixture identity and final-match status. Unsupported or unconfirmed outcomes stay pending.
 
-## 💬 On-demand Discord analytics (implementation in progress)
+## 🔄 How StatRally works
 
-**StatRally should work when the user is ready, not only when the scheduler runs.** The proposed free Discord app will support user installation alongside server installation, letting people request the latest available BTTS research using slash commands. An initial **offline-tested read-only interaction service** is being built, but the feature is **not deployed, registered or installed in Discord**. See [Discord's user-installable app tutorial](https://docs.discord.com/developers/tutorials/developing-a-user-installable-app).
-
-### Which experience belongs where?
-
-| Scheduled server message (existing workflow) | On-demand app command (planned) |
-| :--- | :--- |
-| **4:17 AM Central:** daily fixture watchlist, when there is useful content | `/btts` with date/league options: latest saved eligible match analysis |
-| **5:23 AM, 8:23 AM, 2:23 PM Central:** only newly eligible official picks, no duplicates and **at most three total per Central day** | `/picks`: show those same officially recorded selections, without creating new picks |
-| **11:55 PM Central:** check grading and publish only verified results, leaving unconfirmed matches pending | `/performance`: tracked record with sample size and clearly defined performance metrics |
-| **Admin-only alerts:** missed/failed operations; no routine success or no-pick notifications | `/match`: detailed analysis for a requested fixture, distinct from an official paper pick |
-| No scheduled league-by-league commentary or repeated performance posts | Later options: `/results`, `/status`, league and history filters, once verified data exists |
-
-**Important:** These times are *configured scheduler targets*, not proof of guaranteed delivery. The commands and the split above are the target behavior. Code for signed interactions, four commands and a public-record reader is being added; **no hosted interaction endpoint, Discord command registration, user installation or live refresh is deployed yet**. See [Discord app implementation and deployment requirements](docs/discord-user-install-app.md).
-
-### Proposed interaction rules
-
-1. **Two distinct products of the same research.** Scheduled picks are official, reserved paper predictions; general match analysis is exploratory. Running `/match` or `/btts` must never create an official pick or bypass the daily three-pick cap.
-2. **Show the latest verified snapshot by default.** Include its source timestamp, model version where available, eligibility status, and clear stale/missing-data messaging. An on-demand command does **not** promise a new prediction or fresh market quote.
-3. **Separate refresh from read.** A future explicit refresh option must respect provider permissions, rate limits, validation, caching and shared job limits. Until supported, display saved information only.
-4. **Privacy and Discord installation scope.** Support user-installable contexts only where Discord permissions and interaction rules allow. Prefer private/ephemeral responses where appropriate. User installation does **not** imply unsolicited DM delivery.
-5. **Keep the free/public product separate from the private Trade Desk.** Never expose private research datasets, credentials, account data, owner-only paper portfolios or trading functionality through Discord commands.
-6. **Failure behavior.** If live automation fails, commands may still show the last successfully verified data *if the independent interaction service is healthy*. Explicitly disclose staleness; never silently replace missing data with synthetic predictions.
-
-### Planned build order
-
-- **Step 1:** Establish a shared, read-only, timestamped analytics response format that both scheduled posts and interactive commands can use.
-- **Step 2:** Prototype the free `/btts`, `/match`, `/picks` and `/performance` commands with mock fixtures and regression tests. Verify Discord interaction acknowledgment/deferred response, permission scopes, installation contexts, caching and abuse protection.
-- **Step 3:** Integrate independently verified read-only records, run controlled server/user-install tests, and document coverage, response latency, failures and known gaps.
-- **Step 4:** Link the same verified analytics layer to the planned mobile website. Keep scheduled messages as lightweight discovery/notification posts.
-
-**Decision:** Hybrid Discord is the target UX: **scheduled posts announce; slash commands let people explore.** Neither requires users to wait for the next picks window to view already available information.
-
-### How the pieces connect
+The public project focuses on reproducible **delivery, accountability, and reporting**. Model research remains private.
 
 ```mermaid
 flowchart LR
-    A["Private research engine<br/>Fixtures, estimates and quotes"] --> B["Public validation<br/>Identity, timing and freshness"]
-    B --> C["GitHub Issues<br/>Reserve paper record"]
-    C --> D["Discord<br/>Experimental paper pick"]
-    D --> E["Verified full-time score<br/>Grade or keep pending"]
-    E --> F["Paper results<br/>Issues and Discord"]
-
-    classDef research fill:#dbeafe,stroke:#2563eb,color:#172554
-    classDef checks fill:#fef3c7,stroke:#d97706,color:#451a03
-    classDef delivery fill:#ede9fe,stroke:#7c3aed,color:#2e1065
-    classDef results fill:#dcfce7,stroke:#16a34a,color:#052e16
-    class A research
-    class B,C checks
-    class D delivery
-    class E,F results
+    A["Private research engine<br/>Fixtures, estimates, market observations"] --> B["Public validation<br/>Identity and freshness checks"]
+    B --> C["GitHub Issues<br/>Durable paper reservation"]
+    C --> D["Discord #btts-picks<br/>Experimental publication"]
+    D --> E["Independent completed-score check"]
+    E --> F["Paper results and saved performance"]
+    C --> G["Read-only public snapshot"]
+    G --> H["Discord slash commands"]
+    classDef model fill:#dbeafe,stroke:#2563eb,color:#172554
+    classDef validation fill:#fef3c7,stroke:#d97706,color:#451a03
+    classDef public fill:#dcfce7,stroke:#16a34a,color:#052e16
+    class A model
+    class B,C validation
+    class D,E,F,G,H public
 ```
 
-This diagram describes the implemented paper-pick path. It does not certify uninterrupted live operation.
+The command app reads existing records; it does **not** execute a fresh model scan. A successful Discord message is evidence of delivery, not of a correct prediction.
 
-## 🚦 What works, and what's next
+## 📣 Scheduled Discord experience
 
-| Status | Capability | Evidence or boundary |
+| Channel | What you see |
+| :--- | :--- |
+| **#match-watchlist** | Daily fixtures and kickoffs; a fixture is not automatically a pick |
+| **#btts-picks** | Official experimental BTTS YES/NO paper signals with recorded inputs |
+| **#btts-results** | Verified completed outcomes when grading evidence exists |
+| **#bot-commands** | On-demand, private slash-command replies |
+| **#admin** | Owner-only operational alerts and health reports |
+
+### ⏱️ Configured Central Time windows
+
+| Time (America/Chicago) | Scheduled operation |
+| :--- | :--- |
+| **4:17 AM** | Daily watchlist |
+| **5:23 AM, 8:23 AM, 2:23 PM** | Check for **new eligible** paper picks |
+| **11:55 PM** | Check outstanding paper results |
+
+**Rules:** At most **three official experimental paper picks per Central day across all pick windows**. No eligible picks means no forced selection and no routine no-pick notification. Existing durable records prevent duplicate publication. A missed scheduled check can be recovered through the [scheduler coordinator](.github/workflows/statrally-scheduler.yml), which checks for incomplete slots and uses a five-minute continuation mechanism. UTC cron is a backup. These are **targets, not guarantees of exact-time Discord delivery**. See the [scheduler recovery evidence](docs/m16_scheduler_recovery.md).
+
+## 💬 On-demand Discord commands
+
+<div align="center">
+
+**[Install StatRally on Discord](https://discord.com/oauth2/authorize?client_id=1567283370419814472)**
+
+</div>
+
+StatRally's application-command service is hosted on **Render** and signed Discord interactions are validated using the application public key. The deployed service responds privately (ephemerally) to supported slash commands.
+
+| Command | Available now | What it actually returns |
+| :--- | :---: | :--- |
+| **/picks** | ✅ Live-tested | Official **already delivered** paper picks for the current Central date |
+| **/btts** | ✅ Registered | Currently shows those **same saved records**, with an extra note; **historical BTTS trend analysis is not implemented** |
+| **/match event_id:...** | ✅ Registered | Searches existing confirmed paper records by numeric ESPN event ID; it is **not** a full fixture-analysis search |
+| **/performance** | ✅ Registered | Latest published paper-performance snapshot, or an explicit unavailable message if no valid snapshot exists |
+
+**Verification boundary:** On November 3, 2026, the owner confirmed that **/picks** returns saved records in Discord after the live GitHub API rate-limit fix. Registration/offline tests exist for the other commands, but **their individual live acceptance tests and personal user-install test are still to be completed**. The Discord interaction app is **not verified by Discord for distribution beyond its unverified-app limits**.
+
+### Why do /btts and /picks look alike?
+
+Today both use the same bot-authored, delivery-confirmed paper record source. That behavior is documented deliberately rather than pretending **/btts** already provides team BTTS rates. The next major analytics phase will separate them:
+
+- **/picks:** official experiment records, odds observations, saved probabilities and tracked outcomes.
+- **/btts (planned expansion):** real historical BTTS rates, last 5/10 completed matches, league and team breakdowns, home/away splits, and sample sizes.
+
+These trends require a separately validated historical match-results pipeline. No historical rates should be invented from published picks.
+
+### Reliability and access
+
+The app reads bot-authored public Issues and delivery receipts. GitHub may rate-limit unauthenticated requests from hosting providers, so a [GitHub Actions snapshot workflow](.github/workflows/publish-discord-snapshot.yml) publishes a public, read-only copy of relevant records every ten minutes. A **recent** snapshot is used only after upstream HTTP 403/429; stale/unavailable source data fails closed instead of pretending there are zero picks. Hosting is on a **Render free plan**, where cold starts may affect Discord's response deadline; reliable post-idle response times remain an acceptance item.
+
+**Security boundary:** No slash command is authorized to write an official pick, bypass the daily quota, access private trading tools, place an order, or send unsolicited messages.
+
+- [Discord implementation and installation notes](docs/discord-user-install-app.md)
+- [Privacy Policy](docs/PRIVACY_POLICY.md) · [Terms of Service](docs/TERMS_OF_SERVICE.md)
+
+## 🌍 Coverage: 13 competitions, different levels of support
+
+Competition identifiers are supported in validation and grading code for:
+
+**Premier League · La Liga · Bundesliga · Serie A · Ligue 1 · Eredivisie · Liga Portugal · Brasileirão Série A · MLS · Liga MX · Argentine Primera División · UEFA Champions League · UEFA Europa League**
+
+**Important:** This is **13 configured competition identities**, not 13 comprehensively backtested leagues, 13 complete market feeds, or guaranteed daily picks in every league.
+
+A [November 3 limited Polymarket US coverage audit](docs/m17_observed_coverage_2026-11-03.md) found **90 observed BTTS markets**, **25 unambiguously mapped matches**, and **13 eligible candidate signals** in its sampled window. The scan itself reported **incomplete**. These numbers are **not** official picks sent to Discord, nor an exhaustive provider inventory.
+
+The active scheduled paper-pick workflow uses a **Polymarket US exporter in the private research repository**. **Kalshi is retired from active StatRally development**; any remaining Kalshi modules/docs are legacy research, not an active Kalshi dependency or trading integration. This public repo does not contain the entire private model or a complete user-facing BTTS trends database.
+
+## 🧭 Milestone tracker
+
+Milestone labels distinguish **code complete**, **operationally verified**, **partial**, and **pending**, rather than using an unsupported overall percentage.
+
+| Milestone / workstream | Status as of Nov 3, 2026 | Evidence / remaining gate |
 | :--- | :--- | :--- |
-| ✅ **Implemented** | Daily fixture-watchlist formatting and scheduled publishing workflow | [Watchlist publisher](src/m13_discord_publish.py) and [workflow](.github/workflows/m13-daily-watchlist.yml) |
-| ✅ **Implemented** | Experimental paper-pick validation and Discord dispatch | Checks fixture/quote verification flags, supported identities, pre-kickoff timing, and quote freshness; [validator](src/m13_beta_signals.py) |
-| ✅ **Implemented** | Durable paper records and duplicate protection | Reserves a GitHub Issue before sending; ambiguous delivery requires review; [dispatcher](src/m13_beta_dispatch.py) |
-| ✅ **Implemented** | Guarded grading and paper-performance summaries | Confirms match identity and full-time status; tracks wins, losses, pending predictions, hit rate, and Brier score where available; [grader](src/m13_beta_grading.py) and [Issue integration](src/m13_beta_grade_issues.py) |
-| ✅ **Verified November 3** | Automatic scheduler continuation and duplicate suppression | A five-minute timer started the next check as `github-actions[bot]`; completed posting slots were skipped. [Run evidence and controls](docs/m16_scheduler_recovery.md). Native cron remains a backup, not the verified primary trigger. |
-| 🧪 **Verification ongoing** | Full pick-to-final-result cycle | A genuinely completed beta outcome still needs confirmation in the [verification notes](docs/m13_beta_publishing.md) |
-| 🔭 **Further work** | Broader reviewed market/model coverage and long-term evaluation | Supported competition identifiers do not establish usable model history, market availability, or reliable predictions in every league |
-| 🧭 **Planned, not implemented** | Free user-installable Discord analytics app and slash commands | Proposed `/btts`, `/match`, `/picks`, `/performance`; no deployed interaction endpoint or commands yet |
+| **M11 · Historical odds backtesting** | 🔎 Private milestone: acceptance not reverified here | Review private research milestone evidence before marking complete |
+| **M12 · Kalshi integration** | 🗄️ Legacy / superseded | Replaced in the active publishing path by Polymarket US |
+| **M13 · Paper publishing and grading** | ✅ Implemented; 🧪 acceptance partial | [Publisher](src/m13_beta_dispatch.py) and [grader](src/m13_beta_grade_issues.py); verify a fully completed pick-to-final-result lifecycle |
+| **M14 · Position ledger** | ✅ Manual ledger code exists | [Deterministic accounting](src/m14_position_ledger.py); no API trading or account access |
+| **M15 · Polymarket US migration** | 🟡 Integrated; coverage partial | Active paper exporter; full provider/fixture mapping and all 13 league coverage not proven |
+| **M16 · Scheduler recovery** | ✅ Implemented with observed continuation evidence | [Scheduler](.github/workflows/statrally-scheduler.yml) and [observed recovery](docs/m16_scheduler_recovery.md); continue unattended monitoring |
+| **M17 · League coverage audit** | 🟡 Code support 13/13; scan incomplete | [Observed coverage](docs/m17_observed_coverage_2026-11-03.md) |
+| **M18 · Admin health monitoring** | ✅ Implemented | [Monitor](src/m18_admin_monitor.py) and [workflow](.github/workflows/m18-admin-monitor.yml); validate ongoing missed-window reporting |
+| **Discord slash-command beta** | ✅ Live /picks; 🧪 remaining commands | [Signed HTTP server](discord-app/server.mjs), [tests](discord-app/tests/discord.test.mjs), [public snapshot](docs/discord-public-snapshot.json) |
+| **Historical BTTS trends + mobile site** | 🗺️ Planned | New verified match-results pipeline and public interface needed |
 
-**Coverage has different layers.** The public paper-signal validator accepts identifiers for 13 competitions. The current public result grader includes ESPN mappings for **all 13 listed competitions**, with strict event-identity and full-time checks. That is code-level support, **not** evidence of a completed graded paper-pick lifecycle in every league. Neither count means every match is eligible for a pick.
+## 🚀 What comes next
 
-<details>
-<summary><strong>🌍 The 13 competition identifiers accepted by the paper-signal validator</strong></summary>
+1. **Historical BTTS data foundation:** identify and validate completed-match results for the 13 supported competitions, calculate BTTS frequencies, sample sizes, recent form and home/away splits, and document missing coverage.
+2. **Make /btts genuinely analytical:** add team/league selection and historical trend displays; preserve **/picks** solely for official paper signals.
+3. **Finish Discord end-to-end acceptance:** live-test **/match** and **/performance**, test independent user installation, publish/pin the guide in **#bot-commands**, and test response time after Render has idled.
+4. **Prove operational performance:** monitor unattended windows, confirm durable Discord delivery counts, and complete at least one real saved-pick → independently verified result → recorded grading cycle.
+5. **Validate the full Polymarket US market-mapping footprint:** improve coverage and handle uncertain or absent markets without making unsupported availability claims.
+6. **Build the free, mobile-friendly public experience:** BTTS trends, verified outcomes, Discord access and clearly labeled signup links.
+7. **Prepare wider Discord distribution:** the [Terms of Service](docs/TERMS_OF_SERVICE.md) and [Privacy Policy](docs/PRIVACY_POLICY.md) are published; **the owner still needs to enter these URLs in Discord**, [create/transfer to a Developer Team](https://github.com/stelladeecoder/statrally-soccer-automation/issues/53), and [verify developer email and set up 2FA](https://github.com/stelladeecoder/statrally-soccer-automation/issues/54). Wider app verification itself remains pending.
 
-Premier League · La Liga · Bundesliga · Serie A · Ligue 1 · Eredivisie · Liga Portugal · Brasileirão Série A · MLS · Liga MX · Argentina Primera División · UEFA Champions League · UEFA Europa League
+**Owner to-do:** [Discord team ownership · Issue #53](https://github.com/stelladeecoder/statrally-soccer-automation/issues/53) · [Email verification and 2FA · Issue #54](https://github.com/stelladeecoder/statrally-soccer-automation/issues/54)
 
-Fixture feeds, reviewed market mappings, historical team data, and grading support can limit actual coverage.
+## 🧰 Explore the technical work
 
-</details>
+| Component | Role | Source |
+| :--- | :--- | :--- |
+| **Python** | Fixture/pick validation, Discord publishers, match grading and monitoring | [src/](src/) |
+| **JavaScript / Node 22** | Signed Discord HTTP interactions, slash commands and safe read-only fallbacks | [discord-app/](discord-app/) |
+| **GitHub Actions** | Coordinated scheduling, testing, public snapshot publishing and manual command registration | [.github/workflows/](.github/workflows/) |
+| **GitHub Issues** | Durable reservations, delivery proof, performance snapshots and operator checklists | [Issues](https://github.com/stelladeecoder/statrally-soccer-automation/issues) |
+| **Render** | Hosts the Discord interaction endpoint | [Public health endpoint](https://statrally-discord-interactions.onrender.com/health) |
+| **Discord** | Scheduled webhook channels and on-demand ephemeral responses | [Install the app](https://discord.com/oauth2/authorize?client_id=1567283370419814472) |
 
-### ⏰ Configured daily schedule
-
-Times below are **America/Chicago (Central Time)** targets. The [automatic posting scheduler](.github/workflows/statrally-scheduler.yml) uses a five-minute continuation timer plus UTC cron as a backup, converts the current time to Central, and runs the latest due slot without a completed receipt. Each timer starts the next check through GitHub's workflow-dispatch API. A delayed trigger can therefore catch up. To pause the loop, set repository variable `STATRALLY_SCHEDULER_PAUSED=true` or disable the scheduler workflow. Completed slots are recorded only after the posting workflow succeeds; existing Discord duplicate protection remains in force.
-
-| Time | Scheduled task |
-| :--- | :--- |
-| **4:17 AM** | [Daily fixture watchlist](.github/workflows/m13-daily-watchlist.yml) |
-| **5:23 AM, 8:23 AM & 2:23 PM** | [Check for new experimental paper picks](.github/workflows/m13-beta-paper-picks.yml) |
-| **11:55 PM** | [Check for confirmed paper outcomes](.github/workflows/m13-beta-grading.yml) |
-
-These are target times, not delivery guarantees. GitHub can delay scheduled events. Failed slots remain eligible for the next heartbeat; a missed picks check catches up to the latest current-day slot instead of publishing stale earlier slots. Results remain pending until confirmed.
-
-## 🛠️ Explore the project
-
-This repository shows how I turn analytical output into a repeatable, reviewable workflow: validate inputs, automate delivery, preserve records, and evaluate outcomes.
-
-| Technology | Role in this public repository |
-| :--- | :--- |
-| **Python** | Validation, message formatting, dispatch, grading, and reporting |
-| **GitHub Actions** | Scheduled workflows and manual validation runs |
-| **GitHub Issues** | Durable paper-prediction records, delivery receipts, and performance snapshots |
-| **Discord webhooks** | Watchlist, paper-pick, and results delivery |
-| **Python unittest** | Offline regression tests for validation, publishing, grading, and duplicate handling |
-
-The scheduled paper-picks workflow currently invokes a **Polymarket US exporter in the private research repository**. **Kalshi was retired from active StatRally development on November 3, 2026.** The unmerged Kalshi financial-reconciliation PR #13 was closed; no Kalshi account importer or Kalshi trading is part of the active pipeline. Legacy Kalshi code and historical notes may remain as archival research, not as active dependencies.
-
-The private research engine is required for the full scheduled pipeline. This public repository is not a standalone distribution of the prediction model or a public BTTS trend dashboard.
-
-### Start here
-
-- **[Source code](src/)** — inspect the automation and reporting logic.
-- **[Tests](tests/)** — review expected behavior and failure cases.
-- **[Workflow definitions](.github/workflows/)** — see exactly what is scheduled.
-- **[Beta publishing and verification notes](docs/m13_beta_publishing.md)** — trace controlled-run evidence and remaining acceptance work. The document includes historical configurations; use current workflow files for the active schedule and exporter.
-
-<details>
-<summary><strong>🧰 Run the public offline tests</strong></summary>
-
-From the repository root, using Python 3.12:
+**Public test commands** (from the repository root):
 
 ```bash
 PYTHONPATH=src python -m unittest discover -s tests -v
+node --test discord-app/tests/*.test.mjs
 ```
 
-This is the command used by the public [validation workflow](.github/workflows/validate.yml). It tests the public automation; it does not run the private engine or certify live Discord delivery.
+A successful offline test suite verifies expected code behavior; it does **not** prove the private research model's predictive accuracy or live Discord availability. Public repository code does not include the private research engine, account credentials, or the owner-only Trade Desk.
 
-</details>
+### 📚 Validation records
+
+- [November 3 scheduler recovery and checkpoint evidence](docs/m16_scheduler_recovery.md)
+- [Limited observed Polymarket US league coverage](docs/m17_observed_coverage_2026-11-03.md)
+- [Paper publishing and historical operational caveats](docs/m13_beta_publishing.md)
+- [Discord application setup, behavior, and security](docs/discord-user-install-app.md)
+- [Public snapshot refresh workflow](.github/workflows/publish-discord-snapshot.yml)
+- [Discord verification follow-ups](https://github.com/stelladeecoder/statrally-soccer-automation/issues?q=is%3Aissue+is%3Aopen+Discord+app+verification)
 
 ---
 
-**Built from a personal research need. Developed through automation, testing, and honest evaluation.**
+<div align="center">
 
-Paper picks are practice predictions. The scheduled beta pipeline places no trades. Wins, losses, hit rate, and Brier score describe paper-model performance, not realized ROI. Betting involves risk; no prediction guarantees a win.
+### ⚽ The Edge Is in the Data.
+
+**Built from a real research problem. Developed with automation, validation, and measurable evidence.**
+
+*Free experimental soccer research. No guaranteed outcomes. No trades.*
+
+</div>
