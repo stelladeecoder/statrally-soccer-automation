@@ -39,6 +39,6 @@ job summary. No webhook values are printed. No POST retries are performed; a
 rerun attempt is refused to prevent duplicating an uncertain send. Inspect saved
 receipts before taking any further action after a partial failure.
 
-Production schedules remain 7:17 AM, 8:23 AM, 2:23 PM and 11:55 PM America/Chicago.
+Production schedules remain 4:17 AM, 5:23 AM, 8:23 AM, 2:23 PM and 11:55 PM America/Chicago.
 Polymarket US stays active. M14 PR #13 stays draft and unmerged. These presentation
 changes enable no trading or financial-result publishing.

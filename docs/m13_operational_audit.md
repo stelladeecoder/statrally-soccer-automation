@@ -7,8 +7,8 @@ coverage/schedules/results audit branch until its PR is reviewed and merged.
 
 | Workflow | America/Chicago time | Winter UTC | Summer UTC | Scheduled-run evidence at audit |
 | --- | --- | --- | --- | --- |
-| Daily watchlist | 7:17 AM | 13:17 | 12:17 | None recorded |
-| Experimental picks | 8:23 AM, 2:23 PM | 14:23, 20:23 | 13:23, 19:23 | None recorded |
+| Daily watchlist | 4:17 AM | 10:17 | 09:17 | None recorded |
+| Experimental picks | 5:23 AM, 8:23 AM, 2:23 PM | 11:23, 14:23, 20:23 | 10:23, 13:23, 19:23 | None recorded |
 | Results checks | 11:55 PM | 05:55 next day | 04:55 next day | None recorded |
 
 All three workflows are active in GitHub and use native IANA timezone schedules.

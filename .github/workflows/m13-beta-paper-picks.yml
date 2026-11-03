@@ -2,7 +2,7 @@ name: StatRally beta paper picks
 on:
   workflow_dispatch:
   schedule:
-    - cron: "23 8,14 * * *"
+    - cron: "23 5,8,14 * * *"
       timezone: "America/Chicago"
 permissions:
   contents: read
