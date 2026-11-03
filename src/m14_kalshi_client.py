@@ -63,7 +63,9 @@ class KalshiReadOnly:
     def __init__(self, key_id, private_pem, *, opener=None, clock_ms=None):
         if not key_id or not private_pem:
             raise ReadOnlyError("missing_credentials")
-        if not isinstance(key_id, str) or not re.fullmatch(r"[A-Za-z0-9_-]{1,256}", key_id):
+        # Key IDs are opaque in the official signer. Require a safe header value
+        # without imposing an undocumented UUID/alphanumeric identifier schema.
+        if not isinstance(key_id, str) or not key_id.strip() or not re.fullmatch(r"[\x20-\x7e]{1,4096}", key_id):
             raise ReadOnlyError("invalid_api_key_id")
         try:
             if not isinstance(private_pem, str) or len(private_pem) > 16384:
