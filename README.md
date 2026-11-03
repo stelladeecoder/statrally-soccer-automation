@@ -90,7 +90,7 @@ This diagram describes the implemented paper-pick path. It does not certify unin
 | 🧪 **Verification ongoing** | Full pick-to-final-result cycle | A genuinely completed beta outcome still needs confirmation in the [verification notes](docs/m13_beta_publishing.md) |
 | 🔭 **Further work** | Broader reviewed market/model coverage and long-term evaluation | Supported competition identifiers do not establish usable model history, market availability, or reliable predictions in every league |
 
-**Coverage has different layers.** The public paper-signal validator accepts identifiers for 13 competitions. The current public result grader supports **Premier League, MLS, and Liga MX**. Neither count means every match is eligible for a pick.
+**Coverage has different layers.** The public paper-signal validator accepts identifiers for 13 competitions. The current public result grader includes ESPN mappings for **all 13 listed competitions**, with strict event-identity and full-time checks. That is code-level support, **not** evidence of a completed graded paper-pick lifecycle in every league. Neither count means every match is eligible for a pick.
 
 <details>
 <summary><strong>🌍 The 13 competition identifiers accepted by the paper-signal validator</strong></summary>
