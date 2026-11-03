@@ -2,10 +2,7 @@ name: Daily soccer fixture watchlist
 on:
   workflow_dispatch:
   schedule:
-    # Avoid the busiest top-of-hour scheduling window.
-    - cron: "17 4 * * *"
-      timezone: "America/Chicago"
-    # Temporary read-only scheduler verification.
+    # Temporary UTC-only, read-only scheduler verification.
     - cron: "*/5 * * * *"
 permissions:
   contents: read
