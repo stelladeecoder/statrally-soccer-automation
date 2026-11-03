@@ -8,6 +8,7 @@ import { allowedGuildChannel, commandText, createApp, verifyDiscord } from "../s
 
 const APP_ID = "123456789012345678";
 const CHANNEL_ID = "888888888888888888";
+const GUILD_ID = "777777777777777777";
 const now = new Date("2026-11-03T18:00:00.000Z");
 const record = {
   number: 21, user: { login: "github-actions[bot]" },
@@ -49,9 +50,10 @@ test("global commands support both guild and user installs, with four names", ()
 
 test("central timezone date and guild-specific channel restriction", () => {
   assert.equal(centralDay(new Date("2026-11-04T04:00:00Z")), "2026-11-03");
-  assert.equal(allowedGuildChannel({ context: 0, channel_id: "111" }, CHANNEL_ID), false);
-  assert.equal(allowedGuildChannel({ context: 0, channel_id: CHANNEL_ID }, CHANNEL_ID), true);
-  assert.equal(allowedGuildChannel({ context: 2, channel_id: "111" }, CHANNEL_ID), true);
+  assert.equal(allowedGuildChannel({ context: 0, guild_id: GUILD_ID, channel_id: "111" }, GUILD_ID, CHANNEL_ID), false);
+  assert.equal(allowedGuildChannel({ context: 0, guild_id: GUILD_ID, channel_id: CHANNEL_ID }, GUILD_ID, CHANNEL_ID), true);
+  assert.equal(allowedGuildChannel({ context: 2, guild_id: GUILD_ID, channel_id: "111" }, GUILD_ID, CHANNEL_ID), true);
+  assert.equal(allowedGuildChannel({ context: 0, guild_id: "222222222222222222", channel_id: "111" }, GUILD_ID, CHANNEL_ID), true);
 });
 
 test("only bot-authored records with a delivery receipt appear", async () => {
@@ -128,7 +130,7 @@ test("signature verifies raw body, timestamp age and tampering", () => {
 });
 
 test("signed Discord ping returns expected ping response", async (t) => {
-  const app = createApp({ publicKey, applicationId: APP_ID, channelId: CHANNEL_ID, clock: () => now });
+  const app = createApp({ publicKey, applicationId: APP_ID, guildId: GUILD_ID, channelId: CHANNEL_ID, clock: () => now });
   app.listen(0, "127.0.0.1");
   await once(app, "listening");
   t.after(() => app.close());
@@ -142,12 +144,12 @@ test("signed Discord ping returns expected ping response", async (t) => {
 
 test("guild restriction rejects unauthorized channels before data calls", async (t) => {
   const mock = mockFetch();
-  const app = createApp({ publicKey, applicationId: APP_ID, channelId: CHANNEL_ID,
+  const app = createApp({ publicKey, applicationId: APP_ID, guildId: GUILD_ID, channelId: CHANNEL_ID,
                            fetcher: mock.fetcher, clock: () => now });
   app.listen(0, "127.0.0.1");
   await once(app, "listening");
   t.after(() => app.close());
-  const req = signed({ type: 2, context: 0, application_id: APP_ID,
+  const req = signed({ type: 2, context: 0, guild_id: GUILD_ID, application_id: APP_ID,
                        channel_id: "111", token: "a".repeat(40), data: { name: "picks" } });
   const response = await fetch(`http://127.0.0.1:${app.address().port}/interactions`, {
     method: "POST", headers: { "x-signature-timestamp": req.ts,
@@ -158,7 +160,7 @@ test("guild restriction rejects unauthorized channels before data calls", async 
 
 test("command acknowledges before remote lookup, then edits private deferred response", async (t) => {
   const mock = mockFetch();
-  const app = createApp({ publicKey, applicationId: APP_ID, channelId: CHANNEL_ID,
+  const app = createApp({ publicKey, applicationId: APP_ID, guildId: GUILD_ID, channelId: CHANNEL_ID,
                            fetcher: mock.fetcher, clock: () => now });
   app.listen(0, "127.0.0.1");
   await once(app, "listening");
