@@ -9,6 +9,7 @@ from urllib.request import Request, urlopen
 from urllib.parse import quote
 from m13_beta_signals import render_beta, signal_identity, signal_proof, parse_time
 from m13_discord_publish import publish
+from m13_discord_embeds import payload_text
 
 API="https://api.github.com"
 DELIVERY_MESSAGE="Discord delivery returned success. Paper signal posted; outcome pending."
@@ -23,14 +24,14 @@ def github(method,path,token,data=None):
         raw=response.read()
     return json.loads(raw) if raw else None
 
-def process(envelope,repo,token,webhook):
-    render_beta(envelope, allow_empty=True)
+def process(envelope,repo,token,webhook,*,now=None):
+    render_beta(envelope, allow_empty=True, require_current_day=True,now=now)
     signals=envelope["signals"]
     if not signals:
         print("BETA_NO_ELIGIBLE_SIGNALS")
         return 0
     # Validate every selected candidate before creating any public state.
-    render_beta(envelope)
+    render_beta(envelope, require_current_day=True,now=now)
     existing=[]
     for page in range(1,21):
         batch=github("GET",f"/repos/{repo}/issues?state=all&per_page=100&page={page}",token)
@@ -76,9 +77,9 @@ def process(envelope,repo,token,webhook):
             print("BETA_ALREADY_RECORDED")
             continue
         item=dict(envelope,signals=[signal])
-        payload=render_beta(item)
+        payload=render_beta(item, require_current_day=True,now=now)
         body=("**StatRally beta PAPER signal** (experimental; no validated edge)\n"
-              +marker+"\n"+"statrally-beta-data:"+json.dumps(signal,sort_keys=True,separators=(",",":"))+"\n\n" + payload["content"]
+              +marker+"\n"+"statrally-beta-data:"+json.dumps(signal,sort_keys=True,separators=(",",":"))+"\n\n" + payload_text(payload)
               +"\n\nState: reserved before Discord delivery. Outcome: pending; no trade.")
         issue=github("POST",f"/repos/{repo}/issues",token,
                      {"title":"BETA PAPER | "+signal["market_ticker"]+" | "+signal["side"],"body":body})
@@ -86,7 +87,7 @@ def process(envelope,repo,token,webhook):
             raise RuntimeError("Durable reservation confirmation missing; refusing delivery")
         existing.append({"body":body})
         # Issue reservation is durable: failed/ambiguous Discord POST is NOT retried.
-        publish(render_beta(item),webhook)
+        publish(render_beta(item, require_current_day=True,now=now),webhook)
         receipt=github("POST",f"/repos/{repo}/issues/{issue['number']}/comments",token,
                        {"body":DELIVERY_MESSAGE+"\nstatrally-beta-delivery-proof:"+proof})
         if not isinstance(receipt,dict) or type(receipt.get("id")) is not int or receipt["id"]<=0:

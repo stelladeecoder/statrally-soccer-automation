@@ -34,7 +34,7 @@ jobs:
         working-directory: engine
         env:
           PYTHONPATH: ../automation/src:src
-        run: python src/m15_polymarket_beta_export.py --discover --days 7 --output "$RUNNER_TEMP/beta.json"
+        run: python src/m15_polymarket_beta_export.py --discover --days 1 --output "$RUNNER_TEMP/beta.json"
       - name: Persist Polymarket US paper log and post eligible beta signals
         env:
           PYTHONPATH: automation/src

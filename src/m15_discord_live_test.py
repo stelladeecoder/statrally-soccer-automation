@@ -8,6 +8,7 @@ from zoneinfo import ZoneInfo
 
 from m13_beta_signals import render_beta, parse_time
 from m13_discord_publish import publish
+from m13_discord_embeds import payload_text
 
 LEAGUES = ("epl", "bundesliga", "laliga", "serie_a", "ligue_1", "eredivisie",
            "liga_portugal", "brasileirao", "mls", "liga_mx", "primera_lpf",
@@ -87,7 +88,7 @@ def picks_payloads(envelope, diagnostics):
         lines.append(f"• {league}: {stats['fixtures']} / {stats['mapped']} / {valid}{suffix}")
     if payload:
         lines.append("Real observed candidate output (maximum 3; upcoming fixtures can be on later days):")
-        lines.extend(payload["content"].splitlines())
+        lines.extend(payload_text(payload).splitlines())
     else:
         lines.append("No eligible paper picks passed the fixture, contract, quote and model checks in this scan. No pick was invented.")
     return pages(lines)

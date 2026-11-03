@@ -3,6 +3,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import Mock
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"src"))
+from m13_discord_embeds import payload_text
 from m13_discord_publish import render,publish,render_watchlist,render_picks,render_approved_picks
 
 class M13DiscordTests(unittest.TestCase):
@@ -11,13 +12,13 @@ class M13DiscordTests(unittest.TestCase):
             render_watchlist({"status":"research_only","decisions":[]})
     def test_watchlist_shows_daily_fixtures_without_bet_decisions(self):
         report={"status":"fixture_schedule","date_central":"2026-11-08","fixtures":[{"league":"Premier League","home_team":"Manchester United","away_team":"Aston Villa","kickoff_utc":"2026-11-08T16:30:00+00:00"}]}
-        text=render_watchlist(report)["content"]
+        text=payload_text(render_watchlist(report))
         self.assertIn("Manchester United vs Aston Villa",text)
-        self.assertIn("10:30 AM CT",text)
+        self.assertIn("10:30 AM",text)
         self.assertNotIn("NO_BET",text)
         self.assertNotIn("No betting",text)
     def test_watchlist_does_not_post_empty_day(self):
-        self.assertIn("No matches scheduled today",render_watchlist({"status":"fixture_schedule","date_central":"2026-11-01","fixtures":[]})["content"])
+        self.assertIn("No matches scheduled today",payload_text(render_watchlist({"status":"fixture_schedule","date_central":"2026-11-01","fixtures":[]})))
     def test_picks_never_publish_unapproved_scan(self):
         self.assertIsNone(render_picks({"status":"research_only","trades_placed":0,"decisions":[{"qualified_bet":True}]}))
     def test_picks_reject_invalid_scan(self):

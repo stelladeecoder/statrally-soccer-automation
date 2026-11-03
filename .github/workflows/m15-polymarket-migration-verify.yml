@@ -54,6 +54,7 @@ jobs:
           python - <<'PY'
           import json, os
           from m13_beta_signals import render_beta
+          from m13_discord_embeds import payload_text
           with open(os.environ["RUNNER_TEMP"]+"/beta.json",encoding="utf-8") as f:
               data=json.load(f)
           if data["trades_placed"] != 0:
@@ -61,7 +62,7 @@ jobs:
           payload=render_beta(data,allow_empty=True)
           print("Public Polymarket experimental signals:",len(data["signals"]))
           if payload:
-              assert "Polymarket US quote" in payload["content"], "Wrong provider or unsupported schema"
+              assert "Polymarket US quote" in payload_text(payload), "Wrong provider or unsupported schema"
               print("Public formatter validated; no Discord message sent")
           else:
               print("No eligible experimental signals; no Discord message sent")

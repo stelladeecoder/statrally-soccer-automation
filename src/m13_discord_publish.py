@@ -4,7 +4,9 @@ import json
 import os
 from m13_beta_signals import render_beta
 from pathlib import Path
-from urllib.request import Request, urlopen
+from urllib.request import Request, urlopen, HTTPRedirectHandler, build_opener
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+from m13_discord_embeds import clock, markdown, validate_payload, watchlist_cards
 
 def render(scan):
     if not isinstance(scan, dict) or scan.get("status") != "research_only":
@@ -45,28 +47,10 @@ def render_watchlist_pages(scan):
         if identity in seen:
             continue
         seen.add(identity)
-        groups.setdefault(league, []).append((when, f"• {when.strftime('%-I:%M %p')} CT | {home} vs {away}"))
+        groups.setdefault(league, []).append((when, f"{clock(when)} · **{markdown(home)} vs {markdown(away)}**"))
     if not groups and scan["status"] == "partial_fixture_schedule":
         return []
-    heading = "**StatRally | Soccer Matches — " + str(day) + "**"
-    lines = []
-    for league in sorted(groups):
-        lines.append("**" + league + "**")
-        lines.extend(line for _, line in sorted(groups[league]))
-    if not groups:
-        lines.append("No matches scheduled today. All configured feeds succeeded.")
-    if scan.get("failed_leagues"):
-        lines.append("Schedule incomplete: unavailable feeds for " + ", ".join(scan["failed_leagues"]))
-    pages, current = [], heading
-    for line in lines:
-        if len(line) > 1800:
-            raise ValueError("Watchlist line too long")
-        if len(current) + len(line) + 1 > 1900:
-            pages.append({"content": current, "allowed_mentions": {"parse": []}})
-            current = heading + " (continued)"
-        current += "\n" + line
-    pages.append({"content": current, "allowed_mentions": {"parse": []}})
-    return pages
+    return watchlist_cards(day, groups, scan.get("failed_leagues", []))
 
 
 def render_watchlist(scan):
@@ -113,14 +97,35 @@ def render_approved_picks(envelope):
     return {"content":"**StatRally | Verified Kalshi BTTS Picks**\n" + "\n".join(lines)}
 
 
-def publish(payload, webhook, opener=urlopen):
+class NoRedirect(HTTPRedirectHandler):
+    def redirect_request(self, *args, **kwargs):
+        return None
+
+
+def publish(payload, webhook, opener=None, *, wait=False):
+    validate_payload(payload)
     if not webhook.startswith("https://discord.com/api/webhooks/") and not webhook.startswith("https://discordapp.com/api/webhooks/"):
         raise ValueError("Discord webhook URL required")
-    data=json.dumps(payload).encode("utf-8")
+    if wait:
+        parts = urlsplit(webhook)
+        query = [(k,v) for k,v in parse_qsl(parts.query,keep_blank_values=True) if k != "wait"]
+        webhook = urlunsplit((parts.scheme,parts.netloc,parts.path,urlencode(query+[("wait","true")]),parts.fragment))
+    data=json.dumps(dict(payload,allowed_mentions={"parse":[]})).encode("utf-8")
     request=Request(webhook,data=data,headers={"Content-Type":"application/json","User-Agent":"StatRally/0.1"},method="POST")
+    opener = opener or build_opener(NoRedirect()).open
     with opener(request,timeout=15) as response:
         if response.status not in (200,204):
             raise RuntimeError("Discord webhook failed")
+        if wait:
+            if response.status != 200:
+                raise RuntimeError("Discord accepted delivery without a message receipt; do not retry")
+            raw = response.read(65537)
+            if len(raw)>65536:
+                raise RuntimeError("Discord receipt too large; do not retry")
+            receipt=json.loads(raw)
+            if any(not isinstance(receipt.get(k),str) or not receipt[k].isascii() or not receipt[k].isdigit() for k in ("id","channel_id")):
+                raise RuntimeError("Discord receipt unconfirmed; do not retry")
+            return {"message_id":receipt["id"],"channel_id":receipt["channel_id"]}
     return True
 
 def main():
@@ -131,7 +136,7 @@ def main():
     parser.add_argument("--suppress-no-bet",action="store_true",help="Avoid repeated routine No Bet posts")
     args=parser.parse_args()
     report=json.loads(Path(args.input).read_text(encoding="utf-8"))
-    payload=(render_watchlist(report) if args.mode=="watchlist" else render_picks(report) if args.mode=="picks" else render_approved_picks(report) if args.mode=="approved-picks" else render_beta(report) if args.mode=="beta" else render(report))
+    payload=(render_watchlist(report) if args.mode=="watchlist" else render_picks(report) if args.mode=="picks" else render_approved_picks(report) if args.mode=="approved-picks" else render_beta(report,require_current_day=True) if args.mode=="beta" else render(report))
     if payload is None:
         print("DISCORD_SKIP_NO_VERIFIED_FIXTURES")
         return

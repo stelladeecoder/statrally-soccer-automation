@@ -1,6 +1,12 @@
 name: Validate public automation scaffold
 on:
   workflow_dispatch:
+    inputs:
+      design_preview:
+        description: Send one fictional DESIGN TEST message to each configured channel
+        type: boolean
+        required: true
+        default: false
   pull_request:
     branches: [main]
     paths: ["src/**", "tests/**", ".github/workflows/**"]
@@ -8,6 +14,7 @@ permissions:
   contents: read
 jobs:
   smoke-test:
+    if: github.event_name != 'workflow_dispatch' || !inputs.design_preview
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -19,3 +26,23 @@ jobs:
         env:
           PYTHONPATH: src
         run: python -m unittest discover -s tests -v
+  design-preview:
+    if: github.event_name == 'workflow_dispatch' && inputs.design_preview
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    concurrency:
+      group: statrally-fictional-design-preview
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Send exactly three fictional design messages (no official records)
+        env:
+          STATRALLY_DISCORD_WEBHOOK: ${{ secrets.STATRALLY_DISCORD_WEBHOOK }}
+          STATRALLY_PICKS_DISCORD_WEBHOOK: ${{ secrets.STATRALLY_PICKS_DISCORD_WEBHOOK }}
+          STATRALLY_RESULTS_DISCORD_WEBHOOK: ${{ secrets.STATRALLY_RESULTS_DISCORD_WEBHOOK }}
+        run: python src/m13_design_preview.py --send
