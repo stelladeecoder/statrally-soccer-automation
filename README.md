@@ -94,7 +94,7 @@ Fixture feeds, reviewed market mappings, historical team data, and grading suppo
 
 ### ⏰ Configured daily schedule
 
-Times below are **America/Chicago (Central Time)** targets. The [automatic posting scheduler](.github/workflows/statrally-scheduler.yml) checks every five minutes using UTC cron, converts the current time to Central, and runs the latest due slot without a completed receipt. A delayed trigger can therefore catch up. Completed slots are recorded only after the posting workflow succeeds; existing Discord duplicate protection remains in force.
+Times below are **America/Chicago (Central Time)** targets. The [automatic posting scheduler](.github/workflows/statrally-scheduler.yml) uses a five-minute continuation timer plus UTC cron as a backup, converts the current time to Central, and runs the latest due slot without a completed receipt. Each timer starts the next check through GitHub's workflow-dispatch API. A delayed trigger can therefore catch up. To pause the loop, set repository variable `STATRALLY_SCHEDULER_PAUSED=true` or disable the scheduler workflow. Completed slots are recorded only after the posting workflow succeeds; existing Discord duplicate protection remains in force.
 
 | Time | Scheduled task |
 | :--- | :--- |

@@ -16,6 +16,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   gate:
+    if: vars.STATRALLY_SCHEDULER_PAUSED != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 3
     outputs:
@@ -66,3 +67,21 @@ jobs:
           SLOTS: ${{ needs.gate.outputs.slots }}
           RESULTS: '{"watchlist":"${{ needs.watchlist.result }}","picks":"${{ needs.picks.result }}","grading":"${{ needs.grading.result }}"}'
         run: python3 src/m16_scheduler.py complete
+  next-check:
+    needs: gate
+    if: ${{ always() && !cancelled() && vars.STATRALLY_SCHEDULER_PAUSED != 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Wait five minutes before the next automatic check
+        run: sleep 300
+      - name: Start the next check without depending on cron delivery
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 src/m16_scheduler.py resume

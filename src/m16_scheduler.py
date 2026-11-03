@@ -36,7 +36,8 @@ def api(method, path, data=None):
                  "X-GitHub-Api-Version": "2022-11-28",
                  "Content-Type": "application/json"}, method=method)
     with urlopen(request, timeout=25) as response:
-        return json.loads(response.read())
+        raw = response.read()
+        return json.loads(raw) if raw else None
 
 
 def checkpoints(repo, call=api):
@@ -105,6 +106,9 @@ def main():
     elif sys.argv[1] == "complete":
         complete(repo, json.loads(os.environ["SLOTS"]), json.loads(os.environ["RESULTS"]),
                  os.environ["GITHUB_SERVER_URL"] + "/" + repo + "/actions/runs/" + os.environ["GITHUB_RUN_ID"])
+    elif sys.argv[1] == "resume":
+        api("POST", f"/repos/{repo}/actions/workflows/statrally-scheduler.yml/dispatches", {"ref": "main"})
+        print("GitHub accepted the next automatic scheduler check")
     else:
         raise ValueError("Unknown scheduler command")
 
