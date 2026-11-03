@@ -14,7 +14,7 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
@@ -40,7 +40,7 @@ jobs:
         working-directory: engine
         env:
           PYTHONPATH: src
-        run: python src/m15_polymarket_beta_export.py --output "$RUNNER_TEMP/beta.json"
+        run: python src/m15_polymarket_beta_export.py --discover --days 7 --output "$RUNNER_TEMP/beta.json"
       - name: Validate public-facing paper envelope without delivery
         working-directory: automation
         env:
