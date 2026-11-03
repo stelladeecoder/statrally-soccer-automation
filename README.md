@@ -12,16 +12,16 @@ All times are **America/Chicago (Central)**. GitHub Actions may start scheduled 
 
 | Time | Channel | Behavior |
 | --- | --- | --- |
-| **7:17 AM** | `#match-watchlist` | Lists the day's soccer fixtures from the configured eight-league watchlist |
+| **7:17 AM** | `#match-watchlist` | Lists the day's soccer fixtures from all 13 configured competition feeds |
 | **8:23 AM** | `#btts-picks` | Morning experimental BTTS paper scan |
 | **2:23 PM** | `#btts-picks` | Afternoon experimental BTTS paper scan, with duplicate suppression |
 | **11:55 PM** | `#btts-results` | Checks independently confirmed final scores and grades outstanding paper predictions |
 
-The watchlist covers **Premier League, La Liga, Bundesliga, Serie A, Ligue 1, MLS, Liga MX, and UEFA Champions League**. The private research configuration defines **13 competitions**, which is broader than the current eight-league watchlist and broader than the current Kalshi beta market allowlist.
+The watchlist covers all **13 configured competitions**: Premier League, La Liga, Bundesliga, Serie A, Ligue 1, MLS, Liga MX, UEFA Champions League, Eredivisie, Liga Portugal, Brasileirão Série A, Argentina Primera División, and UEFA Europa League. A live verification of the private feed expansion on a November 1 sample returned **36 fixtures and zero feed failures** across all 13 competitions ([GitHub Actions run](https://github.com/stelladeecoder/statrally-soccer-btts/actions/runs/41560694807), private repository). Some leagues had no scheduled fixtures that day, which does not indicate a feed failure. This fixture coverage is broader than the current Kalshi beta market allowlist.
 
 ## What is operational
 
-- **M13 fixtures:** automated daily match watchlist in Central Time; provider/API failures can lead to partial or empty fixture coverage.
+- **M13 fixtures:** automated daily 13-competition match watchlist in Central Time; provider/API failures can lead to partial or empty fixture coverage.
 - **M13 experimental picks:** scheduled read-only beta exporter with pre-kickoff fixture verification, current quote checks, up to three signals per export and persistent GitHub Issue reservations to prevent duplicate paper picks.
 - **M13 grading:** independently checks regulation-time final scores; pending matches stay pending; only newly verified paper outcomes are eligible for posting. **Paper win rate and Brier scores are not real-money P&L.**
 - **Discord integration:** separate watchlist, picks and results channels and controlled publishing safeguards.
