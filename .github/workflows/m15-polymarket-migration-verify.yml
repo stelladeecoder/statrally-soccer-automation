@@ -36,6 +36,11 @@ jobs:
         env:
           PYTHONPATH: src
         run: python -m unittest discover -s tests -v
+      - name: Test private all-league discovery and request pacing
+        working-directory: engine
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests -p 'test_m15*.py' -v
       - name: Run live Polymarket US exporter (read-only, no Discord)
         working-directory: engine
         env:
