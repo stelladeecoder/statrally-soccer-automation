@@ -2,7 +2,7 @@ name: StatRally beta paper grading
 on:
   workflow_dispatch:
   schedule:
-    - cron: "41 0,17,21 * * *"
+    - cron: "55 23 * * *"
       timezone: "America/Chicago"
 permissions:
   contents: read
