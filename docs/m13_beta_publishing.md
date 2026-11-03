@@ -1,5 +1,7 @@
 # M13 — Experimental BTTS beta publishing
 
+> **Current source update — November 2, 2026:** The scheduled M13 BTTS paper-picks workflow now uses the **Polymarket US** private exporter, not the Kalshi export path described below. The legacy M12 Kalshi scan schedule is disabled. Private live read-only exporter verification passed for one explicitly reviewed EPL fixture, and public full-suite validation passed **80 tests**. A controlled actual scheduled-workflow dispatch [run #41562467939](https://github.com/stelladeecoder/statrally-soccer-automation/actions/runs/41562467939) completed successfully: it recorded **BETA_ALREADY_RECORDED**, so no second Discord post was sent for the same previously published fixture. New Polymarket-to-Discord delivery for a different fixture remains unverified. **Historical Kalshi sections below document previous M12/M13 behavior and must not be read as current provider configuration.** No trading is enabled.
+
 **November 2, 2026:** Scheduled *paper-only* dispatch is committed to the public repository. Manual real-source beta delivery and a separate results connection test now have successful Actions runs and durable delivery evidence (see the latest verification below). This is not a production betting recommendation system; unattended scheduled posting and a completed beta outcome remain unverified.
 
 ## Pipeline
