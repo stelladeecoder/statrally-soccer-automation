@@ -8,6 +8,8 @@
 ![Mode: Paper picks](https://img.shields.io/badge/Mode-Paper%20picks-8b5cf6?style=flat-square)
 ![Built with Python](https://img.shields.io/badge/Built%20with-Python-3776AB?style=flat-square&logo=python&logoColor=white)
 
+**[Privacy Policy](docs/PRIVACY_POLICY.md) · [Terms of Service](docs/TERMS_OF_SERVICE.md)**
+
 **[Why I built it](#-why-i-built-statrally) · [Scheduled Discord](#-statrally-discord-from-matchday-to-results) · [Interactive Discord roadmap](#-on-demand-discord-analytics-planned) · [Project status](#-what-works-and-whats-next) · [Explore the code](#-explore-the-project)**
 
 </div>
