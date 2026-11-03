@@ -38,7 +38,7 @@ class PolymarketPublicTests(unittest.TestCase):
         def api(method,path,token,data=None):
             events.append(method)
             if method=="GET":return []
-            if "/comments" in path:return {}
+            if "/comments" in path:return {"id":1}
             return {"number":101}
         with patch("m13_beta_dispatch.github",side_effect=api),patch("m13_beta_dispatch.publish") as send:
             self.assertEqual(process(envelope(),"owner/repo","token","synthetic-webhook"),1)

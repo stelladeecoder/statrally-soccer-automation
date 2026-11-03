@@ -1,5 +1,5 @@
 import unittest
-from m13_beta_grading import grade, aggregate
+from m13_beta_grading import LEAGUES, grade, aggregate
 SIGNAL={"league":"epl","espn_event_id":"123","home_team":"Alpha","away_team":"Beta","side":"YES",
         "kickoff_utc":"2026-11-02T20:00:00+00:00","model_probability":"0.60","market_price":"0.55"}
 def fixture(h=2,a=1,complete=True):
@@ -7,6 +7,30 @@ def fixture(h=2,a=1,complete=True):
       "competitions":[{"competitors":[{"homeAway":"home","team":{"displayName":"Alpha"},"score":str(h)},
                                      {"homeAway":"away","team":{"displayName":"Beta"},"score":str(a)}]}]}]}
 class GradingTests(unittest.TestCase):
+    def test_bound_team_ids_allow_display_updates_but_never_changed_or_reversed_teams(self):
+        signal=dict(SIGNAL,espn_home_team_id="1",espn_away_team_id="2")
+        data=fixture()
+        teams=data["events"][0]["competitions"][0]["competitors"]
+        teams[0]["team"]={"id":"1","displayName":"Updated Alpha"}
+        teams[1]["team"]={"id":"2","displayName":"Updated Beta"}
+        self.assertEqual(grade(signal,data)["result"],"WIN")
+        teams[0]["team"]["id"]="2"
+        with self.assertRaisesRegex(ValueError,"ID mismatch"):grade(signal,data)
+    def test_all_thirteen_configured_leagues_can_be_graded(self):
+        self.assertEqual(len(LEAGUES),13)
+        for league in LEAGUES:
+            with self.subTest(league=league):
+                self.assertEqual(grade(dict(SIGNAL,league=league),fixture())["result"],"WIN")
+
+    def test_postponed_cancelled_and_rescheduled_need_confirmation(self):
+        for status in ("STATUS_POSTPONED","STATUS_CANCELED","STATUS_SUSPENDED"):
+            data=fixture(complete=False)
+            data["events"][0]["status"]["type"]["name"]=status
+            self.assertEqual(grade(SIGNAL,data)["status"],"pending")
+        data=fixture()
+        data["events"][0]["date"]="2026-11-03T20:00:00Z"
+        with self.assertRaisesRegex(ValueError,"Kickoff changed"):
+            grade(SIGNAL,data)
     def test_yes_win(self): self.assertEqual(grade(SIGNAL,fixture())["result"],"WIN")
     def test_yes_loss(self): self.assertEqual(grade(SIGNAL,fixture(a=0))["result"],"LOSS")
     def test_no_win(self): self.assertEqual(grade(dict(SIGNAL,side="NO"),fixture(a=0))["result"],"WIN")

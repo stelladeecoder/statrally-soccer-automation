@@ -49,6 +49,19 @@ class FakeAPI:
 
 
 class IssueGradingTests(unittest.TestCase):
+    def test_test_only_record_never_enters_official_performance(self):
+        issue, proof, _=paper_record()
+        issue["body"]="statrally-test-only\n"+issue["body"]
+        self.assertIsNone(delivered_record(issue,[proof]))
+
+    def test_duplicate_delivered_record_is_counted_only_once(self):
+        api=FakeAPI()
+        api.issues.append(dict(api.issues[0],number=8))
+        with patch("m13_beta_grade_issues.github",side_effect=api),patch("m13_beta_grade_issues.fetch_scoreboard",return_value=fixture()),patch("m13_beta_grade_issues.publish") as send:
+            report=run("owner/repo","token",now=NOW,webhook="synthetic-webhook")
+        self.assertEqual(report["snapshot"]["graded"],1)
+        self.assertEqual(report["checks"]["duplicate_records"],1)
+        send.assert_called_once()
     def setUp(self):
         # Synthetic accuracy figures must not look like live deployment output.
         output=redirect_stdout(StringIO())

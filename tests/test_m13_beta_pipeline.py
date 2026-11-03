@@ -13,6 +13,19 @@ def envelope():
         "model_probability":"0.58","market_price":"0.52",
         "fixture_verified":True,"quote_verified":True}]}
 class BetaPipelineTests(unittest.TestCase):
+    def test_changed_side_for_same_fixture_does_not_create_a_second_prediction(self):
+        data=envelope()
+        prior=dict(data["signals"][0],side="NO")
+        import json
+        with patch("m13_beta_dispatch.github",return_value=[{"body":"statrally-beta-data:"+json.dumps(prior)}]),patch("m13_beta_dispatch.publish") as send:
+            self.assertEqual(process(data,"owner/repo","token","synthetic-webhook"),0)
+            send.assert_not_called()
+
+    def test_unconfirmed_pick_receipt_fails_after_one_accepted_send(self):
+        with patch("m13_beta_dispatch.github",side_effect=[[],{"number":77},{}]),patch("m13_beta_dispatch.publish") as send:
+            with self.assertRaisesRegex(RuntimeError,"receipt is unconfirmed"):
+                process(envelope(),"owner/repo","token","synthetic-webhook")
+            send.assert_called_once()
     def test_render_has_real_newlines(self):
         self.assertIn(chr(10),render_beta(envelope())["content"])
         self.assertNotIn(chr(92)+"n",render_beta(envelope())["content"])
@@ -21,7 +34,7 @@ class BetaPipelineTests(unittest.TestCase):
         def api(method,path,token,data=None):
             calls.append(method)
             if method=="GET":return []
-            if "/comments" in path:return {}
+            if "/comments" in path:return {"id":1}
             return {"number":77}
         with patch("m13_beta_dispatch.github",side_effect=api),patch("m13_beta_dispatch.publish") as send:
             self.assertEqual(process(envelope(),"owner/repo","token","https://discord.com/api/webhooks/1/test"),1)

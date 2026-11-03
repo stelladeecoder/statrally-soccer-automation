@@ -5,7 +5,10 @@ from decimal import Decimal, InvalidOperation
 from urllib.request import Request, urlopen
 from m13_beta_signals import parse_time
 
-LEAGUES={"epl":"eng.1","mls":"usa.1","liga_mx":"mex.1"}
+LEAGUES={"epl":"eng.1","bundesliga":"ger.1","laliga":"esp.1","serie_a":"ita.1",
+        "ligue_1":"fra.1","eredivisie":"ned.1","liga_portugal":"por.1",
+        "brasileirao":"bra.1","mls":"usa.1","liga_mx":"mex.1",
+        "primera_lpf":"arg.1","champions_league":"uefa.champions","europa_league":"uefa.europa"}
 
 def fetch_scoreboard(league, day):
     code=LEAGUES[league]
@@ -28,7 +31,13 @@ def grade(signal, response):
     home=[x for x in opponents if x.get("homeAway")=="home"]
     away=[x for x in opponents if x.get("homeAway")=="away"]
     if len(home)!=1 or len(away)!=1: raise ValueError("Missing home/away roles")
-    if home[0].get("team",{}).get("displayName")!=signal["home_team"] or away[0].get("team",{}).get("displayName")!=signal["away_team"]:
+    ids=(signal.get("espn_home_team_id"),signal.get("espn_away_team_id"))
+    if any(value is not None for value in ids):
+        if (any(not isinstance(value,str) or not value.isascii() or not value.isdigit() for value in ids)
+                or ids[0]==ids[1] or str(home[0].get("team",{}).get("id"))!=ids[0]
+                or str(away[0].get("team",{}).get("id"))!=ids[1]):
+            raise ValueError("Stable ESPN team ID mismatch")
+    elif home[0].get("team",{}).get("displayName")!=signal["home_team"] or away[0].get("team",{}).get("displayName")!=signal["away_team"]:
         raise ValueError("Team identity mismatch")
     if parse_time(event["date"]) != parse_time(signal["kickoff_utc"]):
         raise ValueError("Kickoff changed; require review")

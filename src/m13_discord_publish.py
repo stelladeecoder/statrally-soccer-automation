@@ -21,41 +21,60 @@ def render(scan):
         return {"content": "StatRally BTTS research: No published selections. Candidate approval requires independent model and fixture verification."}
     return {"content": "StatRally BTTS scan complete. No qualified selections. Research only; no wagers placed."}
 
-def render_watchlist(scan):
-    from datetime import datetime
+def render_watchlist_pages(scan):
+    from datetime import date, datetime
     from zoneinfo import ZoneInfo
-    if not isinstance(scan,dict) or scan.get("status") not in ("fixture_schedule","partial_fixture_schedule"):
+    if not isinstance(scan, dict) or scan.get("status") not in ("fixture_schedule", "partial_fixture_schedule"):
         raise ValueError("Daily fixture schedule required")
-    fixtures=scan.get("fixtures")
-    if not isinstance(fixtures,list):
+    day = date.fromisoformat(scan["date_central"])
+    fixtures = scan.get("fixtures")
+    if not isinstance(fixtures, list):
         raise ValueError("Missing fixture list")
-    groups={}
-    seen=set()
+    groups, seen = {}, set()
     for match in fixtures:
-        home,away,kickoff,league=(match.get(k) for k in ("home_team","away_team","kickoff_utc","league"))
-        if not all(isinstance(x,str) and x.strip() for x in (home,away,kickoff,league)):
-            continue
-        when=datetime.fromisoformat(kickoff.replace("Z","+00:00")).astimezone(ZoneInfo("America/Chicago"))
-        identity=(league.strip().casefold(),home.strip().casefold(),away.strip().casefold(),when.isoformat())
+        home, away, kickoff, league = (match.get(k) for k in ("home_team", "away_team", "kickoff_utc", "league"))
+        if not all(isinstance(x, str) and x.strip() for x in (home, away, kickoff, league)):
+            raise ValueError("Missing fixture identity")
+        when = datetime.fromisoformat(kickoff.replace("Z", "+00:00"))
+        if when.tzinfo is None:
+            raise ValueError("Aware kickoff required")
+        when = when.astimezone(ZoneInfo("America/Chicago"))
+        if when.date() != day:
+            raise ValueError("Fixture outside Central calendar date")
+        identity = (league.strip().casefold(), home.strip().casefold(), away.strip().casefold(), when)
         if identity in seen:
             continue
         seen.add(identity)
-        groups.setdefault(league,[]).append((when,f"• {when.strftime('%-I:%M %p')} CT | {home} vs {away}"))
-    if not groups and scan.get("status")=="fixture_schedule":
-        return {"content":"**StatRally | Soccer Matches — "+str(scan.get("date_central",""))+"**\nNo matches scheduled today."}
-    if not groups:
-        return None
-    parts=["**StatRally | Soccer Matches — "+str(scan.get("date_central",""))+"**"]
+        groups.setdefault(league, []).append((when, f"• {when.strftime('%-I:%M %p')} CT | {home} vs {away}"))
+    if not groups and scan["status"] == "partial_fixture_schedule":
+        return []
+    heading = "**StatRally | Soccer Matches — " + str(day) + "**"
+    lines = []
     for league in sorted(groups):
-        parts.append("**"+league+"**")
-        parts.extend(line for _,line in sorted(groups[league]))
-    failed=scan.get("failed_leagues",[])
-    if failed:
-        parts.append("Schedule incomplete: unavailable feeds for "+", ".join(failed))
-    content="\n".join(parts)
-    if len(content)>2000:
-        content=content[:1960].rsplit("\n",1)[0]+"\n(Additional fixtures omitted)"
-    return {"content":content}
+        lines.append("**" + league + "**")
+        lines.extend(line for _, line in sorted(groups[league]))
+    if not groups:
+        lines.append("No matches scheduled today. All configured feeds succeeded.")
+    if scan.get("failed_leagues"):
+        lines.append("Schedule incomplete: unavailable feeds for " + ", ".join(scan["failed_leagues"]))
+    pages, current = [], heading
+    for line in lines:
+        if len(line) > 1800:
+            raise ValueError("Watchlist line too long")
+        if len(current) + len(line) + 1 > 1900:
+            pages.append({"content": current, "allowed_mentions": {"parse": []}})
+            current = heading + " (continued)"
+        current += "\n" + line
+    pages.append({"content": current, "allowed_mentions": {"parse": []}})
+    return pages
+
+
+def render_watchlist(scan):
+    pages = render_watchlist_pages(scan)
+    if len(pages) > 1:
+        raise ValueError("Multi-page watchlist requires the durable watchlist dispatcher")
+    return pages[0] if pages else None
+
 
 def render_picks(scan):
     """Fail closed: M12 has no exportable approved candidate evidence yet."""

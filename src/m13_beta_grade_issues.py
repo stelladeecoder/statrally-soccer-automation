@@ -46,6 +46,8 @@ def delivered_record(issue, comments):
     if not bot(issue):
         return None
     body = issue.get("body") or ""
+    if "statrally-test-only" in body:
+        return None
     signal = json.loads(body.split("statrally-beta-data:", 1)[1].split("\n", 1)[0])
     created = parse_time(issue.get("created_at"))
     kickoff = parse_time(signal.get("kickoff_utc"))
@@ -78,9 +80,10 @@ def run(repo, token, *, now=None, webhook=None):
     now = now or datetime.now(timezone.utc)
     webhook = os.environ.get("STATRALLY_RESULTS_DISCORD_WEBHOOK", "") if webhook is None else webhook
     all_issues = records(f"/repos/{repo}/issues?state=all", token)
-    outcomes, cache = [], {}
+    outcomes, cache, seen = [], {}, {}
     counts = {"unconfirmed": 0, "invalid_records": 0, "source_failures": 0,
-              "results_delivered": 0, "already_reserved": 0, "results_delivery_unconfirmed": 0}
+              "results_delivered": 0, "already_reserved": 0, "results_delivery_unconfirmed": 0,
+              "duplicate_records": 0}
     for issue in all_issues:
         if "pull_request" in issue or "statrally-beta-data:" not in (issue.get("body") or ""):
             continue
@@ -96,6 +99,13 @@ def run(repo, token, *, now=None, webhook=None):
             if signal.get("league") not in LEAGUES:
                 raise ValueError("Unsupported verified fixture league")
             kickoff = parse_time(signal["kickoff_utc"])
+            identity_key = (signal["league"], signal["espn_event_id"], kickoff)
+            if identity_key in seen:
+                if seen[identity_key] != signal_proof(signal):
+                    raise RuntimeError("Conflicting delivered predictions for one fixture require review")
+                counts["duplicate_records"] += 1
+                continue
+            seen[identity_key] = signal_proof(signal)
             if kickoff >= now:
                 outcomes.append({"status": "pending"})
                 continue

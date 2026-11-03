@@ -1,19 +1,39 @@
 # Deployment guardrails
 
-This public repository currently contains only a no-secret scaffold and unit test.
+StatRally reports experimental soccer predictions. Polymarket US is the active
+market-data provider. The retained Kalshi scanner is manual-only historical work;
+there is no active-provider fallback or automated trading.
 
-The original `statrally-soccer-btts` repository stays private. Do not copy its Git history, research datasets, model weights, notebooks, local configuration, or private credentials here.
+Research code, datasets, model internals and credentials stay private. Public
+workflow logs, Issues and Discord messages must contain only reviewed reporting
+fields. Deployment configuration and webhook provisioning are documented privately.
 
-Future public deployment requires a file-by-file review and specific opt-in for publishing model artifacts. Use GitHub Actions repository secrets for tokens, minimize job permissions, and never log secret values. Workflow logs and published outputs may be publicly readable.
+See the [operational audit](m13_operational_audit.md) for configured schedules,
+successful manual tests and the remaining unattended-operation evidence.
 
-No scheduled jobs or live betting picks are enabled. Before scheduling, validate odds and fixture sources, model reliability, and deployment permissions. No profitable-edge claims without evidence.
+The three reporting workflows use `America/Chicago` schedules and separate
+concurrency groups. Picks/results require Issues write access for durable
+reservations and receipts. The audit branch adds this protection to watchlists.
 
-## Milestone 12 public runner integration (November 1, 2026)
+## Delivery and results safeguards
 
-A read-only scanner workflow exists at `.github/workflows/m12-kalshi-scanner.yml`. It runs at 13:10, 18:10 and 23:10 UTC **only if** the public repository Actions variable `ENABLE_STAT_RALLY_SCANS` equals `true`. With the variable absent/disabled, the job is skipped before runner allocation.
+Reservations precede Discord delivery. A failed send or missing durable receipt
+requires review before retrying: the message may already have arrived. Never
+delete a reservation to force another send. HTTP acceptance does not establish
+visual confirmation of the channel destination.
 
-It checks out `stelladeecoder/statrally-soccer-btts` directly into the ephemeral runner using a GitHub Actions secret named `STAT_RALLY_PRIVATE_READ_TOKEN`. Create a short-lived or narrowly scoped fine-grained GitHub personal access token with **Contents: read-only** permission restricted to the private repository, then add it under the public repository Actions secrets. Do not paste tokens in chat, logs, or source control. Rotate/revoke it when no longer needed. This does **not** publish the private repository: the code only exists in the runner workspace. Note that public workflow logs may be public; the scan prints bounded research-only status.
+Public PR tests have no webhook bindings. Read-only coverage audits send no
+messages. Deliberate Discord tests must be clearly labeled and must not enter
+official prediction reservations or cumulative performance.
 
-The private entrypoint `src/m12_operational_scan.py` collects at most three Kalshi market quotes and looks for an exact reviewed fixture manifest at `config/m12_reviewed_fixtures.json`. If missing, it generates **No Bet**. The manifest is a JSON list of full, independently reviewed Kalshi-to-ESPN event/team ID mappings, each with `reviewed: true`; do not fabricate mappings from ticker fragments. Independently verified mapping, currently available markets, and a reliable model remain separate acceptance checks.
+Only genuine bot-reserved predictions with a hash-bound pre-kickoff delivery
+receipt enter grading. New records carry explicit ESPN event/team IDs; legacy
+records retain exact-name checks. Regulation-time final scores are required.
+Postponed, cancelled, suspended, extra-time and penalty outcomes do not become
+ordinary BTTS wins/losses. Changed kickoffs, conflicting predictions and corrected
+scores require review. Source failures preserve the previous dashboard and fail
+the run. Uncertain results delivery blocks an automatic resend.
 
-**Not activated or certified yet:** No secret/variable has been set by this change, and no runner job/test has been executed. M12 still requires evidence of a successfully completed public-runner job and reviewed, current fixture/provider identities. GitHub API access provided to the assistant cannot configure Actions secrets or dispatch workflows.
+Practice accuracy and probability scoring stay separate from account
+transactions, fees and financial returns. M14 PR #13 remains draft and unmerged;
+no actual financial publishing is enabled.
