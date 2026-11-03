@@ -2,78 +2,89 @@
 
 **The Edge Is in the Data.**
 
-StatRally is a data analytics portfolio project that turns soccer data into match watchlists, experimental predictions, and tracked results shared through Discord.
+StatRally turns soccer data across **13 competitions** into match watchlists, experimental predictions, and tracked results delivered through Discord.
 
-The project demonstrates data collection, cleaning, statistical analysis, model evaluation, automated reporting, and clear communication of uncertainty.
+This portfolio project brings together **data engineering, statistical analysis, model evaluation, automation, and reporting**. Its focus is turning inconsistent information into useful updates while clearly showing what is known, uncertain, or incomplete.
 
-It focuses on **Both Teams to Score (BTTS)**:
+## The problem
 
-- **YES:** both teams score at least one goal.
-- **NO:** at least one team finishes without scoring.
+Soccer information arrives in different formats. Team names can vary, kickoff times can change, and some matches have missing information. A useful analytics project needs to handle these problems before presenting a prediction.
 
-For example, a 1–1 score is BTTS YES. A 2–0 score is BTTS NO. These predictions cover regular match time, including stoppage time, but exclude extra time and penalty shootouts.
+StatRally organizes that information into a simple experience: see the day's matches, review eligible practice predictions, and follow confirmed outcomes.
 
-## Project highlights
+## What I built
 
-- **Data engineering:** combine match information from multiple sources, standardize names and times, and check records for missing or conflicting information.
-- **Analytics and modeling:** explore historical results, develop probability estimates, and compare predictions with simple benchmarks.
-- **Quality and reliability:** test data checks, prevent duplicate records, and keep unconfirmed results separate from completed outcomes.
-- **Communication:** turn analytical output into readable updates for people without a technical background.
+- **Data preparation:** combined match information from multiple sources, standardized names and times, and added checks for missing or conflicting records.
+- **Analysis and evaluation:** explored historical results, developed probability estimates, and compared predictions with simple benchmarks.
+- **Automated reporting:** created scheduled match lists, experimental paper-pick updates, and result tracking through Discord.
+- **Quality controls:** added automated tests, duplicate prevention, and checks that keep unconfirmed results separate from completed outcomes.
+- **Accessible communication:** translated analytical output into messages that people without a technical background can understand.
 
-A verified project test run passed **116 automated checks**, and controlled match-list and paper-pick delivery tests succeeded in Discord. These checks demonstrate software validation; they do not establish profitable predictions.
+## Tools and skills
 
-## Tools used
-
-| Tool | Role in the project |
+| Tool | What it supports |
 | --- | --- |
 | **Python** | Data processing, analysis, and automation |
-| **pandas and NumPy** | Preparing, organizing, and analyzing match data |
+| **pandas and NumPy** | Cleaning, organizing, and analyzing match data |
 | **scikit-learn and SciPy** | Statistical research and historical model evaluation |
 | **Git and GitHub** | Version control and project documentation |
 | **GitHub Actions** | Scheduled tasks and automated checks |
 | **Python unittest** | Testing data validation and reporting behavior |
-| **Discord** | Sharing match lists, paper picks, and results |
+| **Discord** | Delivering readable updates to users |
 
-This overview describes the work and tools at a portfolio level. Proprietary methods and setup instructions are not included.
+Skills demonstrated include data cleaning, combining information from different sources, working with time zones, evaluating predictions, testing software, and communicating findings.
 
-## Your Discord guide
+## Public project and private research
 
-| Channel | What you will find |
+This public repository contains the reporting, automation, and testing work available for review.
+
+A separate private repository holds the underlying analytical research and prediction development. The public component presents the resulting updates, while the research implementation remains private.
+
+This README explains the project's purpose, tools, and demonstrated work without publishing proprietary methods, connection details, or setup instructions.
+
+## Evidence and lessons learned
+
+A verified project run passed **116 automated checks**. Controlled tests also successfully delivered real match-list and experimental paper-pick messages to Discord.
+
+Searches cover all 13 competitions, but this does not mean every competition produces a pick. Missing information, unresolved team identities, and limited historical data can prevent a match from qualifying.
+
+Historical evaluation has not established a reliable predictive advantage over simple benchmarks. That finding informs the project: predictions remain experimental, uncertainty is stated clearly, and practice results are kept separate from actual betting profits.
+
+**Current stage:** working match-list and paper-pick delivery, with broader coverage and long-term performance still under evaluation.
+
+## The Discord experience
+
+StatRally focuses on **Both Teams to Score (BTTS)**:
+
+- **YES:** both teams score at least one goal. A 1–1 result is an example.
+- **NO:** at least one team does not score. A 2–0 result is an example.
+
+Predictions cover regular match time, including stoppage time, but exclude extra time and penalty shootouts.
+
+| Channel | What users see |
 | --- | --- |
 | `#match-watchlist` | The day's soccer matches and kickoff times. A listed match is not automatically a pick. |
 | `#btts-picks` | Experimental BTTS YES or NO paper picks for upcoming matches. |
-| `#btts-results` | Results for previously recorded paper picks once the final score is confirmed. |
+| `#btts-results` | Outcomes for recorded paper picks once the final score is confirmed. |
 
-**Paper picks are practice predictions.** The bot does not place bets or use your money. Messages marked **TEST** check that information displays correctly; they are not official tracked picks.
+**Paper picks are practice predictions.** The bot does not place bets or use anyone's money. Messages marked **TEST** check delivery and presentation; they are not official tracked picks.
 
-## When to check
+Each pick identifies the match, kickoff time, and prediction. A displayed percentage is an estimated chance, not a guarantee. Market prices can change. Up to three paper picks are shared per check; some checks produce none.
+
+### Expected daily updates
 
 All times are **Central Time**.
 
-| Time | Expected update |
+| Time | Update |
 | --- | --- |
 | 7:17 AM | Daily match list |
 | 8:23 AM and 2:23 PM | Checks for new paper picks |
 | 11:55 PM | Checks for completed results |
 
-Updates can arrive late. A picks check may produce no message when nothing new meets the requirements. Results stay pending until they can be confirmed.
+Updates may arrive late. Results remain pending until confirmed.
 
-## Understanding a pick
+### Competition coverage
 
-Each paper pick identifies the match, kickoff time, and BTTS YES or NO prediction. A percentage is an estimated chance, not a guarantee. Any displayed market price can change.
+Premier League, La Liga, Bundesliga, Serie A, Ligue 1, Eredivisie, Liga Portugal, Brasileirão Série A, MLS, Liga MX, Argentina Primera División, UEFA Champions League, and UEFA Europa League.
 
-StatRally shares up to three paper picks per check. There is no requirement to produce a pick every day.
-
-## Competition coverage
-
-StatRally checks 13 competitions: Premier League, La Liga, Bundesliga, Serie A, Ligue 1, Eredivisie, Liga Portugal, Brasileirão Série A, MLS, Liga MX, Argentina Primera División, UEFA Champions League, and UEFA Europa League.
-
-**Checking a competition does not guarantee a pick.** Some matches lack enough reliable information. A match may appear on the watchlist without appearing in the picks channel.
-
-## Current stage
-
-StatRally is experimental and still being improved. Match-list and paper-pick messages have been tested in Discord. Coverage is still growing, and reliable long-term prediction performance has not been established.
-
-Reported wins and losses describe tracked practice predictions. They do not represent actual betting profits.
-
-Betting involves risk. No prediction guarantees a win.
+Reported wins and losses describe tracked practice predictions, not actual betting profits. Betting involves risk, and no prediction guarantees a win.
