@@ -25,6 +25,14 @@ The ambition is to connect BTTS analysis, daily pick generation, and outcome tra
 > [!NOTE]
 > **Current stage: experimental paper picks.** StatRally has no verified betting edge. A model estimate is a research hypothesis, and paper results do not represent actual betting profit.
 
+## 🌱 Free and open to everyone
+
+**StatRally is a free soccer BTTS research project, not a subscription service.** There are no paid memberships, premium tiers, or customer trading products planned. The public experience focuses on useful BTTS trends, experimental YES/NO paper picks, transparent historical results, and a free Discord community.
+
+The public application is still planned, not launched. Current working functionality centers on the scheduled watchlist, paper-pick validation/dispatch, and guarded results reporting. The research engine and model development are maintained separately in a private repository.
+
+**Development priorities:** finish provider coverage, daily automation reliability, and end-to-end result verification before building the mobile-friendly free dashboard. Public reporting does not place real-money orders.
+
 ## 🎯 BTTS, explained
 
 **Both Teams to Score** asks whether each team scores at least one goal during regular match time, including stoppage time.
