@@ -163,8 +163,11 @@ export function createApp({ publicKey, applicationId, guildId = "", channelId = 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const { DISCORD_PUBLIC_KEY: publicKey, DISCORD_APPLICATION_ID: applicationId,
           STAT_RALLY_COMMAND_CHANNEL_ID: channelId, STAT_RALLY_GUILD_ID: guildId, PORT = "3000" } = process.env;
-  if (!publicKey || !applicationId) {
-    console.error("DISCORD_PUBLIC_KEY and DISCORD_APPLICATION_ID are required");
+  if (!/^[a-fA-F0-9]{64}$/.test(publicKey || "") ||
+      !/^\\d{15,22}$/.test(applicationId || "") ||
+      !/^\\d{15,22}$/.test(guildId || "") ||
+      !/^\\d{15,22}$/.test(channelId || "")) {
+    console.error("Valid Discord public key, application ID, StatRally guild ID and #bot-commands channel ID are required");
     process.exit(1);
   }
   const server = createApp({ publicKey, applicationId, guildId, channelId });
