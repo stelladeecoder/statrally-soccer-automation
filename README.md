@@ -96,8 +96,8 @@ Times follow **America/Chicago (Central Time)**, as defined in the current workf
 
 | Time | Scheduled task |
 | :--- | :--- |
-| **7:17 AM** | [Daily fixture watchlist](.github/workflows/m13-daily-watchlist.yml) |
-| **8:23 AM & 2:23 PM** | [Check for new experimental paper picks](.github/workflows/m13-beta-paper-picks.yml) |
+| **4:17 AM** | [Daily fixture watchlist](.github/workflows/m13-daily-watchlist.yml) |
+| **5:23 AM, 8:23 AM & 2:23 PM** | [Check for new experimental paper picks](.github/workflows/m13-beta-paper-picks.yml) |
 | **11:55 PM** | [Check for confirmed paper outcomes](.github/workflows/m13-beta-grading.yml) |
 
 These are configured run times, not delivery guarantees. Updates can be delayed, and results remain pending until confirmed.

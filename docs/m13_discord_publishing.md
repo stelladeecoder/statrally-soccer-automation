@@ -1,5 +1,7 @@
 # Milestone 13 — Discord publishing (in progress)
 
+> Current active schedule: **4:17 AM watchlist; 5:23 AM, 8:23 AM and 2:23 PM paper-pick checks; 11:55 PM grading**, all America/Chicago. Older times and activation steps below are historical records, not the current workflow configuration. See [current operations](m13_operational_audit.md).
+
 The public automation repo owns publishing; private `statrally-soccer-btts` continues to own research, fixture verification, model probabilities and Kalshi EV.
 
 ## Implemented
