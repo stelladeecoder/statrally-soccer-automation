@@ -1,10 +1,6 @@
-name: StatRally Kalshi scanner and soccer schedule
+name: StatRally legacy Kalshi scanner (manual only)
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "0 7 * * *"
-      timezone: "America/Chicago"
-    - cron: "10 18,23 * * *"
 permissions:
   contents: read
 concurrency:
