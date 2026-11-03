@@ -70,7 +70,7 @@ def render_beta(envelope, now=None, *, allow_empty=False):
             raise ValueError("Missing signal identity")
         if s["side"] not in ("YES","NO") or s["market_ticker"] in seen:
             raise ValueError("Invalid side or duplicate market")
-        if s["league"] not in ("epl","mls","liga_mx") or not s["espn_event_id"].isascii() or not s["espn_event_id"].isdigit():
+        if s["league"] not in ("epl","bundesliga","laliga","serie_a","ligue_1","eredivisie","liga_portugal","brasileirao","mls","liga_mx","primera_lpf","champions_league","europa_league") or not s["espn_event_id"].isascii() or not s["espn_event_id"].isdigit():
             raise ValueError("Supported league and explicit ESPN event identity required")
         seen.add(s["market_ticker"])
         try:
@@ -88,7 +88,8 @@ def render_beta(envelope, now=None, *, allow_empty=False):
             raise ValueError("Invalid probability or executable price")
         local=kickoff.astimezone(ZoneInfo("America/Chicago"))
         lines.append(f"• {s['home_team']} vs {s['away_team']} | BTTS {s['side']} | {local:%b %d %I:%M %p} CT")
-        lines.append(f"  Model estimate {p:.1%} | Kalshi quote ${q:.2f} | PAPER ONLY")
+        provider = "Polymarket US" if s["market_ticker"].startswith("astatc-") else "Kalshi"
+        lines.append(f"  Model estimate {p:.1%} | {provider} quote ${q:.2f} | PAPER ONLY")
     payload={"content":"\n".join(lines),"allowed_mentions":{"parse":[]}}
     if len(payload["content"])>2000:
         raise ValueError("Discord message too long")
