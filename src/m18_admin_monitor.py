@@ -167,6 +167,8 @@ def recent_failure_details(repo, run_id, call=api):
         name = job.get("name", "Unknown job")
         if any("Export independently mapped Polymarket" in s for s in steps):
             meaning = "Polymarket US export/data pipeline failed; API cause not yet confirmed"
+        elif any("Report schedule and BTTS market eligibility" in s for s in steps):
+            meaning = "Polymarket US source incomplete or API error reported; inspect diagnostics"
         elif any("Persist Polymarket US paper log" in s for s in steps):
             meaning = "Paper-pick dispatch failed; Discord delivery may be unconfirmed. Do not auto-resend"
         elif "watchlist" in name.lower():
