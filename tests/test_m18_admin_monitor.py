@@ -2,7 +2,7 @@
 import unittest
 from datetime import datetime, timedelta, timezone, date
 from zoneinfo import ZoneInfo
-from m18_admin_monitor import due_slots, alert, failure, watch, CENTRAL, expected_windows, window_status_lines, completed_window_audit
+from m18_admin_monitor import due_slots, alert, failure, watch, CENTRAL, expected_windows, window_status_lines, completed_window_audit, delivery_counts
 
 
 class TestAdminMonitor(unittest.TestCase):
@@ -127,6 +127,36 @@ class TestAdminMonitor(unittest.TestCase):
         seen = completed_window_audit("owner/repo", [issue], fake)
         self.assertEqual(len(seen), 2)
         self.assertEqual(len(calls), 1)
+
+
+    def test_delivery_totals_are_confirmed_comments_in_central_day(self):
+        start = datetime(2026, 11, 4, 0, 0, tzinfo=CENTRAL).astimezone(timezone.utc)
+        end = datetime(2026, 11, 5, 0, 0, tzinfo=CENTRAL).astimezone(timezone.utc)
+        rows = [
+            {"number": 4, "title": "BETA PAPER | X", "user": {"login": "github-actions[bot]"}},
+            {"number": 5, "title": "StatRally watchlist | 2026-11-04", "user": {"login": "github-actions[bot]"}},
+        ]
+        records = {
+            4: [
+                {"created_at": "2026-11-04T13:00:00Z", "user": {"login": "github-actions[bot]"},
+                 "body": "Discord delivery returned success.\\nstatrally-beta-delivery-proof:abc"},
+                {"created_at": "2026-11-04T23:59:00Z", "user": {"login": "github-actions[bot]"},
+                 "body": "statrally-beta-results-delivered:abc"},
+                {"created_at": "2026-11-05T13:00:00Z", "user": {"login": "github-actions[bot]"},
+                 "body": "Discord delivery returned success.\\nstatrally-beta-delivery-proof:later"},
+            ],
+            5: [
+                {"created_at": "2026-11-04T14:00:00Z", "user": {"login": "github-actions[bot]"},
+                 "body": "statrally-watchlist-page-delivered:1/2\\nDiscord accepted this page."},
+                {"created_at": "2026-11-04T14:01:00Z", "user": {"login": "github-actions[bot]"},
+                 "body": "statrally-watchlist-page-delivered:2/2\\nDiscord accepted this page."},
+            ],
+        }
+        def fake(method, repo, path, data=None):
+            number = int(path.split("/")[2])
+            return records[number]
+        totals = delivery_counts("owner/repo", rows, start, end, fake)
+        self.assertEqual(totals, {"paper_picks": 1, "watchlist_pages": 2, "graded_results": 1})
 
 
 if __name__ == "__main__":
