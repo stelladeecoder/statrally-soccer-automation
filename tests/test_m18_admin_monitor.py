@@ -2,7 +2,7 @@
 import unittest
 from datetime import datetime, timedelta, timezone, date
 from zoneinfo import ZoneInfo
-from m18_admin_monitor import due_slots, alert, failure, watch, CENTRAL, expected_windows, window_status_lines, completed_window_audit, delivery_counts
+from m18_admin_monitor import due_slots, alert, failure, watch, CENTRAL, expected_windows, window_status_lines, completed_window_audit, delivery_counts, is_superseded_push_cancellation
 
 
 class TestAdminMonitor(unittest.TestCase):
@@ -157,6 +157,46 @@ class TestAdminMonitor(unittest.TestCase):
             return records[number]
         totals = delivery_counts("owner/repo", rows, start, end, fake)
         self.assertEqual(totals, {"paper_picks": 1, "watchlist_pages": 2, "graded_results": 1})
+
+
+    def test_cancelled_jobless_push_superseded_by_active_dispatch_is_silent(self):
+        now = datetime(2026, 11, 3, 17, 23, tzinfo=timezone.utc)
+        old_run = {"id": 44, "head_branch": "main", "conclusion": "cancelled",
+                   "event": "push", "created_at": "2026-11-03T17:20:15Z"}
+        newer = {"id": 45, "head_branch": "main", "status": "in_progress",
+                 "event": "workflow_dispatch", "conclusion": None,
+                 "created_at": "2026-11-03T17:22:47Z"}
+        def fake(method, repo, path, data=None):
+            if path == "/actions/runs/44":
+                return old_run
+            if path == "/actions/runs/44/jobs?per_page=100":
+                return {"total_count": 0, "jobs": []}
+            if path.startswith("/actions/workflows/"):
+                return {"workflow_runs": [newer]}
+            raise AssertionError("Cancelled superseded run must not write alerts")
+        messages = []
+        failure("owner/repo", "stub", 44, now=now,
+                call=fake, sender=lambda *args: messages.append(args))
+        self.assertEqual(messages, [])
+
+    def test_cancelled_jobless_run_not_superseded_without_live_successor(self):
+        run = {"id": 44, "head_branch": "main", "conclusion": "cancelled",
+               "event": "push", "created_at": "2026-11-03T17:20:15Z"}
+        def fake(method, repo, path, data=None):
+            if path.endswith("/jobs?per_page=100"):
+                return {"total_count": 0, "jobs": []}
+            if path.startswith("/actions/workflows/"):
+                return {"workflow_runs": []}
+            raise AssertionError(path)
+        self.assertFalse(is_superseded_push_cancellation("owner/repo", run, fake))
+
+    def test_cancelled_run_with_failed_job_is_not_suppressed(self):
+        run = {"id": 44, "head_branch": "main", "conclusion": "cancelled",
+               "event": "push", "created_at": "2026-11-03T17:20:15Z"}
+        def fake(method, repo, path, data=None):
+            self.assertTrue(path.endswith("/jobs?per_page=100"))
+            return {"total_count": 1, "jobs": [{"name": "gate", "conclusion": "failure"}]}
+        self.assertFalse(is_superseded_push_cancellation("owner/repo", run, fake))
 
 
 if __name__ == "__main__":
