@@ -59,8 +59,8 @@ export async function commandText(interaction, { fetcher = fetch, now = new Date
 }
 
 export function allowedGuildChannel(interaction, guildId, channelId) {
-  if (!guildId || !channelId || !/^\\d{15,22}$/.test(guildId) ||
-      !/^\\d{15,22}$/.test(channelId)) return true;
+  if (!guildId || !channelId || !/^\d{15,22}$/.test(guildId) ||
+      !/^\d{15,22}$/.test(channelId)) return true;
   // Limit only the StatRally home server; preserve user installs elsewhere.
   if (interaction.context !== 0 || interaction.guild_id !== guildId) return true;
   return interaction.channel_id === channelId;
