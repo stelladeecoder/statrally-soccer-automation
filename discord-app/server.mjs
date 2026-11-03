@@ -77,8 +77,17 @@ export async function editDeferred(applicationId, token, content, fetcher = fetc
       `https://discord.com/api/v10/webhooks/${applicationId}/${token}/messages/@original`,
       { method: "PATCH", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: textResponse(content).content, allowed_mentions: { parse: [] } }), signal: controller.signal });
-    if (!response.ok) throw new Error("Deferred response delivery failed");
+    if (!response.ok) throw new Error("Deferred response delivery failed (Discord HTTP " + response.status + ")");
   } finally { clearTimeout(timeout); }
+}
+
+function safeFailure(error) {
+  const kind = error?.name === "AbortError" ? "timeout" :
+    error?.name === "TypeError" ? "network_error" : "application_error";
+  const message = String(error?.message || "").slice(0, 180);
+  // Only internally generated, non-secret error messages are emitted to logs.
+  const known = /^(Deferred response delivery failed \(Discord HTTP \d{3}\)|Public GitHub source unavailable \(\d{3}\)|Issue history exceeds read limit; refusing incomplete results|Invalid GitHub source|Invalid interaction identifiers|The operation was aborted|fetch failed)$/;
+  return kind + (known.test(message) ? ": " + message : "");
 }
 
 export function createApp({ publicKey, applicationId, guildId = "", channelId = "", fetcher = fetch,
@@ -155,14 +164,14 @@ export function createApp({ publicKey, applicationId, guildId = "", channelId = 
         try {
           text = await commandText(interaction, { fetcher, now: clock() });
         } catch (err) {
-          logger.error("StatRally command failed:", err?.name || "UnknownError");
+          logger.error("StatRally command failed:", safeFailure(err));
           text = "Latest verified records are unavailable right now. No new analysis was generated.";
         }
         try { await editDeferred(applicationId, interaction.token, text, fetcher); }
-        catch (err) { logger.error("Discord response failed:", err?.name || "UnknownError"); }
+        catch (err) { logger.error("Discord response failed:", safeFailure(err)); }
       })();
     } catch (err) {
-      logger.error("Discord interaction request failed:", err?.name || "UnknownError");
+      logger.error("Discord interaction request failed:", safeFailure(err));
       if (!res.headersSent) reply(500, { error: "Request processing failed" });
     }
   });

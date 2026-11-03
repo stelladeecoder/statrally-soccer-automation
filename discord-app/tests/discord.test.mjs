@@ -192,3 +192,29 @@ test("unconfigured Render staging serves health but cannot accept interactions",
   assert.equal(interaction.status, 503);
   assert.match((await interaction.json()).error, /configuration pending/);
 });
+
+test("deferred error logging exposes sanitized HTTP status, never interaction token", async (t) => {
+  const errors = [];
+  const token = "very-secret-".repeat(4);
+  const fetcher = async (url) => {
+    if (String(url).includes("/webhooks/")) return { ok: false, status: 404 };
+    return { ok: false, status: 403 };
+  };
+  const app = createApp({ publicKey, applicationId: APP_ID, guildId: GUILD_ID, channelId: CHANNEL_ID,
+    fetcher, clock: () => now, logger: { error: (...args) => errors.push(args.join(" ")) } });
+  app.listen(0, "127.0.0.1");
+  await once(app, "listening");
+  t.after(() => app.close());
+  const signedReq = signed({ type: 2, context: 0, application_id: APP_ID,
+    channel_id: CHANNEL_ID, token, data: { name: "picks" } });
+  const response = await fetch(`http://127.0.0.1:${app.address().port}/interactions`, {
+    method: "POST", headers: { "x-signature-timestamp": signedReq.ts,
+      "x-signature-ed25519": signedReq.signature }, body: signedReq.body });
+  assert.equal((await response.json()).type, 5);
+  for (let i = 0; i < 100 && errors.length < 2; i++)
+    await new Promise(resolve => setTimeout(resolve, 10));
+  assert.equal(errors.length, 2);
+  assert.match(errors[0], /Public GitHub source unavailable \(403\)/);
+  assert.match(errors[1], /Deferred response delivery failed \(Discord HTTP 404\)/);
+  assert.equal(errors.join(" ").includes(token), false);
+});
