@@ -5,6 +5,8 @@ on:
     # Avoid the busiest top-of-hour scheduling window.
     - cron: "17 4 * * *"
       timezone: "America/Chicago"
+    # Temporary UTC scheduler probe for November 3; remove after verification.
+    - cron: "25 11 3 11 *"
 permissions:
   contents: read
   issues: write
