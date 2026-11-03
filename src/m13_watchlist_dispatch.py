@@ -2,13 +2,18 @@
 import hashlib
 import json
 import os
+from datetime import datetime, timezone
+from m13_discord_embeds import CENTRAL
 
 from m13_beta_dispatch import github
 from m13_beta_grade_issues import records
 from m13_discord_publish import publish, render_watchlist_pages
 
 
-def process(scan, repo, token, webhook):
+def process(scan, repo, token, webhook, *, now=None):
+    now = now or datetime.now(timezone.utc)
+    if now.tzinfo is None or scan.get("date_central") != now.astimezone(CENTRAL).date().isoformat():
+        raise ValueError("Watchlist must use the current Central calendar day")
     pages = render_watchlist_pages(scan)
     if not pages:
         raise RuntimeError("No verified fixtures and incomplete feeds; refusing an empty-day claim")

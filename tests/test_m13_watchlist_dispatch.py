@@ -4,10 +4,14 @@ from contextlib import redirect_stdout
 from io import StringIO
 import unittest
 from unittest.mock import patch
+from datetime import datetime, timezone
 
 from m13_discord_publish import render_watchlist_pages
 from m13_discord_embeds import payload_text, validate_payload
-from m13_watchlist_dispatch import process
+from m13_watchlist_dispatch import process as dispatch_process
+
+def process(*args,**kwargs):
+    return dispatch_process(*args,now=datetime(2026,11,8,14,tzinfo=timezone.utc),**kwargs)
 
 
 def scan(count=1):

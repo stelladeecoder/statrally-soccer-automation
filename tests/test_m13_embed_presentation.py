@@ -14,6 +14,7 @@ from m13_discord_publish import publish, render_watchlist_pages, NoRedirect
 from m13_discord_embeds import (YES_COLOR, NO_COLOR, NEUTRAL_COLOR, payload_text,
     validate_payload, units, render_paper_result)
 from m13_design_preview import previews, deliver, LABEL, ROLES
+from m13_watchlist_dispatch import process as process_watchlist
 from test_m13_beta_grade_issues import paper_record
 
 NOW=datetime(2026,11,3,15,tzinfo=timezone.utc)
@@ -131,6 +132,12 @@ class EmbedPresentationTests(unittest.TestCase):
         with patch('m13_beta_dispatch.github') as api,patch('m13_beta_dispatch.publish') as send:
             with self.assertRaises(ValueError):process(envelope(kickoff='2026-11-04T06:00:00Z'),'owner/repo','token','synthetic',now=NOW)
         api.assert_not_called();send.assert_not_called()
+
+    def test_watchlist_delivery_rejects_stale_or_future_day_before_reserving(self):
+        for day in ('2026-11-02','2026-11-04'):
+            with patch('m13_watchlist_dispatch.records') as records,patch('m13_watchlist_dispatch.publish') as send:
+                with self.assertRaises(ValueError):process_watchlist({'date_central':day},'owner/repo','token','synthetic',now=NOW)
+            records.assert_not_called();send.assert_not_called()
 
     def test_spring_fall_and_midnight_pick_boundaries(self):
         for now,last,next_day in (('2026-03-08T06:30:00Z','2026-03-09T04:59:00Z','2026-03-09T05:00:00Z'),
