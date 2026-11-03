@@ -1,8 +1,10 @@
-# StatRally
+# StatRally | Soccer Data Analytics
 
 **The Edge Is in the Data.**
 
-StatRally is a soccer research project that shares match lists, experimental predictions, and results through Discord.
+StatRally is a data analytics portfolio project that turns soccer data into match watchlists, experimental predictions, and tracked results shared through Discord.
+
+The project demonstrates data collection, cleaning, statistical analysis, model evaluation, automated reporting, and clear communication of uncertainty.
 
 It focuses on **Both Teams to Score (BTTS)**:
 
@@ -10,6 +12,29 @@ It focuses on **Both Teams to Score (BTTS)**:
 - **NO:** at least one team finishes without scoring.
 
 For example, a 1–1 score is BTTS YES. A 2–0 score is BTTS NO. These predictions cover regular match time, including stoppage time, but exclude extra time and penalty shootouts.
+
+## Project highlights
+
+- **Data engineering:** combine match information from multiple sources, standardize names and times, and check records for missing or conflicting information.
+- **Analytics and modeling:** explore historical results, develop probability estimates, and compare predictions with simple benchmarks.
+- **Quality and reliability:** test data checks, prevent duplicate records, and keep unconfirmed results separate from completed outcomes.
+- **Communication:** turn analytical output into readable updates for people without a technical background.
+
+A verified project test run passed **116 automated checks**, and controlled match-list and paper-pick delivery tests succeeded in Discord. These checks demonstrate software validation; they do not establish profitable predictions.
+
+## Tools used
+
+| Tool | Role in the project |
+| --- | --- |
+| **Python** | Data processing, analysis, and automation |
+| **pandas and NumPy** | Preparing, organizing, and analyzing match data |
+| **scikit-learn and SciPy** | Statistical research and historical model evaluation |
+| **Git and GitHub** | Version control and project documentation |
+| **GitHub Actions** | Scheduled tasks and automated checks |
+| **Python unittest** | Testing data validation and reporting behavior |
+| **Discord** | Sharing match lists, paper picks, and results |
+
+This overview describes the work and tools at a portfolio level. Proprietary methods and setup instructions are not included.
 
 ## Your Discord guide
 
