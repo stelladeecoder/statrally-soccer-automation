@@ -28,14 +28,14 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install private research runtime dependency
-        run: python -m pip install pandas
-      - name: Capture verified experimental signals
+      - name: Install private research and Polymarket US runtime dependencies
+        run: python -m pip install pandas polymarket-us
+      - name: Export independently mapped Polymarket US experimental signals
         working-directory: engine
         env:
           PYTHONPATH: ../automation/src:src
-        run: python ../automation/src/m13_beta_capture.py --output "$RUNNER_TEMP/beta.json"
-      - name: Persist paper log and post eligible beta signals
+        run: python src/m15_polymarket_beta_export.py --output "$RUNNER_TEMP/beta.json"
+      - name: Persist Polymarket US paper log and post eligible beta signals
         env:
           PYTHONPATH: automation/src
           BETA_INPUT_FILE: ${{ runner.temp }}/beta.json
