@@ -1,90 +1,145 @@
-# StatRally | Soccer Data Analytics
+<div align="center">
 
-**The Edge Is in the Data.**
+# ⚽ StatRally
+### Soccer BTTS research. Daily automation. Results you can review.
 
-StatRally turns soccer data across **13 competitions** into match watchlists, experimental predictions, and tracked results delivered through Discord.
+![Focus: Soccer BTTS](https://img.shields.io/badge/Focus-Soccer%20BTTS-16a34a?style=flat-square)
+![Stage: Experimental](https://img.shields.io/badge/Stage-Experimental-f59e0b?style=flat-square)
+![Mode: Paper picks](https://img.shields.io/badge/Mode-Paper%20picks-8b5cf6?style=flat-square)
+![Built with Python](https://img.shields.io/badge/Built%20with-Python-3776AB?style=flat-square&logo=python&logoColor=white)
 
-This portfolio project brings together **data engineering, statistical analysis, model evaluation, automation, and reporting**. Its focus is turning inconsistent information into useful updates while clearly showing what is known, uncertain, or incomplete.
+**[Why I built it](#-why-i-built-statrally) · [The experience](#-from-matchday-to-results) · [Project status](#-what-works-and-whats-next) · [Explore the code](#-explore-the-project)**
 
-## The problem
+</div>
 
-Soccer information arrives in different formats. Team names can vary, kickoff times can change, and some matches have missing information. A useful analytics project needs to handle these problems before presenting a prediction.
+---
 
-StatRally organizes that information into a simple experience: see the day's matches, review eligible practice predictions, and follow confirmed outcomes.
+## 💡 Why I built StatRally
 
-## What I built
+I couldn't find a soccer analysis tool that gave me the **Both Teams to Score (BTTS) trends** I wanted to help with my betting decisions. I also wanted to **automate daily picks**, instead of repeating the same research and selection process every day.
 
-- **Data preparation:** combined match information from multiple sources, standardized names and times, and added checks for missing or conflicting records.
-- **Analysis and evaluation:** explored historical results, developed probability estimates, and compared predictions with simple benchmarks.
-- **Automated reporting:** created scheduled match lists, experimental paper-pick updates, and result tracking through Discord.
-- **Quality controls:** added automated tests, duplicate prevention, and checks that keep unconfirmed results separate from completed outcomes.
-- **Accessible communication:** translated analytical output into messages that people without a technical background can understand.
+That frustration became StatRally: a project built around my own need for focused soccer research and a more consistent daily workflow.
 
-## Tools and skills
+The ambition is to connect BTTS analysis, daily pick generation, and outcome tracking in one experience. The current public repository contains the **automation and reporting layer**: match watchlists, experimental paper-pick publishing, and guarded result grading. The underlying research and prediction engine remains private.
 
-| Tool | What it supports |
-| --- | --- |
-| **Python** | Data processing, analysis, and automation |
-| **pandas and NumPy** | Cleaning, organizing, and analyzing match data |
-| **scikit-learn and SciPy** | Statistical research and historical model evaluation |
-| **Git and GitHub** | Version control and project documentation |
-| **GitHub Actions** | Scheduled tasks and automated checks |
-| **Python unittest** | Testing data validation and reporting behavior |
-| **Discord** | Delivering readable updates to users |
+> [!NOTE]
+> **Current stage: experimental paper picks.** StatRally has no verified betting edge. A model estimate is a research hypothesis, and paper results do not represent actual betting profit.
 
-Skills demonstrated include data cleaning, combining information from different sources, working with time zones, evaluating predictions, testing software, and communicating findings.
+## 🎯 BTTS, explained
 
-## Public project and private research
+**Both Teams to Score** asks whether each team scores at least one goal during regular match time, including stoppage time.
 
-This public repository contains the reporting, automation, and testing work available for review.
+| Prediction | What it means | Example |
+| :--- | :--- | :--- |
+| 🟢 **BTTS YES** | Both teams score | 1–1 or 2–1 |
+| 🔵 **BTTS NO** | At least one team does not score | 2–0 or 0–0 |
 
-A separate private repository holds the underlying analytical research and prediction development. The public component presents the resulting updates, while the research implementation remains private.
+Extra time and penalty shootouts are excluded. The grader leaves unsupported or unconfirmed outcomes pending.
 
-This README explains the project's purpose, tools, and demonstrated work without publishing proprietary methods, connection details, or setup instructions.
+## 📬 From matchday to results
 
-## Evidence and lessons learned
+| Destination | The experience |
+| :--- | :--- |
+| 🗓️ `#match-watchlist` | Soccer fixtures and kickoff times, grouped by competition. A listed match is not automatically a pick. |
+| ⚽ `#btts-picks` | Eligible experimental YES/NO paper picks with a model estimate, market quote, and kickoff time. |
+| 📊 `#btts-results` | Paper outcomes after the recorded match and final score pass verification. |
 
-A verified project run passed **116 automated checks**. Controlled tests also successfully delivered real match-list and experimental paper-pick messages to Discord.
+The beta publisher accepts **up to three paper signals per check**. Some checks produce none: the system does not force a daily selection. Messages marked **TEST** are delivery checks, not official tracked predictions.
 
-Searches cover all 13 competitions, but this does not mean every competition produces a pick. Missing information, unresolved team identities, and limited historical data can prevent a match from qualifying.
+### How the pieces connect
 
-Historical evaluation has not established a reliable predictive advantage over simple benchmarks. That finding informs the project: predictions remain experimental, uncertainty is stated clearly, and practice results are kept separate from actual betting profits.
+```mermaid
+flowchart LR
+    A["Private research engine<br/>Fixtures, estimates and quotes"] --> B["Public validation<br/>Identity, timing and freshness"]
+    B --> C["GitHub Issues<br/>Reserve paper record"]
+    C --> D["Discord<br/>Experimental paper pick"]
+    D --> E["Verified full-time score<br/>Grade or keep pending"]
+    E --> F["Paper results<br/>Issues and Discord"]
 
-**Current stage:** working match-list and paper-pick delivery, with broader coverage and long-term performance still under evaluation.
+    classDef research fill:#dbeafe,stroke:#2563eb,color:#172554
+    classDef checks fill:#fef3c7,stroke:#d97706,color:#451a03
+    classDef delivery fill:#ede9fe,stroke:#7c3aed,color:#2e1065
+    classDef results fill:#dcfce7,stroke:#16a34a,color:#052e16
+    class A research
+    class B,C checks
+    class D delivery
+    class E,F results
+```
 
-## The Discord experience
+This diagram describes the implemented paper-pick path. It does not certify uninterrupted live operation.
 
-StatRally focuses on **Both Teams to Score (BTTS)**:
+## 🚦 What works, and what's next
 
-- **YES:** both teams score at least one goal. A 1–1 result is an example.
-- **NO:** at least one team does not score. A 2–0 result is an example.
+| Status | Capability | Evidence or boundary |
+| :--- | :--- | :--- |
+| ✅ **Implemented** | Daily fixture-watchlist formatting and scheduled publishing workflow | [Watchlist publisher](src/m13_discord_publish.py) and [workflow](.github/workflows/m13-daily-watchlist.yml) |
+| ✅ **Implemented** | Experimental paper-pick validation and Discord dispatch | Checks fixture/quote verification flags, supported identities, pre-kickoff timing, and quote freshness; [validator](src/m13_beta_signals.py) |
+| ✅ **Implemented** | Durable paper records and duplicate protection | Reserves a GitHub Issue before sending; ambiguous delivery requires review; [dispatcher](src/m13_beta_dispatch.py) |
+| ✅ **Implemented** | Guarded grading and paper-performance summaries | Confirms match identity and full-time status; tracks wins, losses, pending predictions, hit rate, and Brier score where available; [grader](src/m13_beta_grading.py) and [Issue integration](src/m13_beta_grade_issues.py) |
+| 🧪 **Verification ongoing** | Unattended delivery and the full pick-to-final-result cycle | Controlled delivery evidence is documented; first unattended executions and a genuinely completed beta outcome still need confirmation in the [verification notes](docs/m13_beta_publishing.md) |
+| 🔭 **Further work** | Broader reviewed market/model coverage and long-term evaluation | Supported competition identifiers do not establish usable model history, market availability, or reliable predictions in every league |
 
-Predictions cover regular match time, including stoppage time, but exclude extra time and penalty shootouts.
+**Coverage has different layers.** The public paper-signal validator accepts identifiers for 13 competitions. The current public result grader supports **Premier League, MLS, and Liga MX**. Neither count means every match is eligible for a pick.
 
-| Channel | What users see |
-| --- | --- |
-| `#match-watchlist` | The day's soccer matches and kickoff times. A listed match is not automatically a pick. |
-| `#btts-picks` | Experimental BTTS YES or NO paper picks for upcoming matches. |
-| `#btts-results` | Outcomes for recorded paper picks once the final score is confirmed. |
+<details>
+<summary><strong>🌍 The 13 competition identifiers accepted by the paper-signal validator</strong></summary>
 
-**Paper picks are practice predictions.** The bot does not place bets or use anyone's money. Messages marked **TEST** check delivery and presentation; they are not official tracked picks.
+Premier League · La Liga · Bundesliga · Serie A · Ligue 1 · Eredivisie · Liga Portugal · Brasileirão Série A · MLS · Liga MX · Argentina Primera División · UEFA Champions League · UEFA Europa League
 
-Each pick identifies the match, kickoff time, and prediction. A displayed percentage is an estimated chance, not a guarantee. Market prices can change. Up to three paper picks are shared per check; some checks produce none.
+Fixture feeds, reviewed market mappings, historical team data, and grading support can limit actual coverage.
 
-### Expected daily updates
+</details>
 
-All times are **Central Time**.
+### ⏰ Configured daily schedule
 
-| Time | Update |
-| --- | --- |
-| 7:17 AM | Daily match list |
-| 8:23 AM and 2:23 PM | Checks for new paper picks |
-| 11:55 PM | Checks for completed results |
+Times follow **America/Chicago (Central Time)**, as defined in the current workflow files.
 
-Updates may arrive late. Results remain pending until confirmed.
+| Time | Scheduled task |
+| :--- | :--- |
+| **7:17 AM** | [Daily fixture watchlist](.github/workflows/m13-daily-watchlist.yml) |
+| **8:23 AM & 2:23 PM** | [Check for new experimental paper picks](.github/workflows/m13-beta-paper-picks.yml) |
+| **11:55 PM** | [Check for confirmed paper outcomes](.github/workflows/m13-beta-grading.yml) |
 
-### Competition coverage
+These are configured run times, not delivery guarantees. Updates can be delayed, and results remain pending until confirmed.
 
-Premier League, La Liga, Bundesliga, Serie A, Ligue 1, Eredivisie, Liga Portugal, Brasileirão Série A, MLS, Liga MX, Argentina Primera División, UEFA Champions League, and UEFA Europa League.
+## 🛠️ Explore the project
 
-Reported wins and losses describe tracked practice predictions, not actual betting profits. Betting involves risk, and no prediction guarantees a win.
+This repository shows how I turn analytical output into a repeatable, reviewable workflow: validate inputs, automate delivery, preserve records, and evaluate outcomes.
+
+| Technology | Role in this public repository |
+| :--- | :--- |
+| **Python** | Validation, message formatting, dispatch, grading, and reporting |
+| **GitHub Actions** | Scheduled workflows and manual validation runs |
+| **GitHub Issues** | Durable paper-prediction records, delivery receipts, and performance snapshots |
+| **Discord webhooks** | Watchlist, paper-pick, and results delivery |
+| **Python unittest** | Offline regression tests for validation, publishing, grading, and duplicate handling |
+
+The scheduled paper-picks workflow currently invokes a **Polymarket US exporter in the private research repository**. Earlier Kalshi paths remain in the project history and code; older milestone notes describe previous configurations.
+
+The private research engine is required for the full scheduled pipeline. This public repository is not a standalone distribution of the prediction model or a public BTTS trend dashboard.
+
+### Start here
+
+- **[Source code](src/)** — inspect the automation and reporting logic.
+- **[Tests](tests/)** — review expected behavior and failure cases.
+- **[Workflow definitions](.github/workflows/)** — see exactly what is scheduled.
+- **[Beta publishing and verification notes](docs/m13_beta_publishing.md)** — trace controlled-run evidence and remaining acceptance work. The document includes historical configurations; use current workflow files for the active schedule and exporter.
+
+<details>
+<summary><strong>🧰 Run the public offline tests</strong></summary>
+
+From the repository root, using Python 3.12:
+
+```bash
+PYTHONPATH=src python -m unittest discover -s tests -v
+```
+
+This is the command used by the public [validation workflow](.github/workflows/validate.yml). It tests the public automation; it does not run the private engine or certify live Discord delivery.
+
+</details>
+
+---
+
+**Built from a personal research need. Developed through automation, testing, and honest evaluation.**
+
+Paper picks are practice predictions. The scheduled beta pipeline places no trades. Wins, losses, hit rate, and Brier score describe paper-model performance, not realized ROI. Betting involves risk; no prediction guarantees a win.
