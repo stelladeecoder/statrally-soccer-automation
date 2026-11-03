@@ -58,7 +58,7 @@ export async function commandText(interaction, { fetcher = fetch, now = new Date
   return content;
 }
 
-export function allowedGuildChannel(interaction, channelId) {
+export function allowedGuildChannel(interaction, guildId, channelId) {
   if (!channelId || !/^\d{15,22}$/.test(channelId)) return true;
   // A personal user installation or private DM is not forced into a server channel.
   if (interaction.context !== 0) return true;
@@ -80,7 +80,7 @@ export async function editDeferred(applicationId, token, content, fetcher = fetc
   } finally { clearTimeout(timeout); }
 }
 
-export function createApp({ publicKey, applicationId, channelId = "", fetcher = fetch,
+export function createApp({ publicKey, applicationId, guildId = "", channelId = "", fetcher = fetch,
                             clock = () => new Date(), logger = console } = {}) {
   const seen = new Map();
   return http.createServer(async (req, res) => {
@@ -161,11 +161,11 @@ export function createApp({ publicKey, applicationId, channelId = "", fetcher = 
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const { DISCORD_PUBLIC_KEY: publicKey, DISCORD_APPLICATION_ID: applicationId,
-          STAT_RALLY_COMMAND_CHANNEL_ID: channelId, PORT = "3000" } = process.env;
+          STAT_RALLY_COMMAND_CHANNEL_ID: channelId, STAT_RALLY_GUILD_ID: guildId, PORT = "3000" } = process.env;
   if (!publicKey || !applicationId) {
     console.error("DISCORD_PUBLIC_KEY and DISCORD_APPLICATION_ID are required");
     process.exit(1);
   }
-  const server = createApp({ publicKey, applicationId, channelId });
+  const server = createApp({ publicKey, applicationId, guildId, channelId });
   server.listen(Number(PORT), "0.0.0.0", () => console.log("StatRally interaction endpoint listening"));
 }
