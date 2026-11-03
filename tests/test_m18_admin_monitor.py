@@ -43,7 +43,13 @@ class TestAdminMonitor(unittest.TestCase):
     def test_no_picks_duplicate_runs_silent(self):
         now = datetime(2026, 11, 3, 6, 0, tzinfo=CENTRAL).astimezone(timezone.utc)
         rows = [{"number": 99, "user": {"login": "github-actions[bot]"},
-                 "body": 'statrally-admin-monitor-v1:{"alerts":{},"report_day":""}'}]
+                 "body": 'statrally-admin-monitor-v1:{"alerts":{},"report_day":""}'},
+                {"number": 33, "user": {"login": "github-actions[bot]"},
+                 "body": 'statrally-scheduler-checkpoint-v1:{"task":"watchlist","completed_slot":"2026-11-03T04:17:00-06:00"}'},
+                {"number": 34, "user": {"login": "github-actions[bot]"},
+                 "body": 'statrally-scheduler-checkpoint-v1:{"task":"picks","completed_slot":"2026-11-03T05:23:00-06:00"}'},
+                {"number": 35, "user": {"login": "github-actions[bot]"},
+                 "body": 'statrally-scheduler-checkpoint-v1:{"task":"grading","completed_slot":"2026-11-02T23:55:00-06:00"}'}]
         recorded = {"workflow_runs": [{"head_branch": "main", "status": "completed",
                      "created_at": (now-timedelta(minutes=3)).isoformat(),
                      "conclusion": "success"}]}
