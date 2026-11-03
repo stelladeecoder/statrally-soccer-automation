@@ -55,3 +55,34 @@ def classify_report(per_league, *, scan_complete):
                            "some_eligible_predictions", "all_observed_fixtures_eligible")
         },
     }
+
+
+def summarize_beta_diagnostics(diagnostics):
+    """Join private exporter aggregate counts with independent fixture counts.
+
+    Only safe aggregates are included. Public logs never expose raw fixture
+    identities, proprietary probability outputs, or provider response bodies.
+    """
+    if not isinstance(diagnostics, dict) or not isinstance(diagnostics.get("discovery"), dict):
+        raise ValueError("Live discovery diagnostics are required")
+    discovery = diagnostics["discovery"]
+    stats = discovery.get("leagues")
+    eligible = diagnostics.get("leagues", {})
+    if not isinstance(stats, dict) or not isinstance(eligible, dict):
+        raise ValueError("Per-league diagnostics unavailable")
+    rows = {}
+    for league, values in stats.items():
+        if not isinstance(values, dict):
+            raise ValueError("Invalid provider coverage row")
+        candidate = eligible.get(league, {})
+        if not isinstance(candidate, dict):
+            raise ValueError("Invalid candidate diagnostics")
+        rows[league] = {
+            "fixtures": values.get("fixtures"),
+            "mapped": values.get("mapped"),
+            "markets_found": values.get("markets_found"),
+            "fully_validated": candidate.get("validated", 0),
+            "feed_failures": values.get("feed_failures"),
+            "search_status": values.get("search_status"),
+        }
+    return classify_report(rows, scan_complete=discovery.get("scan_complete"))
