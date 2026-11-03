@@ -54,7 +54,7 @@ These updates are delivered to the channels in the **StatRally Discord server**.
 | ⚽ `#btts-picks` | Eligible experimental YES/NO paper picks with a model estimate, market quote, and kickoff time. |
 | 📊 `#btts-results` | Paper outcomes after the recorded match and final score pass verification. |
 
-The beta publisher accepts **up to three paper signals per check**. Some checks produce none: the system does not force a daily selection. Messages marked **TEST** are delivery checks, not official tracked predictions.
+The beta publisher accepts **up to three paper signals per Central calendar day across all scheduled checks**, counting durable reservations even when delivery is uncertain. Some checks produce none: the system does not force a daily selection. Messages marked **TEST** are delivery checks, not official tracked predictions.
 
 ### How the pieces connect
 
