@@ -322,7 +322,8 @@ def watch(repo, webhook, *, now, paused=False, call=api, sender=send):
             daily = [r for r in runs if start <=
                      datetime.fromisoformat(r["created_at"].replace("Z", "+00:00")) < end]
             successes = sum(r.get("conclusion") == "success" for r in daily)
-            failures = sum(r.get("conclusion") in ("failure", "timed_out", "cancelled") for r in daily)
+            failures = sum(r.get("conclusion") in ("failure", "timed_out") for r in daily)
+            cancellations = sum(r.get("conclusion") == "cancelled" for r in daily)
             paper = [r for r in rows if r.get("title", "").startswith("BETA PAPER | ")
                      and r.get("user", {}).get("login") == BOT
                      and start <= datetime.fromisoformat(r["created_at"].replace("Z", "+00:00")) < end]
@@ -335,7 +336,7 @@ def watch(repo, webhook, *, now, paused=False, call=api, sender=send):
             sender(webhook,
                    f"**StatRally Admin | Daily health report — {day.isoformat()} CT**\n"
                    + "\n".join(window_lines) + "\n"
-                   + f"Scheduler executions: {len(daily)} | successful: {successes} | failed/cancelled: {failures}\n"
+                   + f"Scheduler executions: {len(daily)} | successful: {successes} | failed: {failures} | cancelled: {cancellations}\n"
                    + f"Confirmed Discord deliveries: {sum(delivery.values())} total\n"
                    + f"  Picks: {delivery['paper_picks']} | Watchlist pages: {delivery['watchlist_pages']} | Graded results: {delivery['graded_results']}\n"
                    + f"Paper reservations created: {len(paper)}\n"
