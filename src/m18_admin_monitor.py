@@ -347,21 +347,21 @@ def watch(repo, webhook, *, now, paused=False, call=api, sender=send):
 
 
 def is_superseded_push_cancellation(repo, run, call=api):
-    """Ignore only jobless push cancellations replaced by active scheduler checks.
+    """Ignore jobless cron/push cancellations superseded by nearby scheduler dispatches.
 
-    A separate watchdog still detects missing posting receipts and heartbeat gaps.
+    The independent watchdog still checks slot receipts and missing heartbeats.
     """
-    if run.get("conclusion") != "cancelled" or run.get("event") != "push":
+    if run.get("conclusion") != "cancelled" or run.get("event") not in ("push", "schedule"):
         return False
     result = call("GET", repo, f"/actions/runs/{int(run['id'])}/jobs?per_page=100")
-    if not isinstance(result, dict) or result.get("total_count", 0) != 0 or result.get("jobs"):
+    if not isinstance(result, dict) or result.get("total_count") != 0 or result.get("jobs") != []:
         return False
     cancelled_start = datetime.fromisoformat(run["created_at"].replace("Z", "+00:00"))
     for candidate in scheduler_runs(repo, since=cancelled_start, call=call):
         if candidate.get("id") == run["id"]:
             continue
         started = datetime.fromisoformat(candidate["created_at"].replace("Z", "+00:00"))
-        if (started >= cancelled_start and
+        if (cancelled_start <= started <= cancelled_start + timedelta(minutes=10) and
             candidate.get("event") == "workflow_dispatch" and
             (candidate.get("status") == "in_progress" or
              candidate.get("conclusion") == "success")):
