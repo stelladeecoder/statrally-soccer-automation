@@ -2,6 +2,8 @@
 import json
 import os
 import sys
+import time as time_module
+from urllib.error import HTTPError, URLError
 from datetime import datetime, time, timedelta, timezone
 from urllib.request import Request, urlopen
 from zoneinfo import ZoneInfo
@@ -127,6 +129,30 @@ def complete(repo, slots, results, run_url, call=api):
                 raise RuntimeError("Latest scheduler checkpoint not confirmed")
         print("Completed slot:", task, slot)
 
+def resume_dispatch(repo, call=api, sleeper=time_module.sleep):
+    """Retry transient GitHub workflow dispatch failures with bounded backoff.
+
+    An uncertain response could start an extra heartbeat. Existing workflow
+    concurrency and completed-slot receipts prevent repeated completed slots.
+    """
+    path = f"/repos/{repo}/actions/workflows/statrally-scheduler.yml/dispatches"
+    payload = {"ref": "main"}
+    for attempt in range(4):
+        try:
+            call("POST", path, payload)
+            print("GitHub accepted the next automatic scheduler check")
+            return
+        except HTTPError as error:
+            if error.code not in (429, 500, 502, 503, 504) or attempt == 3:
+                raise
+        except (URLError, TimeoutError):
+            if attempt == 3:
+                raise
+        delay = 2 ** (attempt + 1)
+        print(f"Temporary dispatch error; retry {attempt + 1}/3 in {delay}s")
+        sleeper(delay)
+
+
 def main():
     repo = os.environ["GITHUB_REPOSITORY"]
     if sys.argv[1] == "gate":
@@ -140,8 +166,7 @@ def main():
         complete(repo, json.loads(os.environ["SLOTS"]), json.loads(os.environ["RESULTS"]),
                  os.environ["GITHUB_SERVER_URL"] + "/" + repo + "/actions/runs/" + os.environ["GITHUB_RUN_ID"])
     elif sys.argv[1] == "resume":
-        api("POST", f"/repos/{repo}/actions/workflows/statrally-scheduler.yml/dispatches", {"ref": "main"})
-        print("GitHub accepted the next automatic scheduler check")
+        resume_dispatch(repo)
     else:
         raise ValueError("Unknown scheduler command")
 
