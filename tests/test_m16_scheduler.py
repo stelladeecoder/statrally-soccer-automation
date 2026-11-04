@@ -1,6 +1,8 @@
 import unittest
+from io import BytesIO
+from urllib.error import HTTPError
 from datetime import datetime
-from m16_scheduler import due_slots, plan, complete, checkpoints, MARKER
+from m16_scheduler import due_slots, plan, complete, checkpoints, MARKER, resume_dispatch
 
 
 class SchedulerTests(unittest.TestCase):
@@ -41,6 +43,27 @@ class SchedulerTests(unittest.TestCase):
             return {"error": "unavailable"}
         with self.assertRaises(RuntimeError):
             checkpoints("owner/repo", fake)
+
+    def test_dispatch_retries_transient_github_500(self):
+        attempts, delays = [], []
+        def fake(method, path, data=None):
+            attempts.append((method, path, data))
+            if len(attempts) == 1:
+                raise HTTPError("https://api.github.com", 500, "Internal error", {}, BytesIO())
+        resume_dispatch("owner/repo", call=fake, sleeper=delays.append)
+        self.assertEqual(len(attempts), 2)
+        self.assertEqual(delays, [2])
+        self.assertEqual(attempts[-1][2], {"ref": "main"})
+
+    def test_dispatch_does_not_retry_permission_errors(self):
+        attempts, delays = [], []
+        def fake(method, path, data=None):
+            attempts.append(method)
+            raise HTTPError("https://api.github.com", 403, "Forbidden", {}, BytesIO())
+        with self.assertRaises(HTTPError):
+            resume_dispatch("owner/repo", call=fake, sleeper=delays.append)
+        self.assertEqual(attempts, ["POST"])
+        self.assertEqual(delays, [])
 
     def test_naive_time_rejected(self):
         with self.assertRaises(ValueError):
