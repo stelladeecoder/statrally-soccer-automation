@@ -179,6 +179,49 @@ class TestAdminMonitor(unittest.TestCase):
                 call=fake, sender=lambda *args: messages.append(args))
         self.assertEqual(messages, [])
 
+    def test_jobless_schedule_superseded_by_successful_dispatch_is_silent(self):
+        run = {"id": 41767480372, "head_branch": "main", "conclusion": "cancelled",
+               "event": "schedule", "created_at": "2026-11-04T03:29:56Z"}
+        successor = {"id": 41767513841, "head_branch": "main",
+                     "event": "workflow_dispatch", "status": "completed",
+                     "conclusion": "success", "created_at": "2026-11-04T03:30:14Z"}
+        def fake(method, repo, path, data=None):
+            if path == "/actions/runs/41767480372":
+                return run
+            if path.endswith("/jobs?per_page=100"):
+                return {"total_count": 0, "jobs": []}
+            if path.startswith("/actions/workflows/"):
+                return {"workflow_runs": [successor]}
+            raise AssertionError(path)
+        sent = []
+        failure("owner/repo", "stub", run["id"], now=datetime.now(timezone.utc),
+                call=fake, sender=lambda *args: sent.append(args))
+        self.assertEqual(sent, [])
+
+    def test_jobless_schedule_without_successor_is_not_suppressed(self):
+        run = {"id": 44, "conclusion": "cancelled", "event": "schedule",
+               "created_at": "2026-11-04T03:29:56Z"}
+        def fake(method, repo, path, data=None):
+            if path.endswith("/jobs?per_page=100"):
+                return {"total_count": 0, "jobs": []}
+            if path.startswith("/actions/workflows/"):
+                return {"workflow_runs": []}
+            raise AssertionError(path)
+        self.assertFalse(is_superseded_push_cancellation("owner/repo", run, fake))
+
+    def test_late_successor_does_not_hide_jobless_schedule(self):
+        run = {"id": 44, "conclusion": "cancelled", "event": "schedule",
+               "created_at": "2026-11-04T03:29:56Z"}
+        successor = {"id": 45, "event": "workflow_dispatch", "status": "completed",
+                     "conclusion": "success", "created_at": "2026-11-04T03:50:14Z"}
+        def fake(method, repo, path, data=None):
+            if path.endswith("/jobs?per_page=100"):
+                return {"total_count": 0, "jobs": []}
+            if path.startswith("/actions/workflows/"):
+                return {"workflow_runs": [successor]}
+            raise AssertionError(path)
+        self.assertFalse(is_superseded_push_cancellation("owner/repo", run, fake))
+
     def test_cancelled_jobless_run_not_superseded_without_live_successor(self):
         run = {"id": 44, "head_branch": "main", "conclusion": "cancelled",
                "event": "push", "created_at": "2026-11-03T17:20:15Z"}
