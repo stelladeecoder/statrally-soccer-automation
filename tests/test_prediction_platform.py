@@ -183,5 +183,16 @@ class PredictionPlatformTests(unittest.TestCase):
             self.assertIn('predictions remain saved',alert.call_args.args[4].lower())
         self.assertEqual(len(self.ledger.forecasts),1)
 
+    def test_league_coverage_projection_remains_strictly_aggregate_only(self):
+        from prediction_public_export import public_metrics
+        report={'schema_version':1,'status':'forward_recorded_experimental_no_trades','revision_policy':'test',
+            'overall':{'n':0},'by_league':{'epl':{'n':0,'evaluated_prematch_fixtures':2,'prediction_coverage':.5}},
+            'by_model_version':{},'by_confidence':{k:{'all':{'n':0},'YES':{'n':0},'NO':{'n':0}} for k in
+                ('0.50-0.55','0.55-0.60','0.60-0.65','0.65-0.70','0.70-0.75','0.75-1.01')},'by_month':{},
+            'coverage':{'predicted_fixtures':1,'evaluated_prematch_fixtures':2,'fraction':.5},'no_model_promoted':True,'trades_placed':0,'note':'test'}
+        self.assertEqual(public_metrics(report)['by_league']['epl']['prediction_coverage'],.5)
+        report['by_league']['epl']['private_dataset']='never-export'
+        with self.assertRaises(ValueError):public_metrics(report)
+
 
 if __name__=='__main__':unittest.main()

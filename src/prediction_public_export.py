@@ -5,7 +5,7 @@ from m13_discord_embeds import COMPETITIONS
 SCORES = {"n","accuracy","balanced_accuracy","brier","log_loss","ece","yes_precision","no_precision","yes_recall","no_recall",
           "yes_f1","no_f1","accuracy_wilson_95","confusion","total_predictions","graded_predictions","pending_predictions",
           "ungradable_predictions","correct_predictions","incorrect_predictions","yes_accuracy","no_accuracy",
-          "baseline_same_fixtures","model_baseline_matched"}
+          "baseline_same_fixtures","model_baseline_matched","evaluated_prematch_fixtures","prediction_coverage"}
 
 
 def public_metrics(report):

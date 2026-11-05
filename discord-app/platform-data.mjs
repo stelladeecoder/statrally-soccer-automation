@@ -48,7 +48,7 @@ function validate(p, comment, day) {
       !["same_competition", "reviewed_domestic_proxy"].includes(h.source) || !/^\d{4}-\d{2}-\d{2}$/.test(h.latest_history_date) ||
       h.latest_history_date >= new Date(created).toISOString().slice(0,10)) throw new Error("Historical coverage guard failed");
 }
-const scoreFields = new Set("n accuracy balanced_accuracy brier log_loss ece yes_precision no_precision yes_recall no_recall yes_f1 no_f1 accuracy_wilson_95 confusion total_predictions graded_predictions pending_predictions ungradable_predictions correct_predictions incorrect_predictions yes_accuracy no_accuracy baseline_same_fixtures model_baseline_matched".split(" "));
+const scoreFields = new Set("n accuracy balanced_accuracy brier log_loss ece yes_precision no_precision yes_recall no_recall yes_f1 no_f1 accuracy_wilson_95 confusion total_predictions graded_predictions pending_predictions ungradable_predictions correct_predictions incorrect_predictions yes_accuracy no_accuracy baseline_same_fixtures model_baseline_matched evaluated_prematch_fixtures prediction_coverage".split(" "));
 function safeScore(value) {
   if (!value || typeof value !== "object" || Object.keys(value).some(k => !scoreFields.has(k))) throw new Error("Unreviewed aggregate fields");
   for (const [k,v] of Object.entries(value)) {
