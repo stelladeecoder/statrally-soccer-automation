@@ -170,6 +170,17 @@ def publish_predictions(ledger, webhook, *, now=None, sender=publish):
     occupied = sum(r["prediction"]["prediction_id"] in top_ids for r in all_day)
     occupied += reserved_today(ledger.issues, now=now)
     top_fixtures = {r["prediction"]["fixture_id"] for r in all_day if r["prediction"]["prediction_id"] in top_ids}
+    # Existing legacy reservations must suppress the same fixture, not merely
+    # consume a numeric slot. Keep the complete new slate independent of this
+    # migration guard; only the separately highlighted official picks deduplicate.
+    for issue in ledger.issues:
+        if issue.get("user",{}).get("login") != "github-actions[bot]" or issue.get("pull_request"):
+            continue
+        for line in (issue.get("body") or "").splitlines():
+            if line.startswith("statrally-beta-data:"):
+                legacy=json.loads(line.removeprefix("statrally-beta-data:"))
+                if parse_time(legacy["kickoff_utc"]).astimezone(CENTRAL).date()==day:
+                    top_fixtures.add(f"espn:{legacy['league']}:{legacy['espn_event_id']}")
     ranked = sorted((r for r in items if r["prediction"]["fixture_id"] not in top_fixtures),
                     key=lambda r:(-Decimal(r["prediction"]["confidence"]),r["prediction"]["fixture_id"]))
     counts = {"daily":deliver(ledger,items,kind="daily",webhook=webhook,now=now,sender=sender,clock=clock)}

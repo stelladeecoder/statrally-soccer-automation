@@ -94,6 +94,21 @@ test("match lookup accepts numeric ESPN IDs only", async () => {
   assert.match(absent, /No confirmed/);
 });
 
+test("canonical migration preserves legacy match lookup and mixed highlights without hiding current records",async()=>{
+ const {fetcher}=mockFetch();
+ const empty={records:[],evaluated:[]};
+ const match=await commandText({data:{name:"match",options:[{name:"event_id",value:"12345"}]}},{fetcher,now,platformData:empty});
+ assert.match(match,/Home vs Away/);
+ const current={prediction:{fixture_id:"espn:epl:900001",espn_event_id:"900001",league:"epl",home_team:"Current Home",away_team:"Current Away",
+  kickoff_utc:"2026-11-03T21:00:00Z",revision:1,side:"NO",confidence:".72"},issued_at:"2026-11-03T18:00:00Z",
+  market:{status:"not_found"},grade:{status:"pending"},deliveries:[{kind:"top",state:"reserved"},{kind:"top",state:"accepted"}]};
+ const mixed={records:[current],evaluated:[]};
+ const text=await commandText({data:{name:"picks"}},{fetcher,now,platformData:mixed});
+ assert.match(text,/Current Home vs Current Away/);assert.match(text,/Legacy delivered records/);assert.match(text,/Home vs Away/);
+ const failed=await commandText({data:{name:"picks"}},{fetcher:mockFetch({failure:true}).fetcher,now,platformData:mixed});
+ assert.match(failed,/Current Home vs Current Away/);assert.match(failed,/Legacy delivery history is temporarily unavailable/);
+});
+
 test("performance honors saved paper metrics and unknown status", async () => {
   const good = mockFetch();
   const summary = await commandText({ data: { name: "performance" } }, { fetcher: good.fetcher });

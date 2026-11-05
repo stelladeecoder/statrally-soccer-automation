@@ -168,6 +168,17 @@ class PredictionPlatformTests(unittest.TestCase):
         counts=publish_predictions(self.ledger,'fake',now=NOW+timedelta(hours=2),sender=self.sender)
         self.assertEqual(counts['top'],0)
 
+    def test_legacy_reservation_blocks_same_fixture_from_new_highlights(self):
+        self.issue(3)
+        self.ledger.issues.append({'number':99,'user':{'login':'github-actions[bot]'},
+            'body':'statrally-beta-data:'+json.dumps({'league':'epl','espn_event_id':'1','kickoff_utc':'2026-11-05T18:00:00+00:00'})})
+        counts=publish_predictions(self.ledger,'fake',now=NOW,sender=self.sender)
+        self.assertEqual(counts,{'daily':3,'top':2})
+        top_ids={e['prediction_id'] for events in self.ledger.comments.values() for event in events
+                 if event['body'].startswith(DELIVERY) for e in [json.loads(event['body'][len(DELIVERY):])]
+                 if e['kind']=='top'}
+        self.assertNotIn(self.ledger.forecasts[0]['prediction']['prediction_id'],top_ids)
+
     def test_provider_outage_cannot_erase_predictions_or_override_side(self):
         issued=self.issue(3)['predictions']
         annotate(self.ledger,{'schema_version':1,'trades_placed':0,'markets':[{'prediction_id':p['prediction_id'],'provider':'polymarket_us','status':'provider_unavailable','checked_at':NOW.isoformat()} for p in issued]})
