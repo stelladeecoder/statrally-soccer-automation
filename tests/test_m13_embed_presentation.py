@@ -11,7 +11,7 @@ from m13_beta_signals import render_beta, signal_proof, signal_identity
 from m13_beta_dispatch import process
 from m13_beta_grade_issues import delivered_record, DELIVERED
 from m13_discord_publish import publish, render_watchlist_pages, NoRedirect
-from m13_discord_embeds import (YES_COLOR, NO_COLOR, NEUTRAL_COLOR, payload_text,
+from m13_discord_embeds import (YES_COLOR, NO_COLOR, PICK_COLOR, WIN_COLOR, LOSS_COLOR, NEUTRAL_COLOR, payload_text,
     validate_payload, units, render_paper_result)
 from m13_design_preview import previews, deliver, LABEL, ROLES
 from m13_watchlist_dispatch import process as process_watchlist
@@ -33,8 +33,9 @@ class EmbedPresentationTests(unittest.TestCase):
         for side,color in (("YES",YES_COLOR),("NO",NO_COLOR)):
             p=render_beta(envelope(side),now=NOW,require_current_day=True)
             e=p['embeds'][0]
-            self.assertEqual(e['color'],color)
-            self.assertIn('BTTS '+side,e['fields'][0]['value'])
+            self.assertEqual(e['color'],PICK_COLOR)
+            self.assertEqual(color,PICK_COLOR)
+            self.assertIn('🔵 BTTS '+side,e['fields'][0]['value'])
             self.assertIn('11:30 PM CT',e['description'])
             self.assertIn('Premier League',e['description'])
             self.assertEqual(e['fields'][1]['value'],'61%')
@@ -43,13 +44,13 @@ class EmbedPresentationTests(unittest.TestCase):
             self.assertTrue(all(f['inline'] for f in e['fields']))
             validate_payload(p)
 
-    def test_result_accents_identify_side_not_win_or_loss(self):
-        for side,outcome,hg,ag,color in (('YES','WIN',2,1,YES_COLOR),('YES','LOSS',0,2,YES_COLOR),
-                                       ('NO','WIN',0,0,NO_COLOR),('NO','LOSS',1,1,NO_COLOR)):
+    def test_result_accents_identify_win_or_loss_not_prediction_side(self):
+        for side,outcome,hg,ag,color in (('YES','WIN',2,1,WIN_COLOR),('YES','LOSS',0,2,LOSS_COLOR),
+                                       ('NO','WIN',0,0,WIN_COLOR),('NO','LOSS',1,1,LOSS_COLOR)):
             p=render_paper_result(envelope(side)['signals'][0],{'status':'graded','result':outcome,'home_goals':hg,'away_goals':ag})
             e=p['embeds'][0]
             self.assertEqual(e['color'],color)
-            self.assertEqual(e['fields'][1]['value'],'**'+outcome+'**')
+            self.assertEqual(e['fields'][1]['value'],('🟢 **WIN**' if outcome == 'WIN' else '🔴 **LOSS**'))
             self.assertEqual(e['fields'][2]['value'],f'{hg}–{ag}')
             self.assertEqual(e['footer']['text'],'Verified full-time · Paper result')
 
