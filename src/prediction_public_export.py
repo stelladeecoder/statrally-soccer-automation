@@ -34,7 +34,7 @@ def public_metrics(report):
     result=dict(report,overall=score(report["overall"]))
     if set(report["by_league"])-set(COMPETITIONS):raise ValueError("Unknown competition")
     import re
-    for key, pattern in (("by_league",r"[a-z_]+"),("by_model_version",r"[A-Za-z0-9_.-]{1,100}"),("by_month",r"\d{4}-\d{2}")):
+    for key, pattern in (("by_league",r"[a-z0-9_]+"),("by_model_version",r"[A-Za-z0-9_.-]{1,100}"),("by_month",r"\d{4}-\d{2}")):
         if not isinstance(report[key],dict) or any(not re.fullmatch(pattern,k) for k in report[key]):raise ValueError("Unreviewed aggregate group")
         result[key]={k:score(v) for k,v in report[key].items()}
     result["by_confidence"]={}
