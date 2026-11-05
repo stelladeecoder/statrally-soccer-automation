@@ -74,6 +74,10 @@ resent. Formatting changes cannot bypass that reservation. The full slate is not
 capped at three; only separate daily highlights share the existing three-slot cap,
 including legacy reservations and fixtures whose kickoff has already passed.
 Highlights rank by model estimate when selected, without market-price gating.
+Legacy reservations also exclude that exact fixture from new highlights, even
+when its provider or selected side changed. Legacy match lookups and mixed
+delivered-highlight command views remain available during migration. They retain
+original saved estimates and remain separate from new forward-model metrics.
 
 ## Grading and monitoring
 

@@ -33,7 +33,23 @@ export function verifyDiscord(body, timestamp, signature, publicKey, now = Date.
 export async function commandText(interaction, { fetcher = fetch, now = new Date(), platformData = null } = {}) {
   const name = interaction?.data?.name;
   if (!commands.some(c => c.name === name)) return "This command is not available.";
-  if (platformData) return platformCommand(interaction,platformData,now);
+  if (platformData) {
+    const eventId=optionsFor(interaction).find(o=>o.name==="event_id")?.value;
+    const legacyMatch=name==="match" && /^\d{1,20}$/.test(eventId||"") &&
+      !platformData.records.some(r=>r.prediction.espn_event_id===eventId);
+    if (name==="picks") {
+      const current=platformData.records.filter(r=>centralDay(new Date(r.prediction.kickoff_utc))===centralDay(now) &&
+        r.deliveries.some(e=>e.kind==="top"&&e.state==="accepted"));
+      const currentIds=new Set(current.map(r=>r.prediction.espn_event_id));
+      let legacy=[];
+      try { legacy=(await deliveredRecords({fetcher,day:centralDay(now)})).filter(r=>!currentIds.has(r.signal.espn_event_id)).slice(0,Math.max(0,3-current.length)); }
+      catch { return platformCommand(interaction,platformData,now)+"\nLegacy delivery history is temporarily unavailable; canonical records above remain saved."; }
+      if(legacy.length) return (current.length?platformCommand(interaction,platformData,now):"**StatRally | Delivered paper highlights**")+
+        "\nLegacy delivered records (original saved estimates):\n"+legacy.map(renderPick).join("\n")+
+        "\nLegacy records remain separate from the new forward monitoring cohort. No trades or new forecasts.";
+    }
+    if(!legacyMatch)return platformCommand(interaction,platformData,now);
+  }
   if (name === "performance") {
     const item = await savedPerformance({ fetcher });
     if (!item) return "**StatRally performance**\nNo independently saved paper-performance snapshot is available. No betting ROI is claimed.";
