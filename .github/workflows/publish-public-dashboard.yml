@@ -1,0 +1,42 @@
+name: Publish read-only StatRally dashboard
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "discord-app/platform*"
+      - "scripts/build_public_dashboard.py"
+      - ".github/workflows/publish-public-dashboard.yml"
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: statrally-public-dashboard
+  cancel-in-progress: false
+jobs:
+  deploy:
+    if: github.event_name == 'workflow_dispatch' || vars.STATRALLY_PUBLIC_DASHBOARD_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verify public presentation and canonical record handling
+        run: node --test discord-app/tests/*.test.mjs
+      - name: Build static public consumer of the sanitized export
+        run: python3 scripts/build_public_dashboard.py --output "$RUNNER_TEMP/site"
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: ${{ runner.temp }}/site
+      - name: Deploy read-only public dashboard
+        id: deployment
+        uses: actions/deploy-pages@v4

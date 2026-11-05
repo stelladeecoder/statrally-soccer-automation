@@ -4,6 +4,7 @@ export const commands = [
   {
     name: "btts", description: "Show today's latest recorded BTTS research",
     type: 1, integration_types: [0, 1], contexts: [0, 1, 2],
+    options: [{name:"page",description:"Page of today's complete prediction slate",type:4,required:false,min_value:1,max_value:10000}],
   },
   {
     name: "match", description: "Inspect an existing StatRally match record",
