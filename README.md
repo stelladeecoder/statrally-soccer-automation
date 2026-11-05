@@ -59,6 +59,8 @@ The **private Trade Desk** is a separate owner-only project, not part of the pub
 
 The **implementation** of a feature is not proof of uninterrupted unattended operation. Live acceptance, statistical coverage, and profitability are separate questions.
 
+[November 5 operational evidence](docs/independent_platform_verification_2026-11-05.md): eight genuine forecasts were independently saved and delivered, including six without a verified market. Hosted dashboard activation and an actual completed grading lifecycle remain separate acceptance items.
+
 ## ⚽ BTTS in 30 seconds
 
 **Both Teams to Score (BTTS)** evaluates whether **both teams score at least once** in regular match time, including stoppage time. Extra time and penalty shootouts do not count in the current result-grading logic.
