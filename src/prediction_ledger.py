@@ -21,6 +21,7 @@ DELIVERY = "statrally-prediction-delivery-v1:"
 SCAN = "statrally-prediction-scan-v1:"
 METRICS = "statrally-prediction-metrics-v1:"
 QUARANTINE = "statrally-prediction-quarantine-v1:"
+SELECTION = "statrally-selection-decision-v1:"
 
 
 class Ledger:

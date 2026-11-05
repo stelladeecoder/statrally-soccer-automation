@@ -3,6 +3,8 @@ on:
   push:
     branches: [main]
     paths:
+      - "config/prediction_selection_policy.json"
+      - "discord-app/prediction-quality.mjs"
       - "discord-app/build-snapshot.mjs"
       - "discord-app/platform-data.mjs"
       - ".github/workflows/publish-discord-snapshot.yml"

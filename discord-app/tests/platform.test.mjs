@@ -10,9 +10,9 @@ const fixture=JSON.parse(fs.readFileSync(new URL("fixtures/fictional-platform-le
 const now=new Date("2026-11-05T11:05:00Z");
 const data=()=>canonicalPlatform(fixture.issues,fixture.comments,now);
 
-test("Fictional cross-language ledger retains all 14 fixtures, three markets and three separate highlights",()=>{
+test("Fictional cross-language ledger retains all 14 fixtures, three markets and three archived experimental highlights",()=>{
  const output=data(),v=views(output,"2026-11-05");
- assert.equal(output.records.length,14);assert.equal(v.today.length,14);assert.equal(v.top.length,3);
+ assert.equal(output.records.length,14);assert.equal(v.today.length,14);assert.equal(v.top.length,0);assert.equal(v.historical_highlights.length,3);
  assert.equal(output.records.filter(r=>r.market.status==="verified_available").length,3);
  assert.equal(output.records.filter(r=>r.market.status==="not_found").length,11);
  assert.equal(output.records[0].prediction.side,"NO");assert.ok(Math.abs(Number(output.records[0].prediction.confidence)-.72)<1e-12);
@@ -65,4 +65,17 @@ test("Unavailable public export returns an error rather than inventing an empty 
  const server=createApp({platformReader:async()=>{throw new Error("Fictional outage");}});server.listen(0,"127.0.0.1");await once(server,"listening");
  try {const result=await fetch(`http://127.0.0.1:${server.address().port}/api/predictions`);assert.equal(result.status,503);assert.ok(!(await result.json()).records);}
  finally {await new Promise(resolve=>server.close(resolve));}
+});
+
+// Full analytics filters never depend on market availability or ranking.
+test("Forecast filters preserve low probability, NO, unavailable markets and pending records",async()=>{
+ const {filterForecasts}=await import("../prediction-quality.mjs");
+ const output=data(),policy=output.selection_policy,records=output.records;
+ assert.equal(filterForecasts(records,"all",policy).length,14);
+ assert.ok(filterForecasts(records,"no",policy).some(r=>Number(r.prediction.confidence)===.72));
+ assert.ok(filterForecasts(records,"low",policy).every(r=>Number(r.prediction.confidence)<.55));
+ assert.equal(filterForecasts(records,"top",policy).length,0);
+ assert.equal(filterForecasts(records,"pending",policy).length,14);
+ assert.equal(filterForecasts(records,"graded",policy).length,0);
+ for(const r of records)assert.equal(r.presentation.selection_eligible,false);
 });

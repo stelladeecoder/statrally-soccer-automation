@@ -104,9 +104,9 @@ test("canonical migration preserves legacy match lookup and mixed highlights wit
   market:{status:"not_found"},grade:{status:"pending"},deliveries:[{kind:"top",state:"reserved"},{kind:"top",state:"accepted"}]};
  const mixed={records:[current],evaluated:[]};
  const text=await commandText({data:{name:"picks"}},{fetcher,now,platformData:mixed});
- assert.match(text,/Current Home vs Current Away/);assert.match(text,/Legacy delivered records/);assert.match(text,/Home vs Away/);
+ assert.match(text,/No forecasts pass/);assert.match(text,/Legacy delivered records/);assert.match(text,/Home vs Away/);
  const failed=await commandText({data:{name:"picks"}},{fetcher:mockFetch({failure:true}).fetcher,now,platformData:mixed});
- assert.match(failed,/Current Home vs Current Away/);assert.match(failed,/Legacy delivery history is temporarily unavailable/);
+ assert.match(failed,/No forecasts pass/);assert.match(failed,/Legacy delivery history is temporarily unavailable/);
 });
 
 test("performance honors saved paper metrics and unknown status", async () => {

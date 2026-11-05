@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "policy_version": "validated-selections-v1",
+  "descriptive_minimum": "0.55",
+  "maximum_selections": 3,
+  "minimum_validation_observations": 200,
+  "maximum_calibration_ece": 0.08,
+  "minimum_validated_coverage": 0.10,
+  "required_conditions": [
+    "accuracy_above_prevalence", "no_precision", "no_recall", "brier", "log_loss",
+    "calibration", "test_sample", "calibration_sample", "both_sides", "coverage",
+    "high_confidence", "paired_accuracy_evidence", "high_confidence_stability",
+    "stability", "data_quality", "fresh_forward_evidence", "regression_and_leakage_checks"
+  ],
+  "approved_policies": [],
+  "note": "No applicable reliability policy has passed. Descriptive probability bands are provisional, not validated reliability or betting-edge claims. Full forecasts remain visible; zero validated selections is a successful outcome."
+}

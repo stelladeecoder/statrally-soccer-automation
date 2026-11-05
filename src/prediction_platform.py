@@ -13,8 +13,9 @@ from m13_beta_dispatch import reserved_today
 from m13_discord_publish import publish
 from m13_discord_embeds import (CENTRAL, match_card, side_style, validate_payload, embed_units,
                                 render_paper_result)
-from prediction_ledger import Ledger, MARKET, GRADE, DELIVERY, METRICS
+from prediction_ledger import Ledger, MARKET, GRADE, DELIVERY, METRICS, SELECTION
 from prediction_schema import MARKETS, canonical, validate
+from prediction_quality import classify, eligible_ranked, load_policy, policy_digest
 
 
 def annotate(ledger, envelope):
@@ -105,10 +106,11 @@ def grade_issued(ledger, *, scoreboard=fetch_scoreboard, now=None):
     return dict(counts)
 
 
-def prediction_pages(items, title):
+def prediction_pages(items, title, *, policy=None):
     pages, cards = [], []
     for item in items:
         prediction = item["prediction"]
+        quality = classify(prediction,policy)
         card, when = match_card(prediction, "Experimental paper prediction · Uncalibrated model estimate")
         card["description"] += " · "+when.strftime("%I:%M %p").lstrip("0")+" CT"
         status = item.get("market", {}).get("status", "provider_unavailable")
@@ -117,7 +119,12 @@ def prediction_pages(items, title):
         labels = {"verified_available":"Verified available", "not_found":"Not found", "identity_mismatch":"Identity unconfirmed",
                   "market_closed":"Closed", "provider_unavailable":"Provider unavailable"}
         card["fields"] = [{"name":"Prediction","value":side_style(prediction["side"])[1],"inline":True},
-                          {"name":"Model estimate","value":format(Decimal(prediction["confidence"]),".1%"),"inline":True},
+                          {"name":"YES / NO","value":format(Decimal(prediction["p_yes"]),".1%")+" / "+format(Decimal(prediction["p_no"]),".1%"),"inline":True},
+                          {"name":"Selected-side estimate","value":format(Decimal(prediction["confidence"]),".1%"),"inline":True},
+                          {"name":"Probability category","value":quality["probability_category"]+" · descriptive only","inline":False},
+                          {"name":"Model / calibration","value":prediction["model_version"]+" · "+quality["calibration_status"],"inline":False},
+                          {"name":"Data quality","value":prediction["data_quality_status"].replace("_"," "),"inline":True},
+                          {"name":"Selection status","value":"Validated policy eligible" if quality["selection_eligible"] else "Experimental forecast · Not an approved selection","inline":False},
                           {"name":"Polymarket US","value":labels[status],"inline":True}]
         if cards and (len(cards) >= 8 or sum(embed_units(c) for c in cards)+embed_units(card) > 5700):
             pages.append(cards);cards=[]
@@ -128,11 +135,11 @@ def prediction_pages(items, title):
                               "embeds":batch,"allowed_mentions":{"parse":[]}}) for i,batch in enumerate(pages,1)]
 
 
-def deliver(ledger, items, *, kind, webhook, now, sender=publish, clock=None):
+def deliver(ledger, items, *, kind, webhook, now, sender=publish, clock=None, policy=None):
     existing = {e["prediction_id"] for issue in ledger.comments for e in ledger.events(issue, DELIVERY)
                 if e.get("kind") == kind and e.get("state") in {"reserved", "accepted"}}
     fresh = [r for r in items if r["prediction"]["prediction_id"] not in existing]
-    pages = prediction_pages(fresh, "Daily BTTS predictions" if kind == "daily" else "Top BTTS predictions")
+    pages = prediction_pages(fresh, "Daily BTTS predictions" if kind == "daily" else "Validated top BTTS selections",policy=policy)
     done, index = 0, 0
     for payload in pages:
         batch = fresh[index:index+len(payload["embeds"])];index += len(batch)
@@ -150,10 +157,11 @@ def deliver(ledger, items, *, kind, webhook, now, sender=publish, clock=None):
     return done
 
 
-def publish_predictions(ledger, webhook, *, now=None, sender=publish):
+def publish_predictions(ledger, webhook, *, now=None, sender=publish, policy=None):
     live = now is None
     now = now or datetime.now(timezone.utc)
     clock = (lambda:datetime.now(timezone.utc)) if live else (lambda:now)
+    policy = load_policy() if policy is None else policy
     day = now.astimezone(CENTRAL).date()
     all_day = [r for r in ledger.export()["records"] if parse_time(r["prediction"]["kickoff_utc"]).astimezone(CENTRAL).date() == day]
     records = [r for r in all_day if parse_time(r["prediction"]["kickoff_utc"]) > now]
@@ -181,10 +189,18 @@ def publish_predictions(ledger, webhook, *, now=None, sender=publish):
                 legacy=json.loads(line.removeprefix("statrally-beta-data:"))
                 if parse_time(legacy["kickoff_utc"]).astimezone(CENTRAL).date()==day:
                     top_fixtures.add(f"espn:{legacy['league']}:{legacy['espn_event_id']}")
-    ranked = sorted((r for r in items if r["prediction"]["fixture_id"] not in top_fixtures),
-                    key=lambda r:(-Decimal(r["prediction"]["confidence"]),r["prediction"]["fixture_id"]))
-    counts = {"daily":deliver(ledger,items,kind="daily",webhook=webhook,now=now,sender=sender,clock=clock)}
-    counts["top"] = deliver(ledger,ranked[:max(0,3-occupied)],kind="top",webhook=webhook,now=now,sender=sender,clock=clock)
+    ranked = eligible_ranked([r for r in items if r["prediction"]["fixture_id"] not in top_fixtures],policy,now=now)
+    selected = ranked[:max(0,3-occupied)]
+    reasons = Counter(reason for r in items for reason in classify(r["prediction"],policy,now=now)["selection_reasons"])
+    decision = {"date_central":day.isoformat(),"policy_version":policy["policy_version"],"policy_sha256":policy_digest(policy),
+                "eligible_prediction_ids":[r["prediction"]["prediction_id"] for r in ranked],
+                "selected_prediction_ids":[r["prediction"]["prediction_id"] for r in selected],
+                "status":"selected" if selected else "no_qualifying_selections","reason_counts":dict(reasons)}
+    number = ledger.daily(day.isoformat())
+    if not any(d==decision for d in ledger.events(number,SELECTION)):
+        ledger.append(number,SELECTION,decision)
+    counts = {"daily":deliver(ledger,items,kind="daily",webhook=webhook,now=now,sender=sender,clock=clock,policy=policy)}
+    counts["top"] = deliver(ledger,selected,kind="top",webhook=webhook,now=now,sender=sender,clock=clock,policy=policy)
     return counts
 
 

@@ -11,7 +11,7 @@ flowchart TD
   B --> C[Immutable prematch forecast ledger]
   C --> D[Verified final-score grading and forward metrics]
   C --> E[Optional Polymarket US verification]
-  E --> F[Full Discord slate and separate daily top three]
+  E --> F[Full Discord slate and separate validated daily selections (0–3)]
   C --> G[Sanitized canonical public export]
   D --> G
   E --> G
@@ -138,3 +138,28 @@ Schedules remain 4:17 AM watchlist; 5:23 AM, 8:23 AM and 2:23 PM predictions;
 admin health and legacy official-paper grading remain active. Manual prediction
 and grading dispatches default to **no Discord delivery**; scheduled calls publish.
 No new routine or fictional preview messages are enabled by these tests.
+
+## Probability and selection policy
+
+Every valid forecast remains saved, visible and gradeable, including NO, near-50%
+forecasts and unavailable markets. Selected-side probability has four descriptive
+bands: 50–<55% Low confidence; 55–<60% Moderate confidence; 60–<70% Higher model
+probability; ≥70% Very high model probability. These bands are provisional display
+labels, not measured reliability. Discord and the dashboard show both side
+probabilities, model version, calibration and data quality independently.
+
+`config/prediction_selection_policy.json` contains **no approved policies**. The
+current experimental, uncalibrated rolling Poisson model produces the full slate
+but cannot populate validated top selections. Zero selections is successful and
+recorded durably once per slate/policy. No numerical cutoff alone authorizes a
+selection. A future scoped approval must identify league, side, version, calibration,
+validation-selected threshold and dated evidence satisfying every existing
+reliability/deployment condition, including NO performance and fresh forward data.
+Previously delivered experimental highlights retain their records/receipts and
+are presented as archives, rather than retroactively validated selections.
+
+Dashboard filters support all/YES/NO/low confidence/top/pending/graded. This does
+not change immutable probabilities, forecast identifiers, grading, market
+verification, same-day restrictions, schedules or trading permissions. Hosted UI
+rollout still requires the configured hosting deployment; merging source alone
+must not be reported as visual or hosted verification.

@@ -3,12 +3,16 @@ on:
   pull_request:
     branches: [main]
     paths:
+      - "config/prediction_selection_policy.json"
+      - "discord-app/prediction-quality.mjs"
       - "discord-app/**"
       - "scripts/build_public_dashboard.py"
       - ".github/workflows/validate-discord-app.yml"
   push:
     branches: [main]
     paths:
+      - "config/prediction_selection_policy.json"
+      - "discord-app/prediction-quality.mjs"
       - "discord-app/**"
       - "scripts/build_public_dashboard.py"
       - ".github/workflows/validate-discord-app.yml"

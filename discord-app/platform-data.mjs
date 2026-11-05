@@ -1,6 +1,9 @@
 // Explicit public projection of canonical forward records. No model execution.
 import crypto from "node:crypto";
 import { centralDay } from "./commands.mjs";
+import fs from "node:fs";
+import {classifyPrediction,validPolicy} from "./prediction-quality.mjs";
+const selectionPolicy=JSON.parse(fs.readFileSync(new URL("../config/prediction_selection_policy.json",import.meta.url)));
 
 const BOT = "github-actions[bot]";
 const prefix = "statrally-";
@@ -152,7 +155,10 @@ export function canonicalPlatform(issues, comments, now = new Date()) {
       }
     }
   }
-  return {schema_version:1,generated_at:now.toISOString(),records,evaluated:[...evaluated.values()],coverage,metrics,trades_placed:0};
+  if(!validPolicy(selectionPolicy))throw new Error("Invalid checked-in selection policy");
+  for(const record of records)record.presentation=classifyPrediction(record.prediction,selectionPolicy,now);
+  return {schema_version:1,generated_at:now.toISOString(),records,evaluated:[...evaluated.values()],coverage,metrics,
+          selection_policy:selectionPolicy,trades_placed:0};
 }
 
 const publicSource="https://raw.githubusercontent.com/stelladeecoder/statrally-soccer-automation/main/docs/predictions-public.json";
@@ -162,16 +168,17 @@ export async function publicPlatform({fetcher=fetch,now=new Date()}={}) {
   const response=await fetcher(publicSource,{signal:AbortSignal.timeout(5500),headers:{"User-Agent":"StatRally-Public-Analytics/1"}});
   if (!response.ok) throw new Error("Canonical public export unavailable");
   const value=await response.json();
-  const rootKeys=new Set(["schema_version","generated_at","records","evaluated","coverage","metrics","trades_placed"]);
+  const rootKeys=new Set(["schema_version","generated_at","records","evaluated","coverage","metrics","trades_placed","selection_policy"]);
   if (value?.schema_version!==1 || value.trades_placed!==0 || !Array.isArray(value.records) || !Array.isArray(value.evaluated) ||
       Object.keys(value).some(k=>!rootKeys.has(k)) || !Number.isFinite(Date.parse(value.generated_at))) throw new Error("Invalid canonical public export");
   for(const item of value.records) {
-    if(Object.keys(item).sort().join(",")!=="comment_id,deliveries,grade,issue_number,issued_at,market,prediction")throw new Error("Unreviewed public record fields");
+    if(Object.keys(item).filter(k=>k!=="presentation").sort().join(",")!=="comment_id,deliveries,grade,issue_number,issued_at,market,prediction")throw new Error("Unreviewed public record fields");
     validate(item.prediction,{created_at:item.issued_at},centralDay(new Date(item.prediction.kickoff_utc)));
+    item.presentation=classifyPrediction(item.prediction,selectionPolicy,now);
   }
   if(value.metrics)safeMetrics(value.metrics);
   for(const row of Object.values(value.coverage))safeCoverage(row);
-  cached={...value,stale:now.getTime()-Date.parse(value.generated_at)>45*60*1000};cachedAt=now.getTime();return cached;
+  cached={...value,selection_policy:selectionPolicy,stale:now.getTime()-Date.parse(value.generated_at)>45*60*1000};cachedAt=now.getTime();return cached;
 }
 
 export function todayRows(data, now=new Date()) {
