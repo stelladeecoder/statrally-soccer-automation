@@ -1,8 +1,9 @@
 # Compact Discord presentation
 
 The active experimental picks, daily watchlist and verified paper results use
-native Discord embeds. YES is green and NO is red; result WIN/LOSS is an explicit
-separate field. A YES loss remains green and a NO win remains red. No custom
+native Discord embeds. All BTTS prediction cards use blue accents for both YES
+and NO. Verified result cards use green for WIN and red for LOSS, regardless of
+which BTTS side was predicted. The original YES/NO side remains explicitly labeled. No custom
 fonts, colored text, images, banners or fixed-width columns are used. Native
 inline fields can stack on mobile; long titles retain full match names in the
 description. Visual Discord/mobile inspection is a separate check from API
