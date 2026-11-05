@@ -4,11 +4,13 @@ on:
     branches: [main]
     paths:
       - "discord-app/**"
+      - "scripts/build_public_dashboard.py"
       - ".github/workflows/validate-discord-app.yml"
   push:
     branches: [main]
     paths:
       - "discord-app/**"
+      - "scripts/build_public_dashboard.py"
       - ".github/workflows/validate-discord-app.yml"
 permissions:
   contents: read
@@ -27,5 +29,11 @@ jobs:
           node --check discord-app/data.mjs
           node --check discord-app/commands.mjs
           node --check discord-app/register.mjs
+          node --check discord-app/platform-web.mjs
+          node --check discord-app/platform-data.mjs
       - name: Run offline signed interaction tests
         run: node --test discord-app/tests/*.test.mjs
+      - name: Verify the shared static dashboard build
+        run: |
+          python3 scripts/build_public_dashboard.py --output "$RUNNER_TEMP/site"
+          node --check "$RUNNER_TEMP/site/platform-web.mjs"

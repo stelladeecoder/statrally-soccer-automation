@@ -6,6 +6,9 @@ import { pathToFileURL } from "node:url";
 import { commands, centralDay, optionsFor, PRIVATE_FLAGS, textResponse } from "./commands.mjs";
 import { deliveredRecords, renderPick, savedPerformance } from "./data.mjs";
 import { snapshotBackedFetch } from "./snapshot.mjs";
+import { publicPlatform } from "./platform-data.mjs";
+import { readFile } from "node:fs/promises";
+import { platformCommand } from "./platform-commands.mjs";
 
 export function verifyDiscord(body, timestamp, signature, publicKey, now = Date.now()) {
   if (!Buffer.isBuffer(body) || typeof timestamp !== "string" ||
@@ -27,9 +30,10 @@ export function verifyDiscord(body, timestamp, signature, publicKey, now = Date.
   }
 }
 
-export async function commandText(interaction, { fetcher = fetch, now = new Date() } = {}) {
+export async function commandText(interaction, { fetcher = fetch, now = new Date(), platformData = null } = {}) {
   const name = interaction?.data?.name;
   if (!commands.some(c => c.name === name)) return "This command is not available.";
+  if (platformData) return platformCommand(interaction,platformData,now);
   if (name === "performance") {
     const item = await savedPerformance({ fetcher });
     if (!item) return "**StatRally performance**\nNo independently saved paper-performance snapshot is available. No betting ROI is claimed.";
@@ -92,7 +96,7 @@ function safeFailure(error) {
 }
 
 export function createApp({ publicKey, applicationId, guildId = "", channelId = "", fetcher = snapshotBackedFetch,
-                            clock = () => new Date(), logger = console } = {}) {
+                            clock = () => new Date(), logger = console, platformReader = publicPlatform } = {}) {
   const configured = /^[a-fA-F0-9]{64}$/.test(publicKey || "") &&
     /^\d{15,22}$/.test(applicationId || "") &&
     /^\d{15,22}$/.test(guildId || "") &&
@@ -106,6 +110,18 @@ export function createApp({ publicKey, applicationId, guildId = "", channelId = 
     if (req.method === "GET" && req.url === "/health") {
       reply(200, { status: configured ? "ready" : "configuration_pending", mode: "read_only", discord_connected: false });
       return;
+    }
+    if (req.method === "GET" && req.url === "/api/predictions") {
+      try { reply(200,await platformReader({fetcher,now:clock()})); }
+      catch { reply(503,{error:"Canonical public predictions unavailable"}); }
+      return;
+    }
+    const assets={"/":"platform.html","/platform.css":"platform.css","/platform-web.mjs":"platform-web.mjs","/platform-ui.mjs":"platform-ui.mjs"};
+    if (req.method === "GET" && Object.hasOwn(assets,req.url)) {
+      const name=assets[req.url];
+      const type=name.endsWith(".html")?"text/html; charset=utf-8":name.endsWith(".css")?"text/css; charset=utf-8":"text/javascript; charset=utf-8";
+      res.writeHead(200,{"Content-Type":type,"X-Content-Type-Options":"nosniff","Content-Security-Policy":"default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'"});
+      res.end(await readFile(new URL(name,import.meta.url)));return;
     }
     if (req.method !== "POST" || req.url !== "/interactions") {
       reply(404, { error: "Not found" });
@@ -163,7 +179,9 @@ export function createApp({ publicKey, applicationId, guildId = "", channelId = 
       void (async () => {
         let text;
         try {
-          text = await commandText(interaction, { fetcher, now: clock() });
+          let platformData=null;
+          try { platformData=await platformReader({fetcher,now:clock()}); } catch { /* Keep existing verified legacy records available during migration. */ }
+          text = await commandText(interaction, { fetcher, now: clock(), platformData });
         } catch (err) {
           logger.error("StatRally command failed:", safeFailure(err));
           text = "Latest verified records are unavailable right now. No new analysis was generated.";

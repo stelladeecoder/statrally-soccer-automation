@@ -1,12 +1,21 @@
 name: StatRally beta paper picks
 on:
   workflow_dispatch:
+    inputs:
+      publish_discord:
+        description: Deliver the saved full slate and daily highlights to Discord
+        type: boolean
+        default: false
   workflow_call:
+    inputs:
+      publish_discord:
+        type: boolean
+        default: true
 permissions:
   contents: read
   issues: write
 concurrency:
-  group: statrally-beta-paper-picks
+  group: statrally-prediction-ledger-writer
   cancel-in-progress: false
 jobs:
   beta:
@@ -26,33 +35,71 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install private research and Polymarket US runtime dependencies
-        run: python -m pip install pandas polymarket-us
-      - name: Export independently mapped Polymarket US experimental signals
+      - name: Install prediction and monitoring dependencies
+        run: python -m pip install pandas==2.2.3 numpy==2.3.5
+      - name: Independently predict all same-day verified ESPN fixtures
         working-directory: engine
         env:
-          PYTHONPATH: ../automation/src:src
-        run: python src/m15_polymarket_beta_export.py --discover --days 1 --output "$RUNNER_TEMP/beta.json" --diagnostics "$RUNNER_TEMP/coverage.json"
-      - name: Report schedule and BTTS market eligibility separately
+          PYTHONPATH: src
+        run: python src/independent_predictions.py --output "$RUNNER_TEMP/slate.json"
+      - name: Durably issue every valid forecast before optional integrations
         env:
           PYTHONPATH: automation/src
+          GH_TOKEN: ${{ github.token }}
+        run: python automation/src/prediction_platform.py issue --input "$RUNNER_TEMP/slate.json" --output "$RUNNER_TEMP/issued.json"
+      - name: Install optional Polymarket US read-only adapter
+        continue-on-error: true
+        run: python -m pip install polymarket-us==2.4.1
+      - name: Annotate issued predictions without changing or suppressing them
+        working-directory: engine
+        env:
+          PYTHONPATH: src
+        run: python src/prediction_market_status.py --predictions "$RUNNER_TEMP/issued.json" --output "$RUNNER_TEMP/markets.json"
+      - name: Retain market status separately and export canonical monitoring input
+        env:
+          PYTHONPATH: automation/src
+          GH_TOKEN: ${{ github.token }}
         run: |
-          python - <<'PY'
-          import json
-          import os
-          from m17_coverage_status import summarize_beta_diagnostics
-          from pathlib import Path
-          data = json.loads((Path(os.environ["RUNNER_TEMP"]) / "coverage.json").read_text())
-          report = summarize_beta_diagnostics(data)
-          print("STATRALLY_COVERAGE_STATUS=" + json.dumps(report, sort_keys=True))
-          if data.get("discovery", {}).get("provider_errors") or report.get("counts_by_status", {}).get("source_incomplete", 0):
-              raise SystemExit("STATRALLY_POLYMARKET_SOURCE_INCOMPLETE: check data export logs")
-          PY
-      - name: Persist Polymarket US paper log and post eligible beta signals
+          python automation/src/prediction_platform.py annotate --input "$RUNNER_TEMP/markets.json"
+          python automation/src/prediction_platform.py export --output "$RUNNER_TEMP/canonical.json"
+      - name: Monitor forward records using existing validated metric implementation
+        working-directory: engine
+        env:
+          PYTHONPATH: src
+        run: python src/forward_prediction_monitoring.py --input "$RUNNER_TEMP/canonical.json" --output "$RUNNER_TEMP/metrics.json"
+      - name: Save sanitized public performance projection
         env:
           PYTHONPATH: automation/src
-          BETA_INPUT_FILE: ${{ runner.temp }}/beta.json
+          GH_TOKEN: ${{ github.token }}
+        run: python automation/src/prediction_platform.py metrics --input "$RUNNER_TEMP/metrics.json"
+      - name: Alert privately on optional market-provider failure
+        id: market-alert
+        continue-on-error: true
+        env:
+          PYTHONPATH: automation/src
+          GH_TOKEN: ${{ github.token }}
+          STATRALLY_ADMIN_DISCORD_WEBHOOK: ${{ secrets.STATRALLY_ADMIN_DISCORD_WEBHOOK }}
+        run: python automation/src/prediction_platform.py alert
+      - name: Publish complete slate and separate top-three highlights
+        id: delivery
+        if: inputs.publish_discord
+        continue-on-error: true
+        env:
+          PYTHONPATH: automation/src
           GH_TOKEN: ${{ github.token }}
           STATRALLY_PICKS_DISCORD_WEBHOOK: ${{ secrets.STATRALLY_PICKS_DISCORD_WEBHOOK }}
-        run: python automation/src/m13_beta_dispatch.py
-
+        run: python automation/src/prediction_platform.py publish
+      - name: Report delivery or source blockers after all forecasts are retained
+        env:
+          ALERT_OUTCOME: ${{ steps.market-alert.outcome }}
+          DELIVERY_OUTCOME: ${{ steps.delivery.outcome }}
+        run: |
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          slate=json.loads((Path(os.environ['RUNNER_TEMP'])/'slate.json').read_text())
+          incomplete=sum(v['provider_status']!='complete' for v in slate['coverage'].values())
+          print('STATRALLY_INDEPENDENT_SCOPE='+json.dumps({'date_central':slate['date_central'],'failed_feeds':incomplete,'trades_placed':0}))
+          if incomplete or os.environ['ALERT_OUTCOME']=='failure' or os.environ['DELIVERY_OUTCOME']=='failure':
+              raise SystemExit('Forecasts retained; source/admin/delivery verification incomplete. No blind resend.')
+          PY

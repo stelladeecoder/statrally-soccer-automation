@@ -1,0 +1,587 @@
+{
+  "fictional_test_only": true,
+  "issues": [
+    {
+      "id": 101,
+      "body": "statrally-prediction-ledger-v1:{\"date_central\":\"2026-11-05\",\"schema_version\":1}",
+      "user": {
+        "login": "github-actions[bot]"
+      },
+      "created_at": "2026-11-05T11:00:01+00:00",
+      "updated_at": "2026-11-05T11:00:01+00:00",
+      "number": 1,
+      "title": "StatRally prediction ledger | 2026-11-05"
+    }
+  ],
+  "comments": {
+    "1": [
+      {
+        "id": 102,
+        "body": "statrally-prediction-v1:{\"away_team\":\"Fictional Away 1\",\"baseline_yes_probability\":\"0.55\",\"confidence\":\"0.71999999999999997\",\"created_at\":\"2026-11-05T11:00:00+00:00\",\"data_quality_status\":\"research_snapshot\",\"espn_away_team_id\":\"3\",\"espn_event_id\":\"1\",\"espn_home_team_id\":\"2\",\"fixture_id\":\"espn:epl:1\",\"fixture_observed_at\":\"2026-11-05T11:00:00+00:00\",\"fixture_source\":\"ESPN scoreboard\",\"history_coverage\":{\"away_matches_used\":10,\"home_matches_used\":10,\"latest_history_date\":\"2026-11-04\",\"minimum_matches_per_team\":10,\"source\":\"same_competition\"},\"home_team\":\"Fictional Caf\\u00e9 \\ud83d\\ude80 <script>\",\"identity_verified\":true,\"kickoff_utc\":\"2026-11-05T18:00:00+00:00\",\"league\":\"epl\",\"model_name\":\"uncalibrated_rolling_poisson\",\"model_version\":\"rolling-poisson-10-v1\",\"p_no\":\"0.71999999999999997\",\"p_yes\":\"0.28\",\"prediction_id\":\"b30c477cdfd9a4e0eed0230db7ed2cb2f0c699fbd32212292b71b0a32bf2d4cb\",\"prediction_source\":\"forward_recorded\",\"prediction_status\":\"predicted\",\"probabilities_calibrated\":false,\"revision\":1,\"side\":\"NO\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:02+00:00",
+        "updated_at": "2026-11-05T11:00:02+00:00"
+      },
+      {
+        "id": 103,
+        "body": "statrally-prediction-v1:{\"away_team\":\"Fictional Away 2\",\"baseline_yes_probability\":\"0.55\",\"confidence\":\"0.71999999999999997\",\"created_at\":\"2026-11-05T11:00:00+00:00\",\"data_quality_status\":\"research_snapshot\",\"espn_away_team_id\":\"5\",\"espn_event_id\":\"2\",\"espn_home_team_id\":\"4\",\"fixture_id\":\"espn:epl:2\",\"fixture_observed_at\":\"2026-11-05T11:00:00+00:00\",\"fixture_source\":\"ESPN scoreboard\",\"history_coverage\":{\"away_matches_used\":10,\"home_matches_used\":10,\"latest_history_date\":\"2026-11-04\",\"minimum_matches_per_team\":10,\"source\":\"same_competition\"},\"home_team\":\"Fictional Home 2\",\"identity_verified\":true,\"kickoff_utc\":\"2026-11-05T18:00:00+00:00\",\"league\":\"epl\",\"model_name\":\"uncalibrated_rolling_poisson\",\"model_version\":\"rolling-poisson-10-v1\",\"p_no\":\"0.71999999999999997\",\"p_yes\":\"0.28\",\"prediction_id\":\"c3e5d2183309b933a36be2338a95ec1bd5b316e9ff941e2426fa67e40f9c60a8\",\"prediction_source\":\"forward_recorded\",\"prediction_status\":\"predicted\",\"probabilities_calibrated\":false,\"revision\":1,\"side\":\"NO\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:03+00:00",
+        "updated_at": "2026-11-05T11:00:03+00:00"
+      },
+      {
+        "id": 104,
+        "body": "statrally-prediction-v1:{\"away_team\":\"Fictional Away 3\",\"baseline_yes_probability\":\"0.55\",\"confidence\":\"0.71999999999999997\",\"created_at\":\"2026-11-05T11:00:00+00:00\",\"data_quality_status\":\"research_snapshot\",\"espn_away_team_id\":\"7\",\"espn_event_id\":\"3\",\"espn_home_team_id\":\"6\",\"fixture_id\":\"espn:epl:3\",\"fixture_observed_at\":\"2026-11-05T11:00:00+00:00\",\"fixture_source\":\"ESPN scoreboard\",\"history_coverage\":{\"away_matches_used\":10,\"home_matches_used\":10,\"latest_history_date\":\"2026-11-04\",\"minimum_matches_per_team\":10,\"source\":\"same_competition\"},\"home_team\":\"Fictional Home 3\",\"identity_verified\":true,\"kickoff_utc\":\"2026-11-05T18:00:00+00:00\",\"league\":\"epl\",\"model_name\":\"uncalibrated_rolling_poisson\",\"model_version\":\"rolling-poisson-10-v1\",\"p_no\":\"0.71999999999999997\",\"p_yes\":\"0.28\",\"prediction_id\":\"3909b8f7acebe9836543389081cc61e86415d11eb01a760228bb35c13cdc7c46\",\"prediction_source\":\"forward_recorded\",\"prediction_status\":\"predicted\",\"probabilities_calibrated\":false,\"revision\":1,\"side\":\"NO\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:04+00:00",
+        "updated_at": "2026-11-05T11:00:04+00:00"
+      },
+      {
+        "id": 105,
+        "body": "statrally-prediction-v1:{\"away_team\":\"Fictional Away 4\",\"baseline_yes_probability\":\"0.55\",\"confidence\":\"0.71999999999999997\",\"created_at\":\"2026-11-05T11:00:00+00:00\",\"data_quality_status\":\"research_snapshot\",\"espn_away_team_id\":\"9\",\"espn_event_id\":\"4\",\"espn_home_team_id\":\"8\",\"fixture_id\":\"espn:epl:4\",\"fixture_observed_at\":\"2026-11-05T11:00:00+00:00\",\"fixture_source\":\"ESPN scoreboard\",\"history_coverage\":{\"away_matches_used\":10,\"home_matches_used\":10,\"latest_history_date\":\"2026-11-04\",\"minimum_matches_per_team\":10,\"source\":\"same_competition\"},\"home_team\":\"Fictional Home 4\",\"identity_verified\":true,\"kickoff_utc\":\"2026-11-05T18:00:00+00:00\",\"league\":\"epl\",\"model_name\":\"uncalibrated_rolling_poisson\",\"model_version\":\"rolling-poisson-10-v1\",\"p_no\":\"0.71999999999999997\",\"p_yes\":\"0.28\",\"prediction_id\":\"ac91598809cb873902392a6e6dec567fc268af60bf47342fd2f040cb83159ddf\",\"prediction_source\":\"forward_recorded\",\"prediction_status\":\"predicted\",\"probabilities_calibrated\":false,\"revision\":1,\"side\":\"NO\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:05+00:00",
+        "updated_at": "2026-11-05T11:00:05+00:00"
+      },
+      {
+        "id": 106,
+        "body": "statrally-prediction-v1:{\"away_team\":\"Fictional Away 5\",\"baseline_yes_probability\":\"0.55\",\"confidence\":\"0.71999999999999997\",\"created_at\":\"2026-11-05T11:00:00+00:00\",\"data_quality_status\":\"research_snapshot\",\"espn_away_team_id\":\"11\",\"espn_event_id\":\"5\",\"espn_home_team_id\":\"10\",\"fixture_id\":\"espn:epl:5\",\"fixture_observed_at\":\"2026-11-05T11:00:00+00:00\",\"fixture_source\":\"ESPN scoreboard\",\"history_coverage\":{\"away_matches_used\":10,\"home_matches_used\":10,\"latest_history_date\":\"2026-11-04\",\"minimum_matches_per_team\":10,\"source\":\"same_competition\"},\"home_team\":\"Fictional Home 5\",\"identity_verified\":true,\"kickoff_utc\":\"2026-11-05T18:00:00+00:00\",\"league\":\"epl\",\"model_name\":\"uncalibrated_rolling_poisson\",\"model_version\":\"rolling-poisson-10-v1\",\"p_no\":\"0.71999999999999997\",\"p_yes\":\"0.28\",\"prediction_id\":\"56b4063f5cd36ab6b9532e81acab31830d3297fc714217c88c65a08d67e42547\",\"prediction_source\":\"forward_recorded\",\"prediction_status\":\"predicted\",\"probabilities_calibrated\":false,\"revision\":1,\"side\":\"NO\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:06+00:00",
+        "updated_at": "2026-11-05T11:00:06+00:00"
+      },
+      {
+        "id": 107,
+        "body": "statrally-prediction-v1:{\"away_team\":\"Fictional Away 6\",\"baseline_yes_probability\":\"0.55\",\"confidence\":\"0.71999999999999997\",\"created_at\":\"2026-11-05T11:00:00+00:00\",\"data_quality_status\":\"research_snapshot\",\"espn_away_team_id\":\"13\",\"espn_event_id\":\"6\",\"espn_home_team_id\":\"12\",\"fixture_id\":\"espn:epl:6\",\"fixture_observed_at\":\"2026-11-05T11:00:00+00:00\",\"fixture_source\":\"ESPN scoreboard\",\"history_coverage\":{\"away_matches_used\":10,\"home_matches_used\":10,\"latest_history_date\":\"2026-11-04\",\"minimum_matches_per_team\":10,\"source\":\"same_competition\"},\"home_team\":\"Fictional Home 6\",\"identity_verified\":true,\"kickoff_utc\":\"2026-11-05T18:00:00+00:00\",\"league\":\"epl\",\"model_name\":\"uncalibrated_rolling_poisson\",\"model_version\":\"rolling-poisson-10-v1\",\"p_no\":\"0.71999999999999997\",\"p_yes\":\"0.28\",\"prediction_id\":\"12d74ff858bc9ddce63bdc56e644854b3883524aa4806c9dc46f11411e8a4859\",\"prediction_source\":\"forward_recorded\",\"prediction_status\":\"predicted\",\"probabilities_calibrated\":false,\"revision\":1,\"side\":\"NO\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:07+00:00",
+        "updated_at": "2026-11-05T11:00:07+00:00"
+      },
+      {
+        "id": 108,
+        "body": "statrally-prediction-v1:{\"away_team\":\"Fictional Away 7\",\"baseline_yes_probability\":\"0.55\",\"confidence\":\"0.71999999999999997\",\"created_at\":\"2026-11-05T11:00:00+00:00\",\"data_quality_status\":\"research_snapshot\",\"espn_away_team_id\":\"15\",\"espn_event_id\":\"7\",\"espn_home_team_id\":\"14\",\"fixture_id\":\"espn:epl:7\",\"fixture_observed_at\":\"2026-11-05T11:00:00+00:00\",\"fixture_source\":\"ESPN scoreboard\",\"history_coverage\":{\"away_matches_used\":10,\"home_matches_used\":10,\"latest_history_date\":\"2026-11-04\",\"minimum_matches_per_team\":10,\"source\":\"same_competition\"},\"home_team\":\"Fictional Home 7\",\"identity_verified\":true,\"kickoff_utc\":\"2026-11-05T18:00:00+00:00\",\"league\":\"epl\",\"model_name\":\"uncalibrated_rolling_poisson\",\"model_version\":\"rolling-poisson-10-v1\",\"p_no\":\"0.71999999999999997\",\"p_yes\":\"0.28\",\"prediction_id\":\"2fdcb9f91fb6312d1fcb8e782398813ad17f05df0c4144b4d73f96db51a37d04\",\"prediction_source\":\"forward_recorded\",\"prediction_status\":\"predicted\",\"probabilities_calibrated\":false,\"revision\":1,\"side\":\"NO\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:08+00:00",
+        "updated_at": "2026-11-05T11:00:08+00:00"
+      },
+      {
+        "id": 109,
+        "body": "statrally-prediction-v1:{\"away_team\":\"Fictional Away 8\",\"baseline_yes_probability\":\"0.55\",\"confidence\":\"0.71999999999999997\",\"created_at\":\"2026-11-05T11:00:00+00:00\",\"data_quality_status\":\"research_snapshot\",\"espn_away_team_id\":\"17\",\"espn_event_id\":\"8\",\"espn_home_team_id\":\"16\",\"fixture_id\":\"espn:epl:8\",\"fixture_observed_at\":\"2026-11-05T11:00:00+00:00\",\"fixture_source\":\"ESPN scoreboard\",\"history_coverage\":{\"away_matches_used\":10,\"home_matches_used\":10,\"latest_history_date\":\"2026-11-04\",\"minimum_matches_per_team\":10,\"source\":\"same_competition\"},\"home_team\":\"Fictional Home 8\",\"identity_verified\":true,\"kickoff_utc\":\"2026-11-05T18:00:00+00:00\",\"league\":\"epl\",\"model_name\":\"uncalibrated_rolling_poisson\",\"model_version\":\"rolling-poisson-10-v1\",\"p_no\":\"0.71999999999999997\",\"p_yes\":\"0.28\",\"prediction_id\":\"bde543b734a16f5e68afbb5879e44813e1396632229fbc5c8d077960d49edece\",\"prediction_source\":\"forward_recorded\",\"prediction_status\":\"predicted\",\"probabilities_calibrated\":false,\"revision\":1,\"side\":\"NO\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:09+00:00",
+        "updated_at": "2026-11-05T11:00:09+00:00"
+      },
+      {
+        "id": 110,
+        "body": "statrally-prediction-v1:{\"away_team\":\"Fictional Away 9\",\"baseline_yes_probability\":\"0.55\",\"confidence\":\"0.71999999999999997\",\"created_at\":\"2026-11-05T11:00:00+00:00\",\"data_quality_status\":\"research_snapshot\",\"espn_away_team_id\":\"19\",\"espn_event_id\":\"9\",\"espn_home_team_id\":\"18\",\"fixture_id\":\"espn:epl:9\",\"fixture_observed_at\":\"2026-11-05T11:00:00+00:00\",\"fixture_source\":\"ESPN scoreboard\",\"history_coverage\":{\"away_matches_used\":10,\"home_matches_used\":10,\"latest_history_date\":\"2026-11-04\",\"minimum_matches_per_team\":10,\"source\":\"same_competition\"},\"home_team\":\"Fictional Home 9\",\"identity_verified\":true,\"kickoff_utc\":\"2026-11-05T18:00:00+00:00\",\"league\":\"epl\",\"model_name\":\"uncalibrated_rolling_poisson\",\"model_version\":\"rolling-poisson-10-v1\",\"p_no\":\"0.71999999999999997\",\"p_yes\":\"0.28\",\"prediction_id\":\"a83d7c5fb2d8ffbf92a25dcb4efff59fd9fa92f251719562750bf1c2b3d2e57e\",\"prediction_source\":\"forward_recorded\",\"prediction_status\":\"predicted\",\"probabilities_calibrated\":false,\"revision\":1,\"side\":\"NO\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:10+00:00",
+        "updated_at": "2026-11-05T11:00:10+00:00"
+      },
+      {
+        "id": 111,
+        "body": "statrally-prediction-v1:{\"away_team\":\"Fictional Away 10\",\"baseline_yes_probability\":\"0.55\",\"confidence\":\"0.71999999999999997\",\"created_at\":\"2026-11-05T11:00:00+00:00\",\"data_quality_status\":\"research_snapshot\",\"espn_away_team_id\":\"21\",\"espn_event_id\":\"10\",\"espn_home_team_id\":\"20\",\"fixture_id\":\"espn:epl:10\",\"fixture_observed_at\":\"2026-11-05T11:00:00+00:00\",\"fixture_source\":\"ESPN scoreboard\",\"history_coverage\":{\"away_matches_used\":10,\"home_matches_used\":10,\"latest_history_date\":\"2026-11-04\",\"minimum_matches_per_team\":10,\"source\":\"same_competition\"},\"home_team\":\"Fictional Home 10\",\"identity_verified\":true,\"kickoff_utc\":\"2026-11-05T18:00:00+00:00\",\"league\":\"epl\",\"model_name\":\"uncalibrated_rolling_poisson\",\"model_version\":\"rolling-poisson-10-v1\",\"p_no\":\"0.71999999999999997\",\"p_yes\":\"0.28\",\"prediction_id\":\"f9a347712a3ed2619ef0c7ec74fd529f981fddd4ee9e59b3e21c8e4217796112\",\"prediction_source\":\"forward_recorded\",\"prediction_status\":\"predicted\",\"probabilities_calibrated\":false,\"revision\":1,\"side\":\"NO\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:11+00:00",
+        "updated_at": "2026-11-05T11:00:11+00:00"
+      },
+      {
+        "id": 112,
+        "body": "statrally-prediction-v1:{\"away_team\":\"Fictional Away 11\",\"baseline_yes_probability\":\"0.55\",\"confidence\":\"0.71999999999999997\",\"created_at\":\"2026-11-05T11:00:00+00:00\",\"data_quality_status\":\"research_snapshot\",\"espn_away_team_id\":\"23\",\"espn_event_id\":\"11\",\"espn_home_team_id\":\"22\",\"fixture_id\":\"espn:epl:11\",\"fixture_observed_at\":\"2026-11-05T11:00:00+00:00\",\"fixture_source\":\"ESPN scoreboard\",\"history_coverage\":{\"away_matches_used\":10,\"home_matches_used\":10,\"latest_history_date\":\"2026-11-04\",\"minimum_matches_per_team\":10,\"source\":\"same_competition\"},\"home_team\":\"Fictional Home 11\",\"identity_verified\":true,\"kickoff_utc\":\"2026-11-05T18:00:00+00:00\",\"league\":\"epl\",\"model_name\":\"uncalibrated_rolling_poisson\",\"model_version\":\"rolling-poisson-10-v1\",\"p_no\":\"0.71999999999999997\",\"p_yes\":\"0.28\",\"prediction_id\":\"43cb5179c2c48d62f57b012a30be97fc3d3e54737f44fd678ae829665e428956\",\"prediction_source\":\"forward_recorded\",\"prediction_status\":\"predicted\",\"probabilities_calibrated\":false,\"revision\":1,\"side\":\"NO\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:12+00:00",
+        "updated_at": "2026-11-05T11:00:12+00:00"
+      },
+      {
+        "id": 113,
+        "body": "statrally-prediction-v1:{\"away_team\":\"Fictional Away 12\",\"baseline_yes_probability\":\"0.55\",\"confidence\":\"0.71999999999999997\",\"created_at\":\"2026-11-05T11:00:00+00:00\",\"data_quality_status\":\"research_snapshot\",\"espn_away_team_id\":\"25\",\"espn_event_id\":\"12\",\"espn_home_team_id\":\"24\",\"fixture_id\":\"espn:epl:12\",\"fixture_observed_at\":\"2026-11-05T11:00:00+00:00\",\"fixture_source\":\"ESPN scoreboard\",\"history_coverage\":{\"away_matches_used\":10,\"home_matches_used\":10,\"latest_history_date\":\"2026-11-04\",\"minimum_matches_per_team\":10,\"source\":\"same_competition\"},\"home_team\":\"Fictional Home 12\",\"identity_verified\":true,\"kickoff_utc\":\"2026-11-05T18:00:00+00:00\",\"league\":\"epl\",\"model_name\":\"uncalibrated_rolling_poisson\",\"model_version\":\"rolling-poisson-10-v1\",\"p_no\":\"0.71999999999999997\",\"p_yes\":\"0.28\",\"prediction_id\":\"aec5e2d28f29f34d512148dc095676d257598d2e5626606911afd4179a304624\",\"prediction_source\":\"forward_recorded\",\"prediction_status\":\"predicted\",\"probabilities_calibrated\":false,\"revision\":1,\"side\":\"NO\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:13+00:00",
+        "updated_at": "2026-11-05T11:00:13+00:00"
+      },
+      {
+        "id": 114,
+        "body": "statrally-prediction-v1:{\"away_team\":\"Fictional Away 13\",\"baseline_yes_probability\":\"0.55\",\"confidence\":\"0.71999999999999997\",\"created_at\":\"2026-11-05T11:00:00+00:00\",\"data_quality_status\":\"research_snapshot\",\"espn_away_team_id\":\"27\",\"espn_event_id\":\"13\",\"espn_home_team_id\":\"26\",\"fixture_id\":\"espn:epl:13\",\"fixture_observed_at\":\"2026-11-05T11:00:00+00:00\",\"fixture_source\":\"ESPN scoreboard\",\"history_coverage\":{\"away_matches_used\":10,\"home_matches_used\":10,\"latest_history_date\":\"2026-11-04\",\"minimum_matches_per_team\":10,\"source\":\"same_competition\"},\"home_team\":\"Fictional Home 13\",\"identity_verified\":true,\"kickoff_utc\":\"2026-11-05T18:00:00+00:00\",\"league\":\"epl\",\"model_name\":\"uncalibrated_rolling_poisson\",\"model_version\":\"rolling-poisson-10-v1\",\"p_no\":\"0.71999999999999997\",\"p_yes\":\"0.28\",\"prediction_id\":\"8b1199a73f83513d0675cfdf21f7d495b3c8b149af4da3fa9ea7c5aa7575731c\",\"prediction_source\":\"forward_recorded\",\"prediction_status\":\"predicted\",\"probabilities_calibrated\":false,\"revision\":1,\"side\":\"NO\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:14+00:00",
+        "updated_at": "2026-11-05T11:00:14+00:00"
+      },
+      {
+        "id": 115,
+        "body": "statrally-prediction-v1:{\"away_team\":\"Fictional Away 14\",\"baseline_yes_probability\":\"0.55\",\"confidence\":\"0.71999999999999997\",\"created_at\":\"2026-11-05T11:00:00+00:00\",\"data_quality_status\":\"research_snapshot\",\"espn_away_team_id\":\"29\",\"espn_event_id\":\"14\",\"espn_home_team_id\":\"28\",\"fixture_id\":\"espn:epl:14\",\"fixture_observed_at\":\"2026-11-05T11:00:00+00:00\",\"fixture_source\":\"ESPN scoreboard\",\"history_coverage\":{\"away_matches_used\":10,\"home_matches_used\":10,\"latest_history_date\":\"2026-11-04\",\"minimum_matches_per_team\":10,\"source\":\"same_competition\"},\"home_team\":\"Fictional Home 14\",\"identity_verified\":true,\"kickoff_utc\":\"2026-11-05T18:00:00+00:00\",\"league\":\"epl\",\"model_name\":\"uncalibrated_rolling_poisson\",\"model_version\":\"rolling-poisson-10-v1\",\"p_no\":\"0.71999999999999997\",\"p_yes\":\"0.28\",\"prediction_id\":\"9ac61f134bfad2675d2a801c1bbde159801f313140bf873e7d440f23e8aaf0c4\",\"prediction_source\":\"forward_recorded\",\"prediction_status\":\"predicted\",\"probabilities_calibrated\":false,\"revision\":1,\"side\":\"NO\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:15+00:00",
+        "updated_at": "2026-11-05T11:00:15+00:00"
+      },
+      {
+        "id": 116,
+        "body": "statrally-prediction-scan-v1:{\"coverage\":{\"brasileirao\":{\"excluded\":{},\"failed_queries\":0,\"fixtures\":0,\"predicted\":0,\"provider_status\":\"complete\"},\"bundesliga\":{\"excluded\":{},\"failed_queries\":0,\"fixtures\":0,\"predicted\":0,\"provider_status\":\"complete\"},\"champions_league\":{\"excluded\":{},\"failed_queries\":0,\"fixtures\":0,\"predicted\":0,\"provider_status\":\"complete\"},\"epl\":{\"excluded\":{},\"failed_queries\":0,\"fixtures\":14,\"predicted\":14,\"provider_status\":\"complete\"},\"eredivisie\":{\"excluded\":{},\"failed_queries\":0,\"fixtures\":0,\"predicted\":0,\"provider_status\":\"complete\"},\"europa_league\":{\"excluded\":{},\"failed_queries\":0,\"fixtures\":0,\"predicted\":0,\"provider_status\":\"complete\"},\"laliga\":{\"excluded\":{},\"failed_queries\":0,\"fixtures\":0,\"predicted\":0,\"provider_status\":\"complete\"},\"liga_mx\":{\"excluded\":{},\"failed_queries\":0,\"fixtures\":0,\"predicted\":0,\"provider_status\":\"complete\"},\"liga_portugal\":{\"excluded\":{},\"failed_queries\":0,\"fixtures\":0,\"predicted\":0,\"provider_status\":\"complete\"},\"ligue_1\":{\"excluded\":{},\"failed_queries\":0,\"fixtures\":0,\"predicted\":0,\"provider_status\":\"complete\"},\"mls\":{\"excluded\":{},\"failed_queries\":0,\"fixtures\":0,\"predicted\":0,\"provider_status\":\"complete\"},\"primera_lpf\":{\"excluded\":{},\"failed_queries\":0,\"fixtures\":0,\"predicted\":0,\"provider_status\":\"complete\"},\"serie_a\":{\"excluded\":{},\"failed_queries\":0,\"fixtures\":0,\"predicted\":0,\"provider_status\":\"complete\"}},\"date_central\":\"2026-11-05\",\"evaluated\":[{\"away_team\":\"Fictional Away 1\",\"espn_away_team_id\":\"3\",\"espn_event_id\":\"1\",\"espn_home_team_id\":\"2\",\"fixture_id\":\"espn:epl:1\",\"fixture_observed_at\":\"2026-11-05T11:00:00+00:00\",\"fixture_source\":\"ESPN scoreboard\",\"home_team\":\"Fictional Caf\\u00e9 \\ud83d\\ude80 <script>\",\"kickoff_utc\":\"2026-11-05T18:00:00+00:00\",\"league\":\"epl\",\"prediction_status\":\"predicted\"},{\"away_team\":\"Fictional Away 2\",\"espn_away_team_id\":\"5\",\"espn_event_id\":\"2\",\"espn_home_team_id\":\"4\",\"fixture_id\":\"espn:epl:2\",\"fixture_observed_at\":\"2026-11-05T11:00:00+00:00\",\"fixture_source\":\"ESPN scoreboard\",\"home_team\":\"Fictional Home 2\",\"kickoff_utc\":\"2026-11-05T18:00:00+00:00\",\"league\":\"epl\",\"prediction_status\":\"predicted\"},{\"away_team\":\"Fictional Away 3\",\"espn_away_team_id\":\"7\",\"espn_event_id\":\"3\",\"espn_home_team_id\":\"6\",\"fixture_id\":\"espn:epl:3\",\"fixture_observed_at\":\"2026-11-05T11:00:00+00:00\",\"fixture_source\":\"ESPN scoreboard\",\"home_team\":\"Fictional Home 3\",\"kickoff_utc\":\"2026-11-05T18:00:00+00:00\",\"league\":\"epl\",\"prediction_status\":\"predicted\"},{\"away_team\":\"Fictional Away 4\",\"espn_away_team_id\":\"9\",\"espn_event_id\":\"4\",\"espn_home_team_id\":\"8\",\"fixture_id\":\"espn:epl:4\",\"fixture_observed_at\":\"2026-11-05T11:00:00+00:00\",\"fixture_source\":\"ESPN scoreboard\",\"home_team\":\"Fictional Home 4\",\"kickoff_utc\":\"2026-11-05T18:00:00+00:00\",\"league\":\"epl\",\"prediction_status\":\"predicted\"},{\"away_team\":\"Fictional Away 5\",\"espn_away_team_id\":\"11\",\"espn_event_id\":\"5\",\"espn_home_team_id\":\"10\",\"fixture_id\":\"espn:epl:5\",\"fixture_observed_at\":\"2026-11-05T11:00:00+00:00\",\"fixture_source\":\"ESPN scoreboard\",\"home_team\":\"Fictional Home 5\",\"kickoff_utc\":\"2026-11-05T18:00:00+00:00\",\"league\":\"epl\",\"prediction_status\":\"predicted\"},{\"away_team\":\"Fictional Away 6\",\"espn_away_team_id\":\"13\",\"espn_event_id\":\"6\",\"espn_home_team_id\":\"12\",\"fixture_id\":\"espn:epl:6\",\"fixture_observed_at\":\"2026-11-05T11:00:00+00:00\",\"fixture_source\":\"ESPN scoreboard\",\"home_team\":\"Fictional Home 6\",\"kickoff_utc\":\"2026-11-05T18:00:00+00:00\",\"league\":\"epl\",\"prediction_status\":\"predicted\"},{\"away_team\":\"Fictional Away 7\",\"espn_away_team_id\":\"15\",\"espn_event_id\":\"7\",\"espn_home_team_id\":\"14\",\"fixture_id\":\"espn:epl:7\",\"fixture_observed_at\":\"2026-11-05T11:00:00+00:00\",\"fixture_source\":\"ESPN scoreboard\",\"home_team\":\"Fictional Home 7\",\"kickoff_utc\":\"2026-11-05T18:00:00+00:00\",\"league\":\"epl\",\"prediction_status\":\"predicted\"},{\"away_team\":\"Fictional Away 8\",\"espn_away_team_id\":\"17\",\"espn_event_id\":\"8\",\"espn_home_team_id\":\"16\",\"fixture_id\":\"espn:epl:8\",\"fixture_observed_at\":\"2026-11-05T11:00:00+00:00\",\"fixture_source\":\"ESPN scoreboard\",\"home_team\":\"Fictional Home 8\",\"kickoff_utc\":\"2026-11-05T18:00:00+00:00\",\"league\":\"epl\",\"prediction_status\":\"predicted\"},{\"away_team\":\"Fictional Away 9\",\"espn_away_team_id\":\"19\",\"espn_event_id\":\"9\",\"espn_home_team_id\":\"18\",\"fixture_id\":\"espn:epl:9\",\"fixture_observed_at\":\"2026-11-05T11:00:00+00:00\",\"fixture_source\":\"ESPN scoreboard\",\"home_team\":\"Fictional Home 9\",\"kickoff_utc\":\"2026-11-05T18:00:00+00:00\",\"league\":\"epl\",\"prediction_status\":\"predicted\"},{\"away_team\":\"Fictional Away 10\",\"espn_away_team_id\":\"21\",\"espn_event_id\":\"10\",\"espn_home_team_id\":\"20\",\"fixture_id\":\"espn:epl:10\",\"fixture_observed_at\":\"2026-11-05T11:00:00+00:00\",\"fixture_source\":\"ESPN scoreboard\",\"home_team\":\"Fictional Home 10\",\"kickoff_utc\":\"2026-11-05T18:00:00+00:00\",\"league\":\"epl\",\"prediction_status\":\"predicted\"},{\"away_team\":\"Fictional Away 11\",\"espn_away_team_id\":\"23\",\"espn_event_id\":\"11\",\"espn_home_team_id\":\"22\",\"fixture_id\":\"espn:epl:11\",\"fixture_observed_at\":\"2026-11-05T11:00:00+00:00\",\"fixture_source\":\"ESPN scoreboard\",\"home_team\":\"Fictional Home 11\",\"kickoff_utc\":\"2026-11-05T18:00:00+00:00\",\"league\":\"epl\",\"prediction_status\":\"predicted\"},{\"away_team\":\"Fictional Away 12\",\"espn_away_team_id\":\"25\",\"espn_event_id\":\"12\",\"espn_home_team_id\":\"24\",\"fixture_id\":\"espn:epl:12\",\"fixture_observed_at\":\"2026-11-05T11:00:00+00:00\",\"fixture_source\":\"ESPN scoreboard\",\"home_team\":\"Fictional Home 12\",\"kickoff_utc\":\"2026-11-05T18:00:00+00:00\",\"league\":\"epl\",\"prediction_status\":\"predicted\"},{\"away_team\":\"Fictional Away 13\",\"espn_away_team_id\":\"27\",\"espn_event_id\":\"13\",\"espn_home_team_id\":\"26\",\"fixture_id\":\"espn:epl:13\",\"fixture_observed_at\":\"2026-11-05T11:00:00+00:00\",\"fixture_source\":\"ESPN scoreboard\",\"home_team\":\"Fictional Home 13\",\"kickoff_utc\":\"2026-11-05T18:00:00+00:00\",\"league\":\"epl\",\"prediction_status\":\"predicted\"},{\"away_team\":\"Fictional Away 14\",\"espn_away_team_id\":\"29\",\"espn_event_id\":\"14\",\"espn_home_team_id\":\"28\",\"fixture_id\":\"espn:epl:14\",\"fixture_observed_at\":\"2026-11-05T11:00:00+00:00\",\"fixture_source\":\"ESPN scoreboard\",\"home_team\":\"Fictional Home 14\",\"kickoff_utc\":\"2026-11-05T18:00:00+00:00\",\"league\":\"epl\",\"prediction_status\":\"predicted\"}],\"generated_at\":\"2026-11-05T11:00:00+00:00\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:16+00:00",
+        "updated_at": "2026-11-05T11:00:16+00:00"
+      },
+      {
+        "id": 117,
+        "body": "statrally-market-v1:{\"checked_at\":\"2026-11-05T11:00:00+00:00\",\"event_slug\":\"fictional-0\",\"market_slug\":\"fictional-btts-0\",\"prediction_id\":\"b30c477cdfd9a4e0eed0230db7ed2cb2f0c699fbd32212292b71b0a32bf2d4cb\",\"provider\":\"polymarket_us\",\"status\":\"verified_available\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:17+00:00",
+        "updated_at": "2026-11-05T11:00:17+00:00"
+      },
+      {
+        "id": 118,
+        "body": "statrally-market-v1:{\"checked_at\":\"2026-11-05T11:00:00+00:00\",\"event_slug\":\"fictional-1\",\"market_slug\":\"fictional-btts-1\",\"prediction_id\":\"c3e5d2183309b933a36be2338a95ec1bd5b316e9ff941e2426fa67e40f9c60a8\",\"provider\":\"polymarket_us\",\"status\":\"verified_available\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:18+00:00",
+        "updated_at": "2026-11-05T11:00:18+00:00"
+      },
+      {
+        "id": 119,
+        "body": "statrally-market-v1:{\"checked_at\":\"2026-11-05T11:00:00+00:00\",\"event_slug\":\"fictional-2\",\"market_slug\":\"fictional-btts-2\",\"prediction_id\":\"3909b8f7acebe9836543389081cc61e86415d11eb01a760228bb35c13cdc7c46\",\"provider\":\"polymarket_us\",\"status\":\"verified_available\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:19+00:00",
+        "updated_at": "2026-11-05T11:00:19+00:00"
+      },
+      {
+        "id": 120,
+        "body": "statrally-market-v1:{\"checked_at\":\"2026-11-05T11:00:00+00:00\",\"prediction_id\":\"ac91598809cb873902392a6e6dec567fc268af60bf47342fd2f040cb83159ddf\",\"provider\":\"polymarket_us\",\"status\":\"not_found\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:20+00:00",
+        "updated_at": "2026-11-05T11:00:20+00:00"
+      },
+      {
+        "id": 121,
+        "body": "statrally-market-v1:{\"checked_at\":\"2026-11-05T11:00:00+00:00\",\"prediction_id\":\"56b4063f5cd36ab6b9532e81acab31830d3297fc714217c88c65a08d67e42547\",\"provider\":\"polymarket_us\",\"status\":\"not_found\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:21+00:00",
+        "updated_at": "2026-11-05T11:00:21+00:00"
+      },
+      {
+        "id": 122,
+        "body": "statrally-market-v1:{\"checked_at\":\"2026-11-05T11:00:00+00:00\",\"prediction_id\":\"12d74ff858bc9ddce63bdc56e644854b3883524aa4806c9dc46f11411e8a4859\",\"provider\":\"polymarket_us\",\"status\":\"not_found\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:22+00:00",
+        "updated_at": "2026-11-05T11:00:22+00:00"
+      },
+      {
+        "id": 123,
+        "body": "statrally-market-v1:{\"checked_at\":\"2026-11-05T11:00:00+00:00\",\"prediction_id\":\"2fdcb9f91fb6312d1fcb8e782398813ad17f05df0c4144b4d73f96db51a37d04\",\"provider\":\"polymarket_us\",\"status\":\"not_found\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:23+00:00",
+        "updated_at": "2026-11-05T11:00:23+00:00"
+      },
+      {
+        "id": 124,
+        "body": "statrally-market-v1:{\"checked_at\":\"2026-11-05T11:00:00+00:00\",\"prediction_id\":\"bde543b734a16f5e68afbb5879e44813e1396632229fbc5c8d077960d49edece\",\"provider\":\"polymarket_us\",\"status\":\"not_found\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:24+00:00",
+        "updated_at": "2026-11-05T11:00:24+00:00"
+      },
+      {
+        "id": 125,
+        "body": "statrally-market-v1:{\"checked_at\":\"2026-11-05T11:00:00+00:00\",\"prediction_id\":\"a83d7c5fb2d8ffbf92a25dcb4efff59fd9fa92f251719562750bf1c2b3d2e57e\",\"provider\":\"polymarket_us\",\"status\":\"not_found\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:25+00:00",
+        "updated_at": "2026-11-05T11:00:25+00:00"
+      },
+      {
+        "id": 126,
+        "body": "statrally-market-v1:{\"checked_at\":\"2026-11-05T11:00:00+00:00\",\"prediction_id\":\"f9a347712a3ed2619ef0c7ec74fd529f981fddd4ee9e59b3e21c8e4217796112\",\"provider\":\"polymarket_us\",\"status\":\"not_found\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:26+00:00",
+        "updated_at": "2026-11-05T11:00:26+00:00"
+      },
+      {
+        "id": 127,
+        "body": "statrally-market-v1:{\"checked_at\":\"2026-11-05T11:00:00+00:00\",\"prediction_id\":\"43cb5179c2c48d62f57b012a30be97fc3d3e54737f44fd678ae829665e428956\",\"provider\":\"polymarket_us\",\"status\":\"not_found\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:27+00:00",
+        "updated_at": "2026-11-05T11:00:27+00:00"
+      },
+      {
+        "id": 128,
+        "body": "statrally-market-v1:{\"checked_at\":\"2026-11-05T11:00:00+00:00\",\"prediction_id\":\"aec5e2d28f29f34d512148dc095676d257598d2e5626606911afd4179a304624\",\"provider\":\"polymarket_us\",\"status\":\"not_found\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:28+00:00",
+        "updated_at": "2026-11-05T11:00:28+00:00"
+      },
+      {
+        "id": 129,
+        "body": "statrally-market-v1:{\"checked_at\":\"2026-11-05T11:00:00+00:00\",\"prediction_id\":\"8b1199a73f83513d0675cfdf21f7d495b3c8b149af4da3fa9ea7c5aa7575731c\",\"provider\":\"polymarket_us\",\"status\":\"not_found\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:29+00:00",
+        "updated_at": "2026-11-05T11:00:29+00:00"
+      },
+      {
+        "id": 130,
+        "body": "statrally-market-v1:{\"checked_at\":\"2026-11-05T11:00:00+00:00\",\"prediction_id\":\"9ac61f134bfad2675d2a801c1bbde159801f313140bf873e7d440f23e8aaf0c4\",\"provider\":\"polymarket_us\",\"status\":\"not_found\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:30+00:00",
+        "updated_at": "2026-11-05T11:00:30+00:00"
+      },
+      {
+        "id": 131,
+        "body": "statrally-prediction-delivery-v1:{\"kind\":\"daily\",\"prediction_id\":\"b30c477cdfd9a4e0eed0230db7ed2cb2f0c699fbd32212292b71b0a32bf2d4cb\",\"reserved_at\":\"2026-11-05T11:00:00+00:00\",\"state\":\"reserved\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:31+00:00",
+        "updated_at": "2026-11-05T11:00:31+00:00"
+      },
+      {
+        "id": 132,
+        "body": "statrally-prediction-delivery-v1:{\"kind\":\"daily\",\"prediction_id\":\"f9a347712a3ed2619ef0c7ec74fd529f981fddd4ee9e59b3e21c8e4217796112\",\"reserved_at\":\"2026-11-05T11:00:00+00:00\",\"state\":\"reserved\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:32+00:00",
+        "updated_at": "2026-11-05T11:00:32+00:00"
+      },
+      {
+        "id": 133,
+        "body": "statrally-prediction-delivery-v1:{\"kind\":\"daily\",\"prediction_id\":\"43cb5179c2c48d62f57b012a30be97fc3d3e54737f44fd678ae829665e428956\",\"reserved_at\":\"2026-11-05T11:00:00+00:00\",\"state\":\"reserved\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:33+00:00",
+        "updated_at": "2026-11-05T11:00:33+00:00"
+      },
+      {
+        "id": 134,
+        "body": "statrally-prediction-delivery-v1:{\"kind\":\"daily\",\"prediction_id\":\"aec5e2d28f29f34d512148dc095676d257598d2e5626606911afd4179a304624\",\"reserved_at\":\"2026-11-05T11:00:00+00:00\",\"state\":\"reserved\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:34+00:00",
+        "updated_at": "2026-11-05T11:00:34+00:00"
+      },
+      {
+        "id": 135,
+        "body": "statrally-prediction-delivery-v1:{\"kind\":\"daily\",\"prediction_id\":\"8b1199a73f83513d0675cfdf21f7d495b3c8b149af4da3fa9ea7c5aa7575731c\",\"reserved_at\":\"2026-11-05T11:00:00+00:00\",\"state\":\"reserved\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:35+00:00",
+        "updated_at": "2026-11-05T11:00:35+00:00"
+      },
+      {
+        "id": 136,
+        "body": "statrally-prediction-delivery-v1:{\"kind\":\"daily\",\"prediction_id\":\"9ac61f134bfad2675d2a801c1bbde159801f313140bf873e7d440f23e8aaf0c4\",\"reserved_at\":\"2026-11-05T11:00:00+00:00\",\"state\":\"reserved\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:36+00:00",
+        "updated_at": "2026-11-05T11:00:36+00:00"
+      },
+      {
+        "id": 137,
+        "body": "statrally-prediction-delivery-v1:{\"kind\":\"daily\",\"prediction_id\":\"c3e5d2183309b933a36be2338a95ec1bd5b316e9ff941e2426fa67e40f9c60a8\",\"reserved_at\":\"2026-11-05T11:00:00+00:00\",\"state\":\"reserved\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:37+00:00",
+        "updated_at": "2026-11-05T11:00:37+00:00"
+      },
+      {
+        "id": 138,
+        "body": "statrally-prediction-delivery-v1:{\"kind\":\"daily\",\"prediction_id\":\"3909b8f7acebe9836543389081cc61e86415d11eb01a760228bb35c13cdc7c46\",\"reserved_at\":\"2026-11-05T11:00:00+00:00\",\"state\":\"reserved\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:38+00:00",
+        "updated_at": "2026-11-05T11:00:38+00:00"
+      },
+      {
+        "id": 139,
+        "body": "statrally-prediction-delivery-v1:{\"kind\":\"daily\",\"prediction_id\":\"b30c477cdfd9a4e0eed0230db7ed2cb2f0c699fbd32212292b71b0a32bf2d4cb\",\"receipt\":{\"channel_id\":\"223456789012345678\",\"message_id\":\"123456789012345678\"},\"state\":\"accepted\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:39+00:00",
+        "updated_at": "2026-11-05T11:00:39+00:00"
+      },
+      {
+        "id": 140,
+        "body": "statrally-prediction-delivery-v1:{\"kind\":\"daily\",\"prediction_id\":\"f9a347712a3ed2619ef0c7ec74fd529f981fddd4ee9e59b3e21c8e4217796112\",\"receipt\":{\"channel_id\":\"223456789012345678\",\"message_id\":\"123456789012345678\"},\"state\":\"accepted\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:40+00:00",
+        "updated_at": "2026-11-05T11:00:40+00:00"
+      },
+      {
+        "id": 141,
+        "body": "statrally-prediction-delivery-v1:{\"kind\":\"daily\",\"prediction_id\":\"43cb5179c2c48d62f57b012a30be97fc3d3e54737f44fd678ae829665e428956\",\"receipt\":{\"channel_id\":\"223456789012345678\",\"message_id\":\"123456789012345678\"},\"state\":\"accepted\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:41+00:00",
+        "updated_at": "2026-11-05T11:00:41+00:00"
+      },
+      {
+        "id": 142,
+        "body": "statrally-prediction-delivery-v1:{\"kind\":\"daily\",\"prediction_id\":\"aec5e2d28f29f34d512148dc095676d257598d2e5626606911afd4179a304624\",\"receipt\":{\"channel_id\":\"223456789012345678\",\"message_id\":\"123456789012345678\"},\"state\":\"accepted\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:42+00:00",
+        "updated_at": "2026-11-05T11:00:42+00:00"
+      },
+      {
+        "id": 143,
+        "body": "statrally-prediction-delivery-v1:{\"kind\":\"daily\",\"prediction_id\":\"8b1199a73f83513d0675cfdf21f7d495b3c8b149af4da3fa9ea7c5aa7575731c\",\"receipt\":{\"channel_id\":\"223456789012345678\",\"message_id\":\"123456789012345678\"},\"state\":\"accepted\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:43+00:00",
+        "updated_at": "2026-11-05T11:00:43+00:00"
+      },
+      {
+        "id": 144,
+        "body": "statrally-prediction-delivery-v1:{\"kind\":\"daily\",\"prediction_id\":\"9ac61f134bfad2675d2a801c1bbde159801f313140bf873e7d440f23e8aaf0c4\",\"receipt\":{\"channel_id\":\"223456789012345678\",\"message_id\":\"123456789012345678\"},\"state\":\"accepted\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:44+00:00",
+        "updated_at": "2026-11-05T11:00:44+00:00"
+      },
+      {
+        "id": 145,
+        "body": "statrally-prediction-delivery-v1:{\"kind\":\"daily\",\"prediction_id\":\"c3e5d2183309b933a36be2338a95ec1bd5b316e9ff941e2426fa67e40f9c60a8\",\"receipt\":{\"channel_id\":\"223456789012345678\",\"message_id\":\"123456789012345678\"},\"state\":\"accepted\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:45+00:00",
+        "updated_at": "2026-11-05T11:00:45+00:00"
+      },
+      {
+        "id": 146,
+        "body": "statrally-prediction-delivery-v1:{\"kind\":\"daily\",\"prediction_id\":\"3909b8f7acebe9836543389081cc61e86415d11eb01a760228bb35c13cdc7c46\",\"receipt\":{\"channel_id\":\"223456789012345678\",\"message_id\":\"123456789012345678\"},\"state\":\"accepted\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:46+00:00",
+        "updated_at": "2026-11-05T11:00:46+00:00"
+      },
+      {
+        "id": 147,
+        "body": "statrally-prediction-delivery-v1:{\"kind\":\"daily\",\"prediction_id\":\"ac91598809cb873902392a6e6dec567fc268af60bf47342fd2f040cb83159ddf\",\"reserved_at\":\"2026-11-05T11:00:00+00:00\",\"state\":\"reserved\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:47+00:00",
+        "updated_at": "2026-11-05T11:00:47+00:00"
+      },
+      {
+        "id": 148,
+        "body": "statrally-prediction-delivery-v1:{\"kind\":\"daily\",\"prediction_id\":\"56b4063f5cd36ab6b9532e81acab31830d3297fc714217c88c65a08d67e42547\",\"reserved_at\":\"2026-11-05T11:00:00+00:00\",\"state\":\"reserved\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:48+00:00",
+        "updated_at": "2026-11-05T11:00:48+00:00"
+      },
+      {
+        "id": 149,
+        "body": "statrally-prediction-delivery-v1:{\"kind\":\"daily\",\"prediction_id\":\"12d74ff858bc9ddce63bdc56e644854b3883524aa4806c9dc46f11411e8a4859\",\"reserved_at\":\"2026-11-05T11:00:00+00:00\",\"state\":\"reserved\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:49+00:00",
+        "updated_at": "2026-11-05T11:00:49+00:00"
+      },
+      {
+        "id": 150,
+        "body": "statrally-prediction-delivery-v1:{\"kind\":\"daily\",\"prediction_id\":\"2fdcb9f91fb6312d1fcb8e782398813ad17f05df0c4144b4d73f96db51a37d04\",\"reserved_at\":\"2026-11-05T11:00:00+00:00\",\"state\":\"reserved\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:50+00:00",
+        "updated_at": "2026-11-05T11:00:50+00:00"
+      },
+      {
+        "id": 151,
+        "body": "statrally-prediction-delivery-v1:{\"kind\":\"daily\",\"prediction_id\":\"bde543b734a16f5e68afbb5879e44813e1396632229fbc5c8d077960d49edece\",\"reserved_at\":\"2026-11-05T11:00:00+00:00\",\"state\":\"reserved\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:51+00:00",
+        "updated_at": "2026-11-05T11:00:51+00:00"
+      },
+      {
+        "id": 152,
+        "body": "statrally-prediction-delivery-v1:{\"kind\":\"daily\",\"prediction_id\":\"a83d7c5fb2d8ffbf92a25dcb4efff59fd9fa92f251719562750bf1c2b3d2e57e\",\"reserved_at\":\"2026-11-05T11:00:00+00:00\",\"state\":\"reserved\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:52+00:00",
+        "updated_at": "2026-11-05T11:00:52+00:00"
+      },
+      {
+        "id": 153,
+        "body": "statrally-prediction-delivery-v1:{\"kind\":\"daily\",\"prediction_id\":\"ac91598809cb873902392a6e6dec567fc268af60bf47342fd2f040cb83159ddf\",\"receipt\":{\"channel_id\":\"223456789012345678\",\"message_id\":\"123456789012345678\"},\"state\":\"accepted\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:53+00:00",
+        "updated_at": "2026-11-05T11:00:53+00:00"
+      },
+      {
+        "id": 154,
+        "body": "statrally-prediction-delivery-v1:{\"kind\":\"daily\",\"prediction_id\":\"56b4063f5cd36ab6b9532e81acab31830d3297fc714217c88c65a08d67e42547\",\"receipt\":{\"channel_id\":\"223456789012345678\",\"message_id\":\"123456789012345678\"},\"state\":\"accepted\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:54+00:00",
+        "updated_at": "2026-11-05T11:00:54+00:00"
+      },
+      {
+        "id": 155,
+        "body": "statrally-prediction-delivery-v1:{\"kind\":\"daily\",\"prediction_id\":\"12d74ff858bc9ddce63bdc56e644854b3883524aa4806c9dc46f11411e8a4859\",\"receipt\":{\"channel_id\":\"223456789012345678\",\"message_id\":\"123456789012345678\"},\"state\":\"accepted\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:55+00:00",
+        "updated_at": "2026-11-05T11:00:55+00:00"
+      },
+      {
+        "id": 156,
+        "body": "statrally-prediction-delivery-v1:{\"kind\":\"daily\",\"prediction_id\":\"2fdcb9f91fb6312d1fcb8e782398813ad17f05df0c4144b4d73f96db51a37d04\",\"receipt\":{\"channel_id\":\"223456789012345678\",\"message_id\":\"123456789012345678\"},\"state\":\"accepted\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:56+00:00",
+        "updated_at": "2026-11-05T11:00:56+00:00"
+      },
+      {
+        "id": 157,
+        "body": "statrally-prediction-delivery-v1:{\"kind\":\"daily\",\"prediction_id\":\"bde543b734a16f5e68afbb5879e44813e1396632229fbc5c8d077960d49edece\",\"receipt\":{\"channel_id\":\"223456789012345678\",\"message_id\":\"123456789012345678\"},\"state\":\"accepted\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:57+00:00",
+        "updated_at": "2026-11-05T11:00:57+00:00"
+      },
+      {
+        "id": 158,
+        "body": "statrally-prediction-delivery-v1:{\"kind\":\"daily\",\"prediction_id\":\"a83d7c5fb2d8ffbf92a25dcb4efff59fd9fa92f251719562750bf1c2b3d2e57e\",\"receipt\":{\"channel_id\":\"223456789012345678\",\"message_id\":\"123456789012345678\"},\"state\":\"accepted\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:58+00:00",
+        "updated_at": "2026-11-05T11:00:58+00:00"
+      },
+      {
+        "id": 159,
+        "body": "statrally-prediction-delivery-v1:{\"kind\":\"top\",\"prediction_id\":\"b30c477cdfd9a4e0eed0230db7ed2cb2f0c699fbd32212292b71b0a32bf2d4cb\",\"reserved_at\":\"2026-11-05T11:00:00+00:00\",\"state\":\"reserved\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:00:59+00:00",
+        "updated_at": "2026-11-05T11:00:59+00:00"
+      },
+      {
+        "id": 160,
+        "body": "statrally-prediction-delivery-v1:{\"kind\":\"top\",\"prediction_id\":\"f9a347712a3ed2619ef0c7ec74fd529f981fddd4ee9e59b3e21c8e4217796112\",\"reserved_at\":\"2026-11-05T11:00:00+00:00\",\"state\":\"reserved\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:01:00+00:00",
+        "updated_at": "2026-11-05T11:01:00+00:00"
+      },
+      {
+        "id": 161,
+        "body": "statrally-prediction-delivery-v1:{\"kind\":\"top\",\"prediction_id\":\"43cb5179c2c48d62f57b012a30be97fc3d3e54737f44fd678ae829665e428956\",\"reserved_at\":\"2026-11-05T11:00:00+00:00\",\"state\":\"reserved\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:01:01+00:00",
+        "updated_at": "2026-11-05T11:01:01+00:00"
+      },
+      {
+        "id": 162,
+        "body": "statrally-prediction-delivery-v1:{\"kind\":\"top\",\"prediction_id\":\"b30c477cdfd9a4e0eed0230db7ed2cb2f0c699fbd32212292b71b0a32bf2d4cb\",\"receipt\":{\"channel_id\":\"223456789012345678\",\"message_id\":\"123456789012345678\"},\"state\":\"accepted\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:01:02+00:00",
+        "updated_at": "2026-11-05T11:01:02+00:00"
+      },
+      {
+        "id": 163,
+        "body": "statrally-prediction-delivery-v1:{\"kind\":\"top\",\"prediction_id\":\"f9a347712a3ed2619ef0c7ec74fd529f981fddd4ee9e59b3e21c8e4217796112\",\"receipt\":{\"channel_id\":\"223456789012345678\",\"message_id\":\"123456789012345678\"},\"state\":\"accepted\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:01:03+00:00",
+        "updated_at": "2026-11-05T11:01:03+00:00"
+      },
+      {
+        "id": 164,
+        "body": "statrally-prediction-delivery-v1:{\"kind\":\"top\",\"prediction_id\":\"43cb5179c2c48d62f57b012a30be97fc3d3e54737f44fd678ae829665e428956\",\"receipt\":{\"channel_id\":\"223456789012345678\",\"message_id\":\"123456789012345678\"},\"state\":\"accepted\"}",
+        "user": {
+          "login": "github-actions[bot]"
+        },
+        "created_at": "2026-11-05T11:01:04+00:00",
+        "updated_at": "2026-11-05T11:01:04+00:00"
+      }
+    ]
+  }
+}

@@ -1,0 +1,10 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>StatRally · BTTS analytics</title><link rel="stylesheet" href="/platform.css"><script type="module" src="/platform-web.mjs"></script></head>
+<body><header><a href="/" class="brand">StatRally</a><span>BTTS analytics · Experimental paper predictions</span></header>
+<main><h1>Soccer predictions, independently recorded.</h1><p class="muted">YES means both teams score. NO means at least one team does not. Model estimates are uncalibrated; no proven betting edge or real trades.</p>
+<p id="source" role="status">Loading canonical public records…</p>
+<nav aria-label="Analytics views"><button data-view="today" aria-pressed="true">Today's predictions</button><button data-view="top">Top predictions</button><button data-view="performance">Performance</button><button data-view="history">Prediction history</button></nav>
+<div class="controls"><label>Competition <select id="league"><option value="">All competitions</option></select></label><span id="day"></span></div>
+<section id="content" aria-live="polite"></section><div class="pagination"><button id="previous">Previous</button><span id="pages"></span><button id="next">Next</button></div>
+<footer>Every displayed forecast comes from a stored prematch record. Polymarket US availability is additional information. Pending or unconfirmed outcomes are never counted as losses. Revisions preserve the original forecast.</footer></main></body></html>
