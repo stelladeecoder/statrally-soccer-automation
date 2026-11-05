@@ -78,7 +78,7 @@ class PredictionPlatformTests(unittest.TestCase):
         p=self.issue()['predictions'][0]
         self.assertEqual(p['side'],'NO');self.assertAlmostEqual(float(p['confidence']),.72)
         card=prediction_pages(self.ledger.export()['records'],'TEST')[0]['embeds'][0]
-        self.assertIn('BTTS NO',card['fields'][0]['value']);self.assertEqual(card['color'],0xE74C3C)
+        self.assertIn('🔵 BTTS NO',card['fields'][0]['value']);self.assertEqual(card['color'],0x3498DB)
 
     def test_fourteen_predictions_only_three_markets_full_pagination_and_top_three(self):
         records=self.issue(14)['predictions']
