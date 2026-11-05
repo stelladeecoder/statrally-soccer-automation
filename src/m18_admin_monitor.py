@@ -348,9 +348,10 @@ def watch(repo, webhook, *, now, paused=False, call=api, sender=send):
 
 
 def is_superseded_push_cancellation(repo, run, call=api):
-    """Ignore jobless cron/push cancellations superseded by nearby scheduler dispatches.
+    """Ignore jobless cron/push cancellations covered by a nearby healthy dispatch.
 
-    The independent watchdog still checks slot receipts and missing heartbeats.
+    This compares runs before and after the cancelled cron, while preserving
+    independent heartbeat and per-slot receipt alerts.
     """
     if run.get("conclusion") != "cancelled" or run.get("event") not in ("push", "schedule"):
         return False
@@ -362,10 +363,11 @@ def is_superseded_push_cancellation(repo, run, call=api):
         if candidate.get("id") == run["id"]:
             continue
         started = datetime.fromisoformat(candidate["created_at"].replace("Z", "+00:00"))
-        if (cancelled_start <= started <= cancelled_start + timedelta(minutes=10) and
+        if (cancelled_start - timedelta(minutes=10) <= started <=
+            cancelled_start + timedelta(minutes=10) and
             candidate.get("event") == "workflow_dispatch" and
-            (candidate.get("status") == "in_progress" or
-             candidate.get("conclusion") == "success")):
+            (candidate.get("conclusion") == "success" or
+             (started >= cancelled_start and candidate.get("status") == "in_progress"))):
             return True
     return False
 
