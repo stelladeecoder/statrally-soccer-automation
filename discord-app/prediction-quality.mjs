@@ -9,13 +9,28 @@ export function validPolicy(p) {
   typeof p.minimum_validated_coverage==="number"&&p.minimum_validated_coverage>=.1&&p.minimum_validated_coverage<=1&&
   Array.isArray(p.approved_policies)&&Array.isArray(p.required_conditions)&&[...p.required_conditions].sort().join(",")===[...requiredConditions].sort().join(",");
 }
+// Compare saved decimal strings exactly; Number can round a value just below
+// 0.55/0.60/0.70 onto the boundary and disagree with the Python policy.
+function decimalRatio(value) {
+ const text=String(value);if(text.length>40)return null;
+ const match=/^\+?(\d*)(?:\.(\d*))?(?:e([+-]?\d+))?$/i.exec(text);
+ if(!match||!(match[1]||match[2]))return null;
+ const exponent=Number(match[3]||0)-(match[2]||"").length;
+ if(!Number.isInteger(exponent)||Math.abs(exponent)>100)return null;
+ const n=BigInt((match[1]||"0")+(match[2]||""));
+ return exponent>=0?[n*10n**BigInt(exponent),1n]:[n,10n**BigInt(-exponent)];
+}
+function decimalCompare(a,b) {
+ const x=decimalRatio(a),y=decimalRatio(b);if(!x||!y)return NaN;
+ const left=x[0]*y[1],right=y[0]*x[1];return left<right?-1:left>right?1:0;
+}
 export function probabilityCategory(value) {
- const n=Number(value);if(!Number.isFinite(n)||n<.5||n>1)throw new Error("Invalid selected-side probability");
- return n<.55?"Low confidence":n<.6?"Moderate confidence":n<.7?"Higher model probability":"Very high model probability";
+ if(!(decimalCompare(value,".5")>=0&&decimalCompare(value,"1")<=0))throw new Error("Invalid selected-side probability");
+ return decimalCompare(value,".55")<0?"Low confidence":decimalCompare(value,".6")<0?"Moderate confidence":decimalCompare(value,".7")<0?"Higher model probability":"Very high model probability";
 }
 export function classifyPrediction(p,policy=null,now=null) {
- const confidence=Number(p.confidence),reasons=[];
- if(confidence<.55)reasons.push("below_descriptive_screen");
+ const reasons=[];
+ if(decimalCompare(p.confidence,".55")<0)reasons.push("below_descriptive_screen");
  if(p.probabilities_calibrated!==true)reasons.push("uncalibrated");
  if(p.data_quality_status!=="verified")reasons.push("unverified_data_quality");
  let approved=null;
@@ -25,7 +40,7 @@ export function classifyPrediction(p,policy=null,now=null) {
    const keys=["approval_id","model_version","league","side","minimum_probability","observations","ece","coverage","deployment_gate_passed","fresh_forward_evidence","passed_conditions","threshold_selected_on","selection_end","approved_at","valid_until","evidence_sha256","calibration_method"];
    if(!sameKeys(rule,keys)||rule.model_version!==p.model_version||rule.league!==p.league||rule.side!==p.side)continue;
    const cutoff=Number(rule.minimum_probability),created=Date.parse(p.created_at),selection=Date.parse(rule.selection_end),approval=Date.parse(rule.approved_at),expiry=Date.parse(rule.valid_until);
-   if(!Number.isFinite(cutoff)||cutoff<.55||cutoff>confidence||rule.deployment_gate_passed!==true||rule.fresh_forward_evidence!==true||
+   if(typeof rule.minimum_probability!=="string"||!Number.isFinite(cutoff)||!(decimalCompare(rule.minimum_probability,".55")>=0&&decimalCompare(rule.minimum_probability,p.confidence)<=0)||rule.deployment_gate_passed!==true||rule.fresh_forward_evidence!==true||
     !Array.isArray(rule.passed_conditions)||[...rule.passed_conditions].sort().join(",")!==[...requiredConditions].sort().join(",")||
     rule.threshold_selected_on!=="validation"||!["sigmoid","isotonic"].includes(rule.calibration_method)||
     !Number.isInteger(rule.observations)||rule.observations<policy.minimum_validation_observations||

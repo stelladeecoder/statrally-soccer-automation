@@ -96,7 +96,9 @@ class PredictionQualityTests(unittest.TestCase):
 
     def test_python_and_javascript_classification_match(self):
         root=Path(__file__).resolve().parents[1];p,approved=approved_example(prediction(p_yes='.72'))
-        cases=[{'prediction':prediction(p_yes=n),'policy':load_policy()} for n in ('.503','.55','.28','.61')]+[{'prediction':p,'policy':approved}]
+        cases=[{'prediction':prediction(p_yes=n),'policy':load_policy()} for n in ('.503','.55','.28','.61','.3','.4','0.54999999999999999','0.59999999999999998','0.69999999999999996')]+[{'prediction':p,'policy':approved}]
+        for value in ('0.54999999999999999','0.59999999999999998','0.69999999999999996'):
+            row={'prediction':copy.deepcopy(p),'policy':copy.deepcopy(approved)};row['prediction']['confidence']=value;cases.append(row)
         script=f"import {{classifyPrediction}} from {json.dumps((root/'discord-app/prediction-quality.mjs').as_uri())};let s='';for await(const c of process.stdin)s+=c;console.log(JSON.stringify(JSON.parse(s).map(r=>classifyPrediction(r.prediction,r.policy))));"
         result=subprocess.run(['node','--input-type=module','-e',script],input=json.dumps(cases),text=True,capture_output=True,check=True)
         self.assertEqual(json.loads(result.stdout),[classify(c['prediction'],c['policy']) for c in cases])

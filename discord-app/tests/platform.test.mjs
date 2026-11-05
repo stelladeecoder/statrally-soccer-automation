@@ -89,3 +89,13 @@ test("Legacy public export keeps its exact schema and immutable forecast bytes",
  }
  assert.ok(current.records.every(r=>r.presentation));assert.ok(current.selection_policy);
 });
+
+test("Decimal confidence boundaries match saved values without floating-point promotion",async()=>{
+ const {probabilityCategory}=await import("../prediction-quality.mjs");
+ assert.equal(probabilityCategory("0.54999999999999999"),"Low confidence");
+ assert.equal(probabilityCategory("0.59999999999999998"),"Moderate confidence");
+ assert.equal(probabilityCategory("0.69999999999999996"),"Higher model probability");
+ assert.equal(probabilityCategory("5.5e-1"),"Moderate confidence");
+ assert.equal(probabilityCategory("0.70"),"Very high model probability");
+ assert.throws(()=>probabilityCategory("0.49999999999999999"));
+});
