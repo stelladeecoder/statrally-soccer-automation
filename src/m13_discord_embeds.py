@@ -5,7 +5,9 @@ import re
 from zoneinfo import ZoneInfo
 
 CENTRAL = ZoneInfo("America/Chicago")
-YES_COLOR, NO_COLOR, NEUTRAL_COLOR = 0x2ECC71, 0xE74C3C, 0x95A5A6
+PICK_COLOR, WIN_COLOR, LOSS_COLOR, NEUTRAL_COLOR = 0x3498DB, 0x2ECC71, 0xE74C3C, 0x95A5A6
+# Keep legacy names for existing integrations; prediction cards are blue for either side.
+YES_COLOR = NO_COLOR = PICK_COLOR
 COMPETITIONS = {
     "epl": "Premier League", "bundesliga": "Bundesliga", "laliga": "La Liga",
     "serie_a": "Serie A", "ligue_1": "Ligue 1", "eredivisie": "Eredivisie",
@@ -54,7 +56,7 @@ def clock(value):
 def side_style(side):
     if side not in ("YES", "NO"):
         raise ValueError("BTTS side required")
-    return (YES_COLOR, "🟢 BTTS YES") if side == "YES" else (NO_COLOR, "🔴 BTTS NO")
+    return (PICK_COLOR, "🔵 BTTS YES") if side == "YES" else (PICK_COLOR, "🔵 BTTS NO")
 
 
 def embed_units(embed):
@@ -154,9 +156,10 @@ def render_paper_result(signal, result):
     if result.get("result") != expected:
         raise ValueError("Result contradicts verified score and original side")
     embed, _ = match_card(signal, "Verified full-time · Paper result")
+    embed["color"] = WIN_COLOR if expected == "WIN" else LOSS_COLOR
     embed["fields"] = [
         {"name": "Original prediction", "value": side_style(signal["side"])[1], "inline": True},
-        {"name": "Outcome", "value": "**" + result["result"] + "**", "inline": True},
+        {"name": "Outcome", "value": ("🟢 **WIN**" if expected == "WIN" else "🔴 **LOSS**"), "inline": True},
         {"name": "Final score", "value": f"{goals[0]}–{goals[1]}", "inline": True},
     ]
     return validate_payload({"content": "Experimental paper result · No financial P&L.",
