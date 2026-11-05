@@ -5,7 +5,7 @@ from m13_discord_embeds import COMPETITIONS
 SCORES = {"n","accuracy","balanced_accuracy","brier","log_loss","ece","yes_precision","no_precision","yes_recall","no_recall",
           "yes_f1","no_f1","accuracy_wilson_95","confusion","total_predictions","graded_predictions","pending_predictions",
           "ungradable_predictions","correct_predictions","incorrect_predictions","yes_accuracy","no_accuracy",
-          "baseline_same_fixtures","model_baseline_matched"}
+          "baseline_same_fixtures","model_baseline_matched","evaluated_prematch_fixtures","prediction_coverage"}
 
 
 def public_metrics(report):
@@ -34,7 +34,7 @@ def public_metrics(report):
     result=dict(report,overall=score(report["overall"]))
     if set(report["by_league"])-set(COMPETITIONS):raise ValueError("Unknown competition")
     import re
-    for key, pattern in (("by_league",r"[a-z_]+"),("by_model_version",r"[A-Za-z0-9_.-]{1,100}"),("by_month",r"\d{4}-\d{2}")):
+    for key, pattern in (("by_league",r"[a-z0-9_]+"),("by_model_version",r"[A-Za-z0-9_.-]{1,100}"),("by_month",r"\d{4}-\d{2}")):
         if not isinstance(report[key],dict) or any(not re.fullmatch(pattern,k) for k in report[key]):raise ValueError("Unreviewed aggregate group")
         result[key]={k:score(v) for k,v in report[key].items()}
     result["by_confidence"]={}

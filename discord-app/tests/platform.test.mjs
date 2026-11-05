@@ -33,6 +33,16 @@ test("Same-day views never substitute future dates and busy pagination loses no 
  for(let i=1;i<=6;i++)collected.push(...page(records,i).items);
  assert.deepEqual(collected,records);
 });
+test("Per-league coverage is public numeric evidence, while private metric fields are rejected",()=>{
+ const f=structuredClone(fixture),score={n:0},report={schema_version:1,status:"forward_recorded_experimental_no_trades",revision_policy:"test",overall:score,
+  by_league:{epl:{n:0,evaluated_prematch_fixtures:2,prediction_coverage:.5}},by_model_version:{},by_month:{},
+  by_confidence:Object.fromEntries(["0.50-0.55","0.55-0.60","0.60-0.65","0.65-0.70","0.70-0.75","0.75-1.01"].map(k=>[k,{all:score,YES:score,NO:score}])),
+  coverage:{predicted_fixtures:1,evaluated_prematch_fixtures:2,fraction:.5},no_model_promoted:true,trades_placed:0,note:"test"};
+ const comment={id:9999,user:{login:"github-actions[bot]"},created_at:now.toISOString(),updated_at:now.toISOString(),body:"statrally-prediction-metrics-v1:"+JSON.stringify(report)};
+ f.comments["1"].push(comment);assert.equal(canonicalPlatform(f.issues,f.comments,now).metrics.by_league.epl.prediction_coverage,.5);
+ report.by_league.epl.private_dataset="never-export";comment.body="statrally-prediction-metrics-v1:"+JSON.stringify(report);
+ assert.throws(()=>canonicalPlatform(f.issues,f.comments,now));
+});
 test("Full-slate slash response exposes every fixture through bounded pages",()=>{
  const output=data(),found=new Set();
  for(let i=1;i<=5;i++) {
