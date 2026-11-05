@@ -9,6 +9,7 @@ import { snapshotBackedFetch } from "./snapshot.mjs";
 import { publicPlatform } from "./platform-data.mjs";
 import { readFile } from "node:fs/promises";
 import { platformCommand } from "./platform-commands.mjs";
+import {classifyPrediction} from "./prediction-quality.mjs";
 
 export function verifyDiscord(body, timestamp, signature, publicKey, now = Date.now()) {
   if (!Buffer.isBuffer(body) || typeof timestamp !== "string" ||
@@ -39,13 +40,13 @@ export async function commandText(interaction, { fetcher = fetch, now = new Date
       !platformData.records.some(r=>r.prediction.espn_event_id===eventId);
     if (name==="picks") {
       const current=platformData.records.filter(r=>centralDay(new Date(r.prediction.kickoff_utc))===centralDay(now) &&
-        r.deliveries.some(e=>e.kind==="top"&&e.state==="accepted"));
+        r.deliveries.some(e=>e.kind==="top"&&e.state==="accepted") && classifyPrediction(r.prediction,platformData.selection_policy,now).selection_eligible);
       const currentIds=new Set(current.map(r=>r.prediction.espn_event_id));
       let legacy=[];
       try { legacy=(await deliveredRecords({fetcher,day:centralDay(now)})).filter(r=>!currentIds.has(r.signal.espn_event_id)).slice(0,Math.max(0,3-current.length)); }
       catch { return platformCommand(interaction,platformData,now)+"\nLegacy delivery history is temporarily unavailable; canonical records above remain saved."; }
-      if(legacy.length) return (current.length?platformCommand(interaction,platformData,now):"**StatRally | Delivered paper highlights**")+
-        "\nLegacy delivered records (original saved estimates):\n"+legacy.map(renderPick).join("\n")+
+      if(legacy.length) return platformCommand(interaction,platformData,now)+
+        "\nLegacy delivered records (original saved estimates; not validated selections):\n"+legacy.map(renderPick).join("\n")+
         "\nLegacy records remain separate from the new forward monitoring cohort. No trades or new forecasts.";
     }
     if(!legacyMatch)return platformCommand(interaction,platformData,now);
@@ -132,7 +133,7 @@ export function createApp({ publicKey, applicationId, guildId = "", channelId = 
       catch { reply(503,{error:"Canonical public predictions unavailable"}); }
       return;
     }
-    const assets={"/":"platform.html","/platform.css":"platform.css","/platform-web.mjs":"platform-web.mjs","/platform-ui.mjs":"platform-ui.mjs"};
+    const assets={"/":"platform.html","/platform.css":"platform.css","/platform-web.mjs":"platform-web.mjs","/platform-ui.mjs":"platform-ui.mjs","/prediction-quality.mjs":"prediction-quality.mjs"};
     if (req.method === "GET" && Object.hasOwn(assets,req.url)) {
       const name=assets[req.url];
       const type=name.endsWith(".html")?"text/html; charset=utf-8":name.endsWith(".css")?"text/css; charset=utf-8":"text/javascript; charset=utf-8";

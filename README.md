@@ -47,7 +47,7 @@ The **private Trade Desk** is a separate owner-only project, not part of the pub
 | :--- | :--- | :--- |
 | 🗓️ Daily fixture watchlists | ✅ Implemented | Formats and publishes supported fixture data to the watchlist channel |
 | ⚽ Full BTTS prediction slate | ✅ Implemented | Retains every valid same-day forecast, including fixtures without Polymarket markets |
-| ⭐ Experimental paper highlights | ✅ Implemented | Separate confidence-ranked shortlist, **up to 3 per Central calendar day** |
+| ⭐ Experimental paper highlights | ✅ Implemented | Separate policy-approved shortlist, **0–3 per Central calendar day**; currently no validated approvals |
 | 🔒 Duplicate protection | ✅ Implemented | Guards against repeated official picks and uncertain delivery |
 | 🧾 Results and performance tracking | ✅ Implemented | Grades issued forecasts independently of Discord/market availability; genuine forward lifecycle acceptance remains separate |
 | ⏰ Resilient scheduling | ✅ Implemented, monitored | Five-minute continuation mechanism with persisted checkpoints and UTC cron backup |
@@ -100,7 +100,7 @@ The command app reads existing records; it does **not** execute a fresh model sc
 | Channel | What you see |
 | :--- | :--- |
 | **#match-watchlist** | Daily fixtures and kickoffs; a fixture is not automatically a pick |
-| **#btts-picks** | Complete same-day BTTS forecasts plus a separate top-three paper shortlist; unavailable markets remain visible |
+| **#btts-picks** | Complete same-day BTTS forecasts plus a separate policy-approved shortlist of zero to three selections; unavailable markets remain visible |
 | **#btts-results** | Verified completed outcomes when grading evidence exists |
 | **#bot-commands** | On-demand, private slash-command replies |
 | **#admin** | Owner-only operational alerts and health reports |

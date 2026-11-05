@@ -8,10 +8,11 @@ SOURCE="https://raw.githubusercontent.com/stelladeecoder/statrally-soccer-automa
 
 def build(output):
     output.mkdir(parents=True,exist_ok=True)
-    for name in ("platform.html","platform.css","platform-web.mjs","platform-ui.mjs"):
+    for name in ("platform.html","platform.css","platform-web.mjs","platform-ui.mjs","prediction-quality.mjs"):
         text=(ROOT/"discord-app"/name).read_text()
         text=text.replace('href="/"','href="./"').replace('href="/platform','href="./platform').replace('src="/platform','src="./platform')
         text=text.replace('from "/platform-ui.mjs"','from "./platform-ui.mjs"')
+        text=text.replace('from "/prediction-quality.mjs"','from "./prediction-quality.mjs"')
         text=text.replace('fetch("/api/predictions"',f'fetch("{SOURCE}"')
         if name=="platform-web.mjs":
             text=text.replace('data=await response.json();','data=await response.json();data.stale=Date.now()-Date.parse(data.generated_at)>45*60*1000;')

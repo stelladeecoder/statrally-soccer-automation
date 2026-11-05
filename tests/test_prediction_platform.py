@@ -92,7 +92,7 @@ class PredictionPlatformTests(unittest.TestCase):
         posted=[]
         def send(payload,*args,**kwargs):posted.append(copy.deepcopy(payload));return self.sender(payload,*args,**kwargs)
         counts=publish_predictions(self.ledger,'fake-offline',now=NOW,sender=send)
-        self.assertEqual(counts,{'daily':14,'top':3})
+        self.assertEqual(counts,{'daily':14,'top':0})
         self.assertEqual(publish_predictions(self.ledger,'fake-offline',now=NOW,sender=send),{'daily':0,'top':0})
         self.assertEqual(sum(len(p['embeds']) for p in posted if p['content'].startswith('Daily')),14)
 
@@ -173,7 +173,7 @@ class PredictionPlatformTests(unittest.TestCase):
         self.ledger.issues.append({'number':99,'user':{'login':'github-actions[bot]'},
             'body':'statrally-beta-data:'+json.dumps({'league':'epl','espn_event_id':'1','kickoff_utc':'2026-11-05T18:00:00+00:00'})})
         counts=publish_predictions(self.ledger,'fake',now=NOW,sender=self.sender)
-        self.assertEqual(counts,{'daily':3,'top':2})
+        self.assertEqual(counts,{'daily':3,'top':0})
         top_ids={e['prediction_id'] for events in self.ledger.comments.values() for event in events
                  if event['body'].startswith(DELIVERY) for e in [json.loads(event['body'][len(DELIVERY):])]
                  if e['kind']=='top'}
