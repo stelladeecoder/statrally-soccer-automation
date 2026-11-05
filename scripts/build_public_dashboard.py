@@ -3,7 +3,7 @@ import argparse
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
-SOURCE="https://raw.githubusercontent.com/stelladeecoder/statrally-soccer-automation/main/docs/predictions-public.json"
+SOURCE="https://raw.githubusercontent.com/stelladeecoder/statrally-soccer-automation/main/docs/predictions-public-v2.json"
 
 
 def build(output):

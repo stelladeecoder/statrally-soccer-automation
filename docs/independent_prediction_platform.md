@@ -163,3 +163,11 @@ not change immutable probabilities, forecast identifiers, grading, market
 verification, same-day restrictions, schedules or trading permissions. Hosted UI
 rollout still requires the configured hosting deployment; merging source alone
 must not be reported as visual or hosted verification.
+
+
+The snapshot builder keeps `docs/predictions-public.json` in its original strict
+schema for already deployed clients. Policy-aware clients consume
+`docs/predictions-public-v2.json`, which adds derived presentation metadata and
+the reviewed public selection policy. Both contain identical immutable forecast
+records; neither reissues predictions or changes delivery receipts. Hosting can
+be updated separately without breaking the earlier export contract.
