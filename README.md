@@ -101,7 +101,11 @@ The command app reads existing records; it does **not** execute a fresh model sc
 | :--- | :--- |
 | **#match-watchlist** | Daily fixtures and kickoffs; a fixture is not automatically a pick |
 | **#btts-picks** | Complete same-day BTTS forecasts plus a separate policy-approved shortlist of zero to three selections; unavailable markets remain visible |
-| **#btts-results** | Verified completed outcomes when grading evidence exists |
+| **#btts-results** | Individual verified BTTS results, with green WIN and red LOSS outcomes; retain this channel |
+| **#daily-results** | **Planned:** one aggregated daily performance summary (W–L, accuracy, YES/NO breakdown, pending count); no individual result posts |
+| **#weekly-recap** | **Planned:** one aggregated weekly performance summary, including league and confidence breakdowns |
+| **#monthly-recap** | **Planned:** one aggregated monthly performance summary, trends and league breakdowns |
+| **#model-performance** | **Planned:** model-version performance, YES/NO precision and recall, Brier score, log loss and calibration, with sufficient-sample disclosure |
 | **#bot-commands** | On-demand, private slash-command replies |
 | **#admin** | Owner-only operational alerts and health reports |
 
@@ -179,6 +183,7 @@ Milestone labels distinguish **code complete**, **operationally verified**, **pa
 | **M17 · League coverage audit** | 🟡 Code support 13/13; scan incomplete | [Observed coverage](docs/m17_observed_coverage_2026-11-03.md) |
 | **M18 · Admin health monitoring** | ✅ Implemented | [Monitor](src/m18_admin_monitor.py) and [workflow](.github/workflows/m18-admin-monitor.yml); validate ongoing missed-window reporting |
 | **Discord slash-command beta** | ✅ Live /picks; 🧪 remaining commands | [Signed HTTP server](discord-app/server.mjs), [tests](discord-app/tests/discord.test.mjs), [public snapshot](docs/discord-public-snapshot.json) |
+| **Automated Discord performance recaps** | 📋 Planned / not yet operationally verified | Keep individual verified results in **#btts-results**; add separate daily, weekly, monthly and model summaries from the canonical graded prediction ledger |
 | **Independent prediction platform + mobile dashboard** | ✅ Implemented; live acceptance tracked separately | [Canonical records, grading and public views](docs/independent_prediction_platform.md); broader historical team trends remain future work |
 
 ## 🚀 What comes next
@@ -189,7 +194,8 @@ Milestone labels distinguish **code complete**, **operationally verified**, **pa
 4. **Prove operational performance:** monitor unattended windows, confirm durable Discord delivery counts, and complete at least one real saved-pick → independently verified result → recorded grading cycle.
 5. **Validate the full Polymarket US market-mapping footprint:** improve coverage and handle uncertain or absent markets without making unsupported availability claims.
 6. **Verify dashboard hosting and extend historical team trends:** the read-only prediction/performance dashboard is implemented; keep beta access free and distinguish deployed evidence from planned analytics.
-7. **Prepare wider Discord distribution:** the [Terms of Service](docs/TERMS_OF_SERVICE.md) and [Privacy Policy](docs/PRIVACY_POLICY.md) are published; **the owner still needs to enter these URLs in Discord**, [create/transfer to a Developer Team](https://github.com/stelladeecoder/statrally-soccer-automation/issues/53), and [verify developer email and set up 2FA](https://github.com/stelladeecoder/statrally-soccer-automation/issues/54). Wider app verification itself remains pending.
+7. **Automate Discord performance reporting:** retain individual graded WIN/LOSS posts in **#btts-results**. Send one aggregate summary per reporting period to **#daily-results**, **#weekly-recap**, and **#monthly-recap** (W–L, graded/pending counts, accuracy, YES/NO breakdown, with league/confidence trends as appropriate). Add independently labeled, sample-size-aware model reliability summaries to **#model-performance**. Reuse the immutable prematch prediction ledger and independently verified final grades; distinguish forward-recorded outcomes from retrospective backtests, treat pending/ungradable matches separately, prohibit duplicate reports and fabricated results, and define clear Central-time reporting windows. Use Discord green for verified wins and red for losses; do not post individual match results in recap channels. Implement, test and verify unattended delivery before marking complete.
+8. **Prepare wider Discord distribution:** the [Terms of Service](docs/TERMS_OF_SERVICE.md) and [Privacy Policy](docs/PRIVACY_POLICY.md) are published; **the owner still needs to enter these URLs in Discord**, [create/transfer to a Developer Team](https://github.com/stelladeecoder/statrally-soccer-automation/issues/53), and [verify developer email and set up 2FA](https://github.com/stelladeecoder/statrally-soccer-automation/issues/54). Wider app verification itself remains pending.
 
 **Owner to-do:** [Discord team ownership · Issue #53](https://github.com/stelladeecoder/statrally-soccer-automation/issues/53) · [Email verification and 2FA · Issue #54](https://github.com/stelladeecoder/statrally-soccer-automation/issues/54)
 
