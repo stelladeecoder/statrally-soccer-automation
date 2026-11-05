@@ -198,6 +198,57 @@ class TestAdminMonitor(unittest.TestCase):
                 call=fake, sender=lambda *args: sent.append(args))
         self.assertEqual(sent, [])
 
+    def test_jobless_schedule_covered_by_prior_success_is_silent(self):
+        # Actual Nov 5 incident: a successful dispatch started 22s before cron.
+        run = {"id": 41981320851, "head_branch": "main",
+               "conclusion": "cancelled", "event": "schedule",
+               "created_at": "2026-11-05T06:34:28Z"}
+        predecessor = {"id": 41981278492, "head_branch": "main",
+                       "event": "workflow_dispatch", "status": "completed",
+                       "conclusion": "success",
+                       "created_at": "2026-11-05T06:34:06Z"}
+        def fake(method, repo, path, data=None):
+            if path == "/actions/runs/41981320851":
+                return run
+            if path.endswith("/jobs?per_page=100"):
+                return {"total_count": 0, "jobs": []}
+            if path.startswith("/actions/workflows/"):
+                return {"workflow_runs": [predecessor]}
+            raise AssertionError(path)
+        sent = []
+        failure("owner/repo", "stub", run["id"],
+                now=datetime(2026, 11, 5, 6, 40, tzinfo=timezone.utc),
+                call=fake, sender=lambda *args: sent.append(args))
+        self.assertEqual(sent, [])
+
+    def test_prior_failed_dispatch_does_not_hide_jobless_cancel(self):
+        run = {"id": 44, "conclusion": "cancelled", "event": "schedule",
+               "created_at": "2026-11-05T06:34:28Z"}
+        predecessor = {"id": 45, "event": "workflow_dispatch",
+                       "status": "completed", "conclusion": "failure",
+                       "created_at": "2026-11-05T06:34:06Z"}
+        def fake(method, repo, path, data=None):
+            if path.endswith("/jobs?per_page=100"):
+                return {"total_count": 0, "jobs": []}
+            if path.startswith("/actions/workflows/"):
+                return {"workflow_runs": [predecessor]}
+            raise AssertionError(path)
+        self.assertFalse(is_superseded_push_cancellation("owner/repo", run, fake))
+
+    def test_prior_in_progress_dispatch_does_not_hide_cancel(self):
+        run = {"id": 44, "conclusion": "cancelled", "event": "schedule",
+               "created_at": "2026-11-05T06:34:28Z"}
+        predecessor = {"id": 45, "event": "workflow_dispatch",
+                       "status": "in_progress", "conclusion": None,
+                       "created_at": "2026-11-05T06:34:06Z"}
+        def fake(method, repo, path, data=None):
+            if path.endswith("/jobs?per_page=100"):
+                return {"total_count": 0, "jobs": []}
+            if path.startswith("/actions/workflows/"):
+                return {"workflow_runs": [predecessor]}
+            raise AssertionError(path)
+        self.assertFalse(is_superseded_push_cancellation("owner/repo", run, fake))
+
     def test_jobless_schedule_without_successor_is_not_suppressed(self):
         run = {"id": 44, "conclusion": "cancelled", "event": "schedule",
                "created_at": "2026-11-04T03:29:56Z"}
