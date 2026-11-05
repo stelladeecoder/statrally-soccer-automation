@@ -139,7 +139,7 @@ def deliver(ledger, items, *, kind, webhook, now, sender=publish, clock=None, po
     existing = {e["prediction_id"] for issue in ledger.comments for e in ledger.events(issue, DELIVERY)
                 if e.get("kind") == kind and e.get("state") in {"reserved", "accepted"}}
     fresh = [r for r in items if r["prediction"]["prediction_id"] not in existing]
-    pages = prediction_pages(fresh, "Daily BTTS predictions" if kind == "daily" else "Validated top BTTS selections",policy=policy)
+    pages = prediction_pages(fresh, "Daily BTTS predictions" if kind == "daily" else "Top 3 BTTS Picks",policy=policy)
     done, index = 0, 0
     for payload in pages:
         batch = fresh[index:index+len(payload["embeds"])];index += len(batch)
