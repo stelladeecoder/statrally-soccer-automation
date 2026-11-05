@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import {once} from "node:events";
-import {canonicalPlatform} from "../platform-data.mjs";
+import {canonicalPlatform,legacyProjection} from "../platform-data.mjs";
 import {platformCommand} from "../platform-commands.mjs";
 import {views,page} from "../platform-ui.mjs";
 import {createApp} from "../server.mjs";
@@ -78,4 +78,14 @@ test("Forecast filters preserve low probability, NO, unavailable markets and pen
  assert.equal(filterForecasts(records,"pending",policy).length,14);
  assert.equal(filterForecasts(records,"graded",policy).length,0);
  for(const r of records)assert.equal(r.presentation.selection_eligible,false);
+});
+
+test("Legacy public export keeps its exact schema and immutable forecast bytes",()=>{
+ const current=data(),legacy=legacyProjection(current);
+ assert.deepEqual(Object.keys(legacy).sort(),["schema_version","generated_at","records","evaluated","coverage","metrics","trades_placed"].sort());
+ for(let i=0;i<legacy.records.length;i++) {
+  assert.deepEqual(Object.keys(legacy.records[i]).sort(),["comment_id","deliveries","grade","issue_number","issued_at","market","prediction"].sort());
+  assert.deepEqual(legacy.records[i].prediction,current.records[i].prediction);
+ }
+ assert.ok(current.records.every(r=>r.presentation));assert.ok(current.selection_policy);
 });

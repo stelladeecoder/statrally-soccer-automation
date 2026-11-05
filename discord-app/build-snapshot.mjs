@@ -1,7 +1,7 @@
 // Publish a minimal read-only copy of the already-public, bot-authored Issues.
 // Runs only in GitHub Actions with a scoped GITHUB_TOKEN; never sends tokens to Render.
 import fs from "node:fs/promises";
-import { canonicalPlatform } from "./platform-data.mjs";
+import { canonicalPlatform, legacyProjection } from "./platform-data.mjs";
 const repo = "stelladeecoder/statrally-soccer-automation";
 const token = process.env.GITHUB_TOKEN;
 if (!token) { console.error("Missing GITHUB_TOKEN"); process.exit(1); }
@@ -48,5 +48,7 @@ for (const issue of selected) {
 const snapshot = { schema: 1, generated_at: new Date().toISOString(), issues: selected, comments };
 await fs.mkdir("docs", { recursive: true });
 await fs.writeFile("docs/discord-public-snapshot.json", JSON.stringify(snapshot) + "\n");
-await fs.writeFile("docs/predictions-public.json",JSON.stringify(canonicalPlatform(selected,comments))+"\n");
+const platform=canonicalPlatform(selected,comments);
+await fs.writeFile("docs/predictions-public.json",JSON.stringify(legacyProjection(platform))+"\n");
+await fs.writeFile("docs/predictions-public-v2.json",JSON.stringify(platform)+"\n");
 console.log("Published verified-source snapshot with " + selected.length + " public bot-authored issue entries");

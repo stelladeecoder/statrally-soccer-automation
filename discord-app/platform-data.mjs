@@ -161,7 +161,13 @@ export function canonicalPlatform(issues, comments, now = new Date()) {
           selection_policy:selectionPolicy,trades_placed:0};
 }
 
-const publicSource="https://raw.githubusercontent.com/stelladeecoder/statrally-soccer-automation/main/docs/predictions-public.json";
+// Preserve the pre-policy public contract for hosted clients deployed earlier.
+export function legacyProjection(data) {
+ const {selection_policy,...legacy}=data;
+ return {...legacy,records:data.records.map(({presentation,...record})=>record)};
+}
+
+const publicSource="https://raw.githubusercontent.com/stelladeecoder/statrally-soccer-automation/main/docs/predictions-public-v2.json";
 let cached=null, cachedAt=0;
 export async function publicPlatform({fetcher=fetch,now=new Date()}={}) {
   if (cached && now.getTime()-cachedAt<60000) return cached;
