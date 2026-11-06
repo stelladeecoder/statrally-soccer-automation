@@ -1,0 +1,38 @@
+name: StatRally independent scheduler rescue
+on:
+  workflow_dispatch:
+  schedule:
+    # Independent ten-minute wake-up when the scheduler's self-dispatch stops.
+    - cron: "3,13,23,33,43,53 * * * *"
+  workflow_run:
+    workflows: ["StatRally automatic posting scheduler"]
+    types: [completed]
+    branches: [main]
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/statrally-scheduler-rescue.yml"
+permissions:
+  contents: read
+  actions: write
+concurrency:
+  group: statrally-independent-scheduler-rescue
+  cancel-in-progress: false
+jobs:
+  rescue:
+    # Do not generate a redundant dispatch for every healthy scheduler completion.
+    if: ${{ vars.STATRALLY_SCHEDULER_PAUSED != 'true' && (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'failure') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify scheduling and idempotency rules
+        env:
+          PYTHONPATH: src
+        run: python3 -m unittest discover -s tests -p 'test_m16_scheduler.py' -v
+      - name: Independently restart the scheduler
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 src/m16_scheduler.py resume
