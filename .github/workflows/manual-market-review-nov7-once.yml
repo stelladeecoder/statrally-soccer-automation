@@ -1,0 +1,39 @@
+name: One-time user-checked Nov 7 BTTS market availability
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/manual-market-review-nov7-once.yml"
+permissions:
+  contents: read
+  issues: write
+  actions: write
+concurrency:
+  group: statrally-prediction-ledger-writer
+  cancel-in-progress: false
+jobs:
+  manual-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Apply only five user-confirmed statuses to bot-authored immutable review history
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PYTHONPATH: src
+        run: |
+          python - <<'PY'
+          import json,os
+          from prediction_ledger import Ledger
+          from manual_market_reviews import apply_reviews
+          repo=os.environ["GITHUB_REPOSITORY"]
+          ledger=Ledger(repo,os.environ["GH_TOKEN"]).load()
+          print("MANUAL_REVIEW_RESULT="+json.dumps(apply_reviews(ledger),sort_keys=True))
+          PY
+      - name: Refresh public snapshot after reviews are durably written
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run publish-discord-snapshot.yml --ref main
