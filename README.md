@@ -110,11 +110,13 @@ The command app reads existing records; it does **not** execute a fresh model sc
 | **#admin** | Owner-only operational alerts and health reports |
 
 
-### 📊 Automated daily results (implementation merged separately; live delivery pending webhook)
+### 📊 Automated daily results
 
 The daily workflow targets **8:15 AM America/Chicago** and reconciles the previous seven calendar days to `#daily-results`, using only saved, verified forward predictions and their finalized grades. It must not fabricate results from chat messages, replay test fixtures or score predictions that remain pending. Individual verified matches continue in `#btts-results`.
 
-**Accounting invariant across all four reports:** Every highlighted Top 3 fixture is already part of the full prediction slate. Overall accuracy counts the first issued forecast once per fixture, including highlighted fixtures. Top 3 accuracy is a separate *breakdown of that same total*, not additional predictions and not an additive second pool. A day with 10 graded forecasts of which 3 are highlighted has 10 overall graded forecasts, not 13. Pending results never count as losses.\n\n**Top 3 performance:** Includes a separate summary for actual highlighted picks only (correct/incorrect, graded count, pending count, accuracy when the denominator is nonzero). Calculate this from durable `top` selection/delivery and verified grades; do not assume that the top three exist every day, or count the same forecast twice. Keep Top 3 performance distinct from the overall slate and YES/NO breakdown. This section is implemented with regression tests; genuine Discord delivery still requires the dedicated webhook secret and live acceptance.
+**Accounting invariant across all four reports:** Every highlighted Top 3 fixture is already part of the full prediction slate. Overall accuracy counts the first issued forecast once per fixture, including highlighted fixtures. Top 3 accuracy is a separate *breakdown of that same total*, not additional predictions and not an additive second pool. A day with 10 graded forecasts of which 3 are highlighted has 10 overall graded forecasts, not 13. Pending results never count as losses.
+
+**Top 3 performance:** Includes a separate summary for actual highlighted picks only (correct/incorrect, graded count, pending count, accuracy when the denominator is nonzero). Calculate this from durable `top` selection/delivery and verified grades; do not assume that the top three exist every day, or count the same forecast twice. Keep Top 3 performance distinct from the overall slate and YES/NO breakdown. This section has regression-test coverage; live delivery is verified separately.
 
 **Display:** a Discord embed headed `StatRally | Daily Results • YYYY-MM-DD` with three prominent accuracy fields (Overall, BTTS YES, BTTS NO), a compact green/red correct/incorrect visual bar or emoji equivalent, and a table-like breakdown of correct, incorrect, total and accuracy per side. Also show pending/ungraded counts, graded sample size and model version/source when available. Use blue branding for the summary, green for correct and red for incorrect. If a side has zero graded forecasts, show `N/A (0 graded)` rather than 0% or 100%.
 
@@ -126,10 +128,10 @@ The daily workflow targets **8:15 AM America/Chicago** and reconciles the previo
 | BTTS NO | 2 | 1 | 66.7% |
 | **Overall** | **4** | **1** | **80.0%** |
 
-**Delivery safeguards:** canonical saved final grades only; deduplicate by first issued forecast per fixture and kickoff date in Central time; label ungraded fixtures as pending; post once per date with a durable Discord receipt and edit the existing message when newly verified finals change the snapshot. Ambiguous posts and edits fail closed for manual review. Regression tests cover YES/NO aggregation, separate Top 3, pending records, repeat runs, revisions, and DST. A workflow failure is visible in GitHub Actions; dedicated owner-admin alerting for this new report remains future work. Real Discord acceptance is not yet verified. Configure the GitHub Actions secret `STATRALLY_DAILY_RESULTS_DISCORD_WEBHOOK` with a webhook created in `#daily-results` before enabling live publication. This does not require using a general picks/results webhook.
+**Delivery safeguards:** canonical saved final grades only; deduplicate by first issued forecast per fixture and kickoff date in Central time; label ungraded fixtures as pending; post once per date with a durable Discord receipt and edit the existing message when newly verified finals change the snapshot. Ambiguous posts and edits fail closed for manual review. Regression tests cover YES/NO aggregation, separate Top 3, pending records, repeat runs, revisions, and DST. A workflow failure is visible in GitHub Actions; dedicated owner-admin alerting for this new report remains future work. Live delivery was verified separately; ongoing unattended operation remains monitored.
 
 
-### 📅 Automated recap reports (implementation; Discord acceptance pending)
+### 📅 Automated recap reports
 
 The [recap workflow](.github/workflows/recap-reports.yml) targets **9:10 AM Central daily** (GitHub schedule best effort; timezone gate handles DST). Weekly reports are created **on Sunday morning** for the **previous complete Sunday–Saturday week**. Monthly reports display the **current calendar month to date** and update the *same* Discord message as verified results arrive; the model-performance report also updates its existing message. Only final verified forecasts are counted; pending cases are disclosed but not scored as incorrect.
 
@@ -137,13 +139,7 @@ The **weekly layout has no calendar**. It shows weighted overall accuracy (total
 
 The **model report** computes observed class metrics, Brier and log loss from verified forward records and original probabilities, separately by model version. A paired baseline is shown only where the original frozen baseline supports the comparison. It never prints fabricated backtest, profit, or reliability numbers. Calibration remains unvalidated absent separate adequate evidence.
 
-GitHub Actions repository secrets required for each destination:
-
-- `STATRALLY_WEEKLY_RECAP_DISCORD_WEBHOOK` for `#weekly-recap`
-- `STATRALLY_MONTHLY_RECAP_DISCORD_WEBHOOK` for `#monthly-recap`
-- `STATRALLY_MODEL_PERFORMANCE_DISCORD_WEBHOOK` for `#model-performance`
-
-A missing secret is reported as `missing_webhook` and does not misroute to another channel. Writes reserve an append-only record before Discord posting, require a confirmed message receipt, update prior messages rather than reposting, and fail closed on ambiguous delivery. Source implementation and CI tests **are not proof** of any successful live Discord message. The complete user-approved three-channel design is implemented, subject to live acceptance and production refinements.
+Writes reserve an append-only record before Discord posting, require a confirmed message receipt, update prior messages rather than reposting, and fail closed on ambiguous delivery. The monthly and model-performance channels have confirmed live delivery; weekly delivery remains pending the first completed reporting week.
 
 ### ⏱️ Configured Central Time windows
 
