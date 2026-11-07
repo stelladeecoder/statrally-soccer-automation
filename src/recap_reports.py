@@ -119,7 +119,7 @@ def weekly_payload(data):
     a = data["overall"]["ALL"]
     fields = [_field("Overall Accuracy", _line(a), False)]
     fields += _side_fields(data)
-    fields.append(_field("⭐ Top 3 highlights", _top_line(data), False))
+    fields.append(_field("⭐ Top 3 accuracy (included in Overall)", _top_line(data), False))
     fields.append(_field("Daily breakdown (Sunday–Saturday)",
                          "\n".join(f'{(start + timedelta(days=i)):%a %b %d}: '
                          + _line(data["days"][(start + timedelta(days=i)).isoformat()])
@@ -128,7 +128,7 @@ def weekly_payload(data):
     return _payload("StatRally | Weekly Recap",
                     f'{start:%b %d, %Y} – {end:%b %d, %Y} · Sunday–Saturday',
                     fields,
-                    "Final verified results only · Experimental Poisson · No financial P&L")
+                    "Top 3 already included in Overall · Verified results only · No financial P&L")
 
 
 def monthly_payload(data):
@@ -139,13 +139,13 @@ def monthly_payload(data):
         _field("Overall Accuracy", _line(a), False),
         _field("Active graded days", str(active)),
         _field("Average graded picks / active day", f'{a["graded"]/active:.1f}' if active else "N/A"),
-        _field("⭐ Top 3 Accuracy", _top_line(data), False),
+        _field("⭐ Top 3 Accuracy (included in Overall)", _top_line(data), False),
         _field("Pending results", str(a["pending"])),
     ] + _side_fields(data)
     return _payload("StatRally | Monthly Recap",
                     f'{first:%B %Y} · Accuracy calendar (Sunday–Saturday)\n'
                     "Green ≥70% · Red <70% · Gray: no graded results. "
-                    "Colors are descriptive, not model-quality thresholds.",
+                    "Colors are descriptive, not model-quality thresholds. Top 3 already count in overall accuracy.",
                     fields,
                     "Calendar percentage and correct/graded shown per day · No financial P&L")
 
@@ -306,7 +306,7 @@ def model_payload(data):
                    else "Requires a separate reliability assessment", False),
         ]
     top = data["top"]
-    fields.append(_field("⭐ Top 3 highlights (separate sample)",
+    fields.append(_field("⭐ Top 3 accuracy (included in Overall)",
                          f'{percent(top)} | {top["correct"]}/{top["graded"]} correct'
                          if data["top_total"] else "No recorded highlights", False))
     trend = data["recent_days"]
@@ -317,7 +317,7 @@ def model_payload(data):
     if len(fields) > 25:
         raise RuntimeError("Too many model versions for one Discord embed; add pagination")
     return _payload("StatRally | Model Performance",
-                    "Verified forward predictions only · Not a proven betting edge.",
+                    "Verified forward predictions only · Top 3 counted once in overall · Not a proven betting edge.",
                     fields, "Accuracy is descriptive · Brier/log loss lower is better · No financial P&L")
 
 
