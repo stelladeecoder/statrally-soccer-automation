@@ -52,6 +52,15 @@ def slate(n=1):
                 "predicted":n if league=='epl' else 0,"excluded":{},"failed_queries":0} for league in COMPETITIONS}}
 
 
+def verify_synthetic(ledger,predictions):
+    annotate(ledger,{"schema_version":1,"trades_placed":0,
+        "markets":[{"prediction_id":p["prediction_id"],"provider":"polymarket_us",
+                    "status":"verified_available","checked_at":NOW.isoformat(),
+                    "event_slug":"fictional-event-"+p["espn_event_id"],
+                    "market_slug":"fictional-btts-"+p["espn_event_id"]}
+                   for p in predictions]})
+
+
 def final_feed(record,hg=2,ag=0,status="STATUS_FULL_TIME",completed=True):
     p=record
     return {"events":[{"id":p['espn_event_id'],"date":p['kickoff_utc'],"status":{"type":{"completed":completed,"name":status}},
@@ -61,7 +70,10 @@ def final_feed(record,hg=2,ag=0,status="STATUS_FULL_TIME",completed=True):
 
 class PredictionPlatformTests(unittest.TestCase):
     def setUp(self):self.api=FakeGitHub();self.ledger=Ledger(REPO,'synthetic-token',call=self.api).load()
-    def issue(self,n=1):return self.ledger.issue_slate(slate(n),now=NOW)
+    def issue(self,n=1):
+        issued=self.ledger.issue_slate(slate(n),now=NOW)
+        verify_synthetic(self.ledger,issued["predictions"])
+        return issued
     def sender(self,payload,hook,**kwargs):validate_payload(payload);return {'message_id':'123456789012345678','channel_id':'223456789012345678'}
 
     def test_prediction_without_market_is_saved_displayable_and_gradeable(self):
@@ -105,9 +117,9 @@ class PredictionPlatformTests(unittest.TestCase):
         posted=[]
         def send(payload,*args,**kwargs):posted.append(copy.deepcopy(payload));return self.sender(payload,*args,**kwargs)
         counts=publish_predictions(self.ledger,'fake-offline',now=NOW,sender=send)
-        self.assertEqual(counts,{'daily':14,'starred':14})
-        self.assertEqual(publish_predictions(self.ledger,'fake-offline',now=NOW,sender=send),{'daily':0,'starred':14})
-        self.assertEqual(sum(len(p['embeds']) for p in posted if p['content'].startswith('Daily')),14)
+        self.assertEqual(counts,{'daily':3,'starred':3})
+        self.assertEqual(publish_predictions(self.ledger,'fake-offline',now=NOW,sender=send),{'daily':0,'starred':3})
+        self.assertEqual(sum(len(p['embeds']) for p in posted if 'BTTS predictions' in p['content']),3)
 
     def test_repeat_and_intentional_revision_preserve_original(self):
         first=copy.deepcopy(self.issue()['predictions'][0]);again=self.issue()['predictions'][0]
@@ -176,7 +188,8 @@ class PredictionPlatformTests(unittest.TestCase):
     def test_ended_fixtures_do_not_appear_in_daily_starred_delivery(self):
         data=slate(6)
         for p in data['fixtures'][:3]:p['kickoff_utc']='2026-11-05T12:00:00+00:00'
-        self.ledger.issue_slate(data,now=NOW)
+        issued=self.ledger.issue_slate(data,now=NOW)
+        verify_synthetic(self.ledger,issued['predictions'])
         publish_predictions(self.ledger,'fake',now=NOW,sender=self.sender)
         counts=publish_predictions(self.ledger,'fake',now=NOW+timedelta(hours=2),sender=self.sender)
         self.assertEqual(counts['starred'],3)
@@ -203,7 +216,7 @@ class PredictionPlatformTests(unittest.TestCase):
         self.assertTrue(all(r['prediction']['side']=='NO' and r['market']['status']=='provider_unavailable' for r in records))
 
     def test_provider_failure_invokes_existing_deduplicated_private_admin_alert(self):
-        self.issue()
+        self.ledger.issue_slate(slate(),now=NOW)
         with patch.dict('os.environ',{'STATRALLY_ADMIN_DISCORD_WEBHOOK':'https://discord.com/api/webhooks/fictional/offline'}), \
              patch('m18_admin_monitor.state',return_value=(99,{'alerts':{}})), \
              patch('m18_admin_monitor.alert',return_value=True) as alert:
