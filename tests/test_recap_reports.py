@@ -86,7 +86,7 @@ class RecapTests(unittest.TestCase):
         self.assertEqual(version["performance"]["ALL"]["correct"],2)
         self.assertIsNotNone(version["brier"])
         self.assertIsNotNone(version["log_loss"])
-        self.assertIsNone(version["baseline_accuracy"])  # Current synthetic set contains no baseline.
+        self.assertAlmostEqual(version["baseline_accuracy"], 100*2/3)  # Synthetic predictions contain a frozen prevalence baseline.
         p=model_payload(d)
         self.assertIn("Not validated",str(p))
         self.assertIn("precision / recall",str(p))
