@@ -12,7 +12,7 @@ const data=()=>canonicalPlatform(fixture.issues,fixture.comments,now);
 
 test("Fictional cross-language ledger retains all 14 fixtures, three markets and three archived experimental highlights",()=>{
  const output=data(),v=views(output,"2026-11-05");
- assert.equal(output.records.length,14);assert.equal(v.today.length,14);assert.equal(v.top.length,0);assert.equal(v.historical_highlights.length,3);
+ assert.equal(output.records.length,14);assert.equal(v.today.length,14);assert.equal(v.top.length,14);assert.equal(v.historical_highlights.length,3);
  assert.equal(output.records.filter(r=>r.market.status==="verified_available").length,3);
  assert.equal(output.records.filter(r=>r.market.status==="not_found").length,11);
  assert.equal(output.records[0].prediction.side,"NO");assert.ok(Math.abs(Number(output.records[0].prediction.confidence)-.72)<1e-12);
@@ -74,10 +74,22 @@ test("Forecast filters preserve low probability, NO, unavailable markets and pen
  assert.equal(filterForecasts(records,"all",policy).length,14);
  assert.ok(filterForecasts(records,"no",policy).some(r=>Number(r.prediction.confidence)===.72));
  assert.ok(filterForecasts(records,"low",policy).every(r=>Number(r.prediction.confidence)<.55));
- assert.equal(filterForecasts(records,"top",policy).length,0);
+ assert.equal(filterForecasts(records,"top",policy).length,14);
  assert.equal(filterForecasts(records,"pending",policy).length,14);
  assert.equal(filterForecasts(records,"graded",policy).length,0);
  for(const r of records)assert.equal(r.presentation.selection_eligible,false);
+});
+
+test("Unlimited yellow-star model picks are descriptive and do not include finished fixtures",()=>{
+ const output=data(),v=views(output,"2026-11-05");
+ assert.equal(v.top.length,14);
+ assert.ok(v.top.every(r=>Number(r.prediction.confidence)>=.7));
+ const text=platformCommand({data:{name:"picks",options:[{name:"page",value:1}]}},output,now);
+ assert.match(text,/⭐ 70%\+ Model Picks/);
+ assert.match(text,/🟨/);
+ assert.doesNotMatch(text,/Validated top selections/);
+ const finished=new Date("2026-11-06T20:00:00Z");
+ assert.match(platformCommand({data:{name:"picks"}},output,finished),/No unstarted fixtures/);
 });
 
 test("Legacy public export keeps its exact schema and immutable forecast bytes",()=>{
