@@ -50,7 +50,7 @@ class DailyResultsTests(unittest.TestCase):
         self.assertEqual(publish_report(self.ledger, self.day, "fake", sender=self.send), "no_verified_results")
         self.assertEqual(self.sent, [])
 
-    def test_correct_incorrect_yes_no_top_and_pending(self):
+    def test_correct_incorrect_yes_no_all_starred_and_pending(self):
         # First two NO calls correct, third NO wrong, fourth YES correct, fifth pending.
         for i in range(3):
             self.grade(i, correct=i != 2)
@@ -63,12 +63,14 @@ class DailyResultsTests(unittest.TestCase):
         self.assertEqual(p["overall"]["YES"]["correct"], 1)
         self.assertEqual(p["overall"]["YES"]["pending"], 1)
         self.assertEqual(p["overall"]["ALL"]["accuracy"], 75)
-        self.assertEqual(p["top_total"], 3)
-        self.assertEqual(p["top"]["correct"], 2)
+        self.assertEqual(p["top_total"], 5)
+        self.assertEqual(p["top"]["correct"], 3)
         self.assertEqual(p["top"]["incorrect"], 1)
-        self.assertEqual(p["overall"]["ALL"]["graded"], 4)  # Top 3 are included, never added.
+        self.assertEqual(p["top"]["pending"], 1)
+        self.assertEqual(p["overall"]["ALL"]["graded"], 4)  # 70%+ starred predictions are included, never added.
         self.assertEqual(p["overall"]["ALL"]["correct"], 3)
         self.assertIn("included in Overall", str(result_embed(p)))
+        self.assertIn("70%+ Model Picks", str(result_embed(p)))
         self.assertEqual(result_embed(p)["embeds"][0]["color"], 0x3498DB)
 
     def test_once_then_update_existing_message_without_reposting(self):
