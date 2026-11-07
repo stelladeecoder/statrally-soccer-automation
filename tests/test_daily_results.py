@@ -66,6 +66,9 @@ class DailyResultsTests(unittest.TestCase):
         self.assertEqual(p["top_total"], 3)
         self.assertEqual(p["top"]["correct"], 2)
         self.assertEqual(p["top"]["incorrect"], 1)
+        self.assertEqual(p["overall"]["ALL"]["graded"], 4)  # Top 3 are included, never added.
+        self.assertEqual(p["overall"]["ALL"]["correct"], 3)
+        self.assertIn("included in Overall", str(result_embed(p)))
         self.assertEqual(result_embed(p)["embeds"][0]["color"], 0x3498DB)
 
     def test_once_then_update_existing_message_without_reposting(self):
