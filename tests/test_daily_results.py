@@ -44,7 +44,7 @@ class DailyResultsTests(unittest.TestCase):
         self.edited.append(copy.deepcopy(payload))
         self.assertEqual(receipt["message_id"], "11111")
 
-    def test_not_found_and_identity_unconfirmed_excluded_from_all_grading_and_roi_reports(self):
+    def test_not_found_excluded_but_unconfirmed_in_all_grading_and_roi_reports(self):
         from prediction_platform import annotate
         p0=self.ledger.forecasts[0]["prediction"]
         p1=self.ledger.forecasts[1]["prediction"]
@@ -55,11 +55,11 @@ class DailyResultsTests(unittest.TestCase):
              "status":"identity_mismatch","checked_at":NOW.isoformat()}]})
         self.grade(0,True);self.grade(1,True);self.grade(2,False)
         result=report(self.ledger,self.day)
-        self.assertEqual(result["total"],3)
-        self.assertEqual(result["overall"]["ALL"]["graded"],1)
-        self.assertEqual(result["overall"]["ALL"]["correct"],0)
-        self.assertEqual(result["top_total"],3)
-        self.assertEqual(result["paper_overall"]["graded"],1)
+        self.assertEqual(result["total"],4)
+        self.assertEqual(result["overall"]["ALL"]["graded"],2)
+        self.assertEqual(result["overall"]["ALL"]["correct"],1)
+        self.assertEqual(result["top_total"],4)
+        self.assertEqual(result["paper_overall"]["graded"],2)
 
     def test_no_data_and_zero_denominator(self):
         self.assertIsNone(report(self.ledger, "2026-11-04"))
