@@ -40,6 +40,48 @@ def annotate(ledger, envelope):
             ledger.append(item["issue_number"], MARKET, value)
 
 
+
+def verified_quote_map(report):
+    """Allowlist a read-only snapshot, never infer an executable quote."""
+    if (not isinstance(report,dict) or set(report)!={"schema_version","source","trades_placed","quotes"}
+        or report["schema_version"]!=1 or report["source"]!="polymarket_us"
+        or report["trades_placed"]!=0 or not isinstance(report["quotes"],list)):
+        raise ValueError("Invalid read-only quote report")
+    indexed={}
+    for row in report["quotes"]:
+        if not isinstance(row,dict) or row.get("status") not in {"verified","unavailable"}:
+            raise ValueError("Invalid quote status")
+        keys = ({"prediction_id","side","status","market_slug","price_dollars","observed_at"}
+                if row["status"]=="verified" else {"prediction_id","side","status"})
+        if set(row)!=keys or row["side"] not in ("YES","NO") or not isinstance(row["prediction_id"],str) or row["prediction_id"] in indexed:
+            raise ValueError("Unreviewed or duplicate quote")
+        if row["status"]=="verified":
+            if not isinstance(row["market_slug"],str) or not row["market_slug"]:
+                raise ValueError("Missing quote market identity")
+            p=Decimal(row["price_dollars"])
+            if not p.is_finite() or not 0<p<1:
+                raise ValueError("Invalid executable quote")
+            parse_time(row["observed_at"])
+        indexed[row["prediction_id"]]=row
+    return indexed
+
+
+def safe_quote_for(item, quotes, now):
+    """Only present a matching side/market and fresh quote taken before kickoff."""
+    p=item["prediction"]
+    row=quotes.get(p["prediction_id"])
+    market=item.get("market",{})
+    if not row or row.get("status")!="verified" or market.get("status")!="verified_available":
+        return None
+    if row["side"]!=p["side"] or row["market_slug"]!=market.get("market_slug"):
+        return None
+    observed=parse_time(row["observed_at"])
+    if not (timedelta(0) <= now-observed <= timedelta(minutes=5)
+            and observed < parse_time(p["kickoff_utc"]) and now < parse_time(p["kickoff_utc"])):
+        return None
+    return row
+
+
 def verified_outcome(prediction, *, scoreboard=fetch_scoreboard, now=None):
     live = now is None
     now = now or datetime.now(timezone.utc)
@@ -106,8 +148,10 @@ def grade_issued(ledger, *, scoreboard=fetch_scoreboard, now=None):
     return dict(counts)
 
 
-def prediction_pages(items, title, *, policy=None, highlighted=False):
+def prediction_pages(items, title, *, policy=None, highlighted=False, quotes=None, now=None):
     pages, cards = [], []
+    now = now or datetime.now(timezone.utc)
+    quotes = quotes or {}
     for item in items:
         prediction = item["prediction"]
         quality = classify(prediction,policy)
@@ -129,6 +173,19 @@ def prediction_pages(items, title, *, policy=None, highlighted=False):
                           {"name":"Data quality","value":prediction["data_quality_status"].replace("_"," "),"inline":True},
                           {"name":"Selection status","value":"Validated policy eligible" if quality["selection_eligible"] else "Experimental forecast · Not an approved selection","inline":False},
                           {"name":"Polymarket US","value":labels[status],"inline":True}]
+        if highlighted:
+            verified=safe_quote_for(item,quotes,now)
+            if verified:
+                price=Decimal(verified["price_dollars"])
+                # Pure $1-settlement illustration; excludes fees, liquidity and slippage.
+                gross=(Decimal("10")/price)-Decimal("10")
+                card["fields"] += [
+                    {"name":"Market ask at posting","value":"$"+format(price,".4f"),"inline":True},
+                    {"name":"Quote observed","value":verified["observed_at"]+" · snapshot","inline":False},
+                    {"name":"Illustrative $10 gross profit","value":"$"+format(gross,".2f")+" if correct; before fees","inline":False}]
+            else:
+                card["fields"].append({"name":"Market price","value":"Unavailable · no verified current quote","inline":False})
+            card["footer"]={"text":"Paper pick · Quote not guaranteed fill · No trades"}
         if cards and (len(cards) >= 8 or sum(embed_units(c) for c in cards)+embed_units(card) > 5700):
             pages.append(cards);cards=[]
         cards.append(card)
@@ -138,11 +195,11 @@ def prediction_pages(items, title, *, policy=None, highlighted=False):
                               "embeds":batch,"allowed_mentions":{"parse":[]}}) for i,batch in enumerate(pages,1)]
 
 
-def deliver(ledger, items, *, kind, webhook, now, sender=publish, clock=None, policy=None):
+def deliver(ledger, items, *, kind, webhook, now, sender=publish, clock=None, policy=None, quotes=None):
     existing = {e["prediction_id"] for issue in ledger.comments for e in ledger.events(issue, DELIVERY)
                 if e.get("kind") == kind and e.get("state") in {"reserved", "accepted"}}
     fresh = [r for r in items if r["prediction"]["prediction_id"] not in existing]
-    pages = prediction_pages(fresh, "Daily BTTS predictions" if kind == "daily" else "⭐ Top 3 highlighted BTTS picks",policy=policy,highlighted=(kind == "top"))
+    pages = prediction_pages(fresh, "Daily BTTS predictions" if kind == "daily" else "⭐ Top 3 highlighted BTTS picks",policy=policy,highlighted=(kind == "top"),quotes=quotes,now=now)
     done, index = 0, 0
     for payload in pages:
         batch = fresh[index:index+len(payload["embeds"])];index += len(batch)
@@ -160,7 +217,7 @@ def deliver(ledger, items, *, kind, webhook, now, sender=publish, clock=None, po
     return done
 
 
-def publish_predictions(ledger, webhook, *, now=None, sender=publish, policy=None):
+def publish_predictions(ledger, webhook, *, now=None, sender=publish, policy=None, quotes=None):
     live = now is None
     now = now or datetime.now(timezone.utc)
     clock = (lambda:datetime.now(timezone.utc)) if live else (lambda:now)
@@ -203,7 +260,7 @@ def publish_predictions(ledger, webhook, *, now=None, sender=publish, policy=Non
     if not any(d==decision for d in ledger.events(number,SELECTION)):
         ledger.append(number,SELECTION,decision)
     counts = {"daily":deliver(ledger,items,kind="daily",webhook=webhook,now=now,sender=sender,clock=clock,policy=policy)}
-    counts["top"] = deliver(ledger,selected,kind="top",webhook=webhook,now=now,sender=sender,clock=clock,policy=policy)
+    counts["top"] = deliver(ledger,selected,kind="top",webhook=webhook,now=now,sender=sender,clock=clock,policy=policy,quotes=quotes)
     return counts
 
 
@@ -245,6 +302,7 @@ def main():
     parser.add_argument("mode",choices=("issue","annotate","grade","export","publish","results","metrics","alert"))
     parser.add_argument("--input",type=Path)
     parser.add_argument("--output",type=Path)
+    parser.add_argument("--quotes",type=Path,help="Optional read-only price snapshots for highlighted paper picks")
     args=parser.parse_args()
     ledger=Ledger(os.environ.get("GITHUB_REPOSITORY",""),os.environ.get("GH_TOKEN","")).load()
     result={}
@@ -252,7 +310,9 @@ def main():
     elif args.mode=="annotate":annotate(ledger,json.loads(args.input.read_text()))
     elif args.mode=="grade":result=grade_issued(ledger)
     elif args.mode=="export":result=ledger.export()
-    elif args.mode=="publish":result=publish_predictions(ledger,os.environ.get("STATRALLY_PICKS_DISCORD_WEBHOOK",""))
+    elif args.mode=="publish":
+        quotes=verified_quote_map(json.loads(args.quotes.read_text())) if args.quotes and args.quotes.exists() else {}
+        result=publish_predictions(ledger,os.environ.get("STATRALLY_PICKS_DISCORD_WEBHOOK",""),quotes=quotes)
     elif args.mode=="results":result={"results_delivered":publish_results(ledger,os.environ.get("STATRALLY_RESULTS_DISCORD_WEBHOOK",""))}
     elif args.mode=="alert":result={"alert_sent":report_provider_outage(ledger)}
     elif args.mode=="metrics":
