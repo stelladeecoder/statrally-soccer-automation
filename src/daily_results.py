@@ -8,6 +8,7 @@ from urllib.parse import urlsplit
 from m13_discord_embeds import CENTRAL, validate_payload
 from m13_discord_publish import NoRedirect, publish
 from m13_beta_signals import parse_time
+from paper_roi import gross_paper_performance, paper_line
 
 DAILY_REPORT = "statrally-daily-report-v1:"
 BLUE = 0x3498DB
@@ -58,7 +59,8 @@ def report(ledger, day):
         raise RuntimeError("Top-three historical cap violation")
     top = [r for r in rows if r["prediction"]["fixture_id"] in top_fixtures]
     return {"date": day.isoformat(), "overall": performance(rows),
-            "top": performance(top)["ALL"], "total": len(rows), "top_total": len(top)}
+            "top": performance(top)["ALL"], "total": len(rows), "top_total": len(top),
+            "paper_overall": gross_paper_performance(rows), "paper_top": gross_paper_performance(top)}
 
 
 def percent(part):
@@ -77,6 +79,10 @@ def result_embed(data):
                    "value": (f'{percent(top)} | {top["correct"]}W–{top["incorrect"]}L | {top["graded"]}/{data["top_total"]} graded'
                              if data["top_total"] else "No recorded highlighted picks"),
                    "inline": False})
+    fields.append({"name": "$10 flat-stake · Overall gross paper ROI",
+                   "value": paper_line(data["paper_overall"]), "inline": False})
+    fields.append({"name": "$10 flat-stake · Top 3 gross paper ROI (subset)",
+                   "value": paper_line(data["paper_top"]), "inline": False})
     fields.append({"name": "Outstanding",
                    "value": f'{all_["pending"]} ungraded overall; {top["pending"]} highlighted ungraded',
                    "inline": False})
@@ -87,7 +93,7 @@ def result_embed(data):
         bar = "No verified finals yet"
     payload = {"content": "",
                "embeds": [{"title": "StatRally | Daily Results • " + data["date"],
-                           "description": bar + "\nOverall includes Top 3 exactly once. Top 3 is a breakdown, not additional picks.\nVerified paper predictions only. Not financial P&L.",
+                           "description": bar + "\nOverall includes Top 3 exactly once. Top 3 is a breakdown, not additional picks.\nVerified paper predictions only. Gross hypothetical P&L is not realized or fee-adjusted profit.",
                            "color": BLUE, "fields": fields,
                            "footer": {"text": "First issued forecast per fixture · America/Chicago · Experimental model"}}],
                "allowed_mentions": {"parse": []}}

@@ -13,7 +13,7 @@ from m13_beta_dispatch import reserved_today
 from m13_discord_publish import publish
 from m13_discord_embeds import (CENTRAL, match_card, side_style, validate_payload, embed_units,
                                 render_paper_result)
-from prediction_ledger import Ledger, MARKET, GRADE, DELIVERY, METRICS, SELECTION
+from prediction_ledger import Ledger, MARKET, GRADE, DELIVERY, METRICS, SELECTION, ENTRY_QUOTE
 from prediction_schema import MARKETS, canonical, validate
 from prediction_quality import classify, eligible_ranked, load_policy, policy_digest
 
@@ -80,6 +80,40 @@ def safe_quote_for(item, quotes, now):
             and observed < parse_time(p["kickoff_utc"]) and now < parse_time(p["kickoff_utc"])):
         return None
     return row
+
+
+
+def save_original_quotes(ledger, report, *, now=None):
+    """Persist only the first verified, fresh, side-matched prematch quote.
+
+    No historical backfill. Unknown prices stay unavailable; the reference is
+    independent of later quote movements. Source snapshot is not a fill.
+    """
+    now = now or datetime.now(timezone.utc)
+    if now.tzinfo is None:
+        raise ValueError("Timezone-aware clock required")
+    quotes = verified_quote_map(report)
+    records = ledger.export()["records"]
+    known = {r["prediction"]["prediction_id"]: r for r in records}
+    if any(key not in known for key in quotes):
+        raise ValueError("Unknown quote prediction")
+    count = 0
+    for key, row in quotes.items():
+        item = known[key]
+        if item.get("entry_quote") is not None or row["status"] != "verified":
+            continue
+        fresh = safe_quote_for(item, quotes, now)
+        if fresh is None:
+            continue
+        event = {
+            "prediction_id": key, "provider": "polymarket_us", "side": row["side"],
+            "market_slug": row["market_slug"], "price_dollars": row["price_dollars"],
+            "observed_at": row["observed_at"], "reference_type": "indicative_buy_quote",
+            "fees_verified": False,
+        }
+        ledger.append(item["issue_number"], ENTRY_QUOTE, event)
+        count += 1
+    return count
 
 
 def verified_outcome(prediction, *, scoreboard=fetch_scoreboard, now=None):
@@ -299,7 +333,7 @@ def report_provider_outage(ledger, *, now=None):
 
 def main():
     parser=argparse.ArgumentParser()
-    parser.add_argument("mode",choices=("issue","annotate","grade","export","publish","results","metrics","alert"))
+    parser.add_argument("mode",choices=("issue","annotate","quotes","grade","export","publish","results","metrics","alert"))
     parser.add_argument("--input",type=Path)
     parser.add_argument("--output",type=Path)
     parser.add_argument("--quotes",type=Path,help="Optional read-only price snapshots for highlighted paper picks")
@@ -308,6 +342,7 @@ def main():
     result={}
     if args.mode=="issue":result=ledger.issue_slate(json.loads(args.input.read_text()))
     elif args.mode=="annotate":annotate(ledger,json.loads(args.input.read_text()))
+    elif args.mode=="quotes":result={"reference_quotes_saved":save_original_quotes(ledger,json.loads(args.input.read_text()))}
     elif args.mode=="grade":result=grade_issued(ledger)
     elif args.mode=="export":result=ledger.export()
     elif args.mode=="publish":
@@ -323,7 +358,7 @@ def main():
         ledger.append(number,METRICS,report)
     if args.output:args.output.write_text(json.dumps(result,sort_keys=True,allow_nan=False))
     print("STATRALLY_PLATFORM="+json.dumps({"mode":args.mode,"records":len(ledger.forecasts),
-                                         "result_counts":result if args.mode in {"grade","publish","results","alert"} else {},"trades_placed":0},sort_keys=True))
+                                         "result_counts":result if args.mode in {"grade","publish","results","alert","quotes"} else {},"trades_placed":0},sort_keys=True))
 
 
 if __name__=="__main__":

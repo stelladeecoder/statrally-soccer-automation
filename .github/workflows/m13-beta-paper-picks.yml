@@ -88,6 +88,17 @@ jobs:
           PYTHONPATH: src
         run: |
           python src/m15_paper_quote_export.py --issued "$RUNNER_TEMP/issued.json" --markets "$RUNNER_TEMP/markets.json" --output "$RUNNER_TEMP/pick-quotes.json"
+      - name: Freeze original verified quotes in append-only prediction ledger
+        if: inputs.publish_discord
+        env:
+          PYTHONPATH: automation/src
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -f "$RUNNER_TEMP/pick-quotes.json" ]; then
+            python automation/src/prediction_platform.py quotes --input "$RUNNER_TEMP/pick-quotes.json"
+          else
+            echo "No quote snapshot available; ROI stays unavailable for unpriced picks."
+          fi
       - name: Publish complete slate and separate top-three highlights
         id: delivery
         if: inputs.publish_discord

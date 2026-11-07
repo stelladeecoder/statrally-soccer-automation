@@ -20,6 +20,7 @@ from m13_beta_signals import parse_time
 from m13_discord_embeds import CENTRAL, validate_payload
 from m13_discord_publish import publish, NoRedirect
 from prediction_ledger import Ledger
+from paper_roi import gross_paper_performance, paper_line
 
 BLUE = 0x3498DB
 ORANGE = 0xF97316
@@ -81,7 +82,8 @@ def summary(ledger, start, end):
         day += timedelta(days=1)
     return {"start": start.isoformat(), "end": end.isoformat(),
             "overall": performance(rows), "top": performance(selected)["ALL"],
-            "top_total": len(selected), "days": dates, "records": rows}
+            "top_total": len(selected), "days": dates, "records": rows,
+            "paper_overall": gross_paper_performance(rows), "paper_top": gross_paper_performance(selected)}
 
 
 def _field(name, value, inline=True):
@@ -120,6 +122,8 @@ def weekly_payload(data):
     fields = [_field("Overall Accuracy", _line(a), False)]
     fields += _side_fields(data)
     fields.append(_field("⭐ Top 3 accuracy (included in Overall)", _top_line(data), False))
+    fields.append(_field("$10 flat-stake · Overall gross paper ROI", paper_line(data["paper_overall"]), False))
+    fields.append(_field("$10 flat-stake · Top 3 gross paper ROI (subset)", paper_line(data["paper_top"]), False))
     fields.append(_field("Daily breakdown (Sunday–Saturday)",
                          "\n".join(f'{(start + timedelta(days=i)):%a %b %d}: '
                          + _line(data["days"][(start + timedelta(days=i)).isoformat()])
@@ -128,7 +132,7 @@ def weekly_payload(data):
     return _payload("StatRally | Weekly Recap",
                     f'{start:%b %d, %Y} – {end:%b %d, %Y} · Sunday–Saturday',
                     fields,
-                    "Top 3 already included in Overall · Verified results only · No financial P&L")
+                    "Top 3 included in Overall · Gross paper ROI before fees, no actual fills")
 
 
 def monthly_payload(data):
@@ -140,6 +144,8 @@ def monthly_payload(data):
         _field("Active graded days", str(active)),
         _field("Average graded picks / active day", f'{a["graded"]/active:.1f}' if active else "N/A"),
         _field("⭐ Top 3 Accuracy (included in Overall)", _top_line(data), False),
+        _field("$10 flat-stake · Overall gross paper ROI", paper_line(data["paper_overall"]), False),
+        _field("$10 flat-stake · Top 3 gross paper ROI (subset)", paper_line(data["paper_top"]), False),
         _field("Pending results", str(a["pending"])),
     ] + _side_fields(data)
     return _payload("StatRally | Monthly Recap",
@@ -147,7 +153,7 @@ def monthly_payload(data):
                     "Green ≥70% · Red <70% · Gray: no graded results. "
                     "Colors are descriptive, not model-quality thresholds. Top 3 already count in overall accuracy.",
                     fields,
-                    "Calendar percentage and correct/graded shown per day · No financial P&L")
+                    "Calendar is accuracy-only · Paper ROI before fees, no actual fills")
 
 
 def calendar_png(data):
