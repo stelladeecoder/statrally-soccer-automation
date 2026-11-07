@@ -21,6 +21,7 @@ from m13_discord_embeds import CENTRAL, validate_payload
 from m13_discord_publish import publish, NoRedirect
 from prediction_ledger import Ledger
 from paper_roi import gross_paper_performance, paper_line
+from prediction_quality import is_starred_probability
 
 BLUE = 0x3498DB
 ORANGE = 0xF97316
@@ -58,16 +59,10 @@ def period_rows(ledger, start, end):
 
 
 def highlighted_fixtures(ledger, start, end):
-    ids = set()
-    for row in ledger.export()["records"]:
-        p = row["prediction"]
-        day = parse_time(p["kickoff_utc"]).astimezone(CENTRAL).date()
-        if start <= day <= end and any(
-            x.get("kind") == "top" and x.get("state") in ("reserved", "accepted")
-            for x in row["deliveries"]
-        ):
-            ids.add(p["fixture_id"])
-    return ids
+    # First-issued forecasts determine the starred cohort. No daily cap or
+    # dependency on obsolete Top 3 Discord delivery events.
+    return {row["prediction"]["fixture_id"] for row in period_rows(ledger,start,end)
+            if is_starred_probability(row["prediction"])}
 
 
 def summary(ledger, start, end):
@@ -102,7 +97,7 @@ def _line(p):
 def _top_line(data):
     p = data["top"]
     if not data["top_total"]:
-        return "No recorded highlighted picks"
+        return "No 70%+ model predictions"
     return f'{percent(p)} | {p["correct"]}/{p["graded"]} correct | {p["pending"]} ungraded'
 
 
@@ -121,9 +116,9 @@ def weekly_payload(data):
     a = data["overall"]["ALL"]
     fields = [_field("Overall Accuracy", _line(a), False)]
     fields += _side_fields(data)
-    fields.append(_field("⭐ Top 3 accuracy (included in Overall)", _top_line(data), False))
+    fields.append(_field("⭐ 70%+ Model Picks accuracy (included in Overall)", _top_line(data), False))
     fields.append(_field("$10 flat-stake · Overall gross paper ROI", paper_line(data["paper_overall"]), False))
-    fields.append(_field("$10 flat-stake · Top 3 gross paper ROI (subset)", paper_line(data["paper_top"]), False))
+    fields.append(_field("$10 flat-stake · 70%+ Model Picks gross paper ROI (subset)", paper_line(data["paper_top"]), False))
     fields.append(_field("Daily breakdown (Sunday–Saturday)",
                          "\n".join(f'{(start + timedelta(days=i)):%a %b %d}: '
                          + _line(data["days"][(start + timedelta(days=i)).isoformat()])
@@ -132,7 +127,7 @@ def weekly_payload(data):
     return _payload("StatRally | Weekly Recap",
                     f'{start:%b %d, %Y} – {end:%b %d, %Y} · Sunday–Saturday',
                     fields,
-                    "Top 3 included in Overall · Gross paper ROI before fees, no actual fills")
+                    "70%+ starred predictions included in Overall · Gross paper ROI before fees, no actual fills")
 
 
 def monthly_payload(data):
@@ -143,15 +138,15 @@ def monthly_payload(data):
         _field("Overall Accuracy", _line(a), False),
         _field("Active graded days", str(active)),
         _field("Average graded picks / active day", f'{a["graded"]/active:.1f}' if active else "N/A"),
-        _field("⭐ Top 3 Accuracy (included in Overall)", _top_line(data), False),
+        _field("⭐ 70%+ Model Picks Accuracy (included in Overall)", _top_line(data), False),
         _field("$10 flat-stake · Overall gross paper ROI", paper_line(data["paper_overall"]), False),
-        _field("$10 flat-stake · Top 3 gross paper ROI (subset)", paper_line(data["paper_top"]), False),
+        _field("$10 flat-stake · 70%+ Model Picks gross paper ROI (subset)", paper_line(data["paper_top"]), False),
         _field("Pending results", str(a["pending"])),
     ] + _side_fields(data)
     return _payload("StatRally | Monthly Recap",
                     f'{first:%B %Y} · Accuracy calendar (Sunday–Saturday)\n'
                     "Green ≥70% · Red <70% · Gray: no graded results. "
-                    "Colors are descriptive, not model-quality thresholds. Top 3 already count in overall accuracy.",
+                    "Colors are descriptive, not model-quality thresholds. 70%+ starred predictions already count in overall accuracy.",
                     fields,
                     "Calendar is accuracy-only · Paper ROI before fees, no actual fills")
 
@@ -216,10 +211,7 @@ def model_summary(ledger):
     for row in sorted(ledger.export()["records"], key=lambda x: (parse_time(x["issued_at"]), x["comment_id"])):
         first.setdefault(row["prediction"]["fixture_id"], row)
     rows = list(first.values())
-    top_ids = {r["prediction"]["fixture_id"] for r in ledger.export()["records"]
-               if any(x.get("kind") == "top" and x.get("state") in ("reserved","accepted")
-                      for x in r["deliveries"])}
-    top = [r for r in rows if r["prediction"]["fixture_id"] in top_ids]
+    top = [r for r in rows if is_starred_probability(r["prediction"])]
     # Trend only includes verified days; never interpolate future or missing results.
     days = sorted({parse_time(r["prediction"]["kickoff_utc"]).astimezone(CENTRAL).date()
                    for r in rows})
@@ -312,9 +304,9 @@ def model_payload(data):
                    else "Requires a separate reliability assessment", False),
         ]
     top = data["top"]
-    fields.append(_field("⭐ Top 3 accuracy (included in Overall)",
+    fields.append(_field("⭐ 70%+ Model Picks accuracy (included in Overall)",
                          f'{percent(top)} | {top["correct"]}/{top["graded"]} correct'
-                         if data["top_total"] else "No recorded highlights", False))
+                         if data["top_total"] else "No 70%+ model predictions", False))
     trend = data["recent_days"]
     fields.append(_field("Recent graded days (not a fitted trend)",
                          "\n".join(f'{x["date"]}: {x["accuracy"]:.1f}% ({x["correct"]}/{x["graded"]})'
@@ -323,7 +315,7 @@ def model_payload(data):
     if len(fields) > 25:
         raise RuntimeError("Too many model versions for one Discord embed; add pagination")
     return _payload("StatRally | Model Performance",
-                    "Verified forward predictions only · Top 3 counted once in overall · Not a proven betting edge.",
+                    "Verified forward predictions only · 70%+ starred predictions counted once in overall · Not a proven betting edge.",
                     fields, "Accuracy is descriptive · Brier/log loss lower is better · No financial P&L")
 
 

@@ -80,15 +80,16 @@ class PredictionPlatformTests(unittest.TestCase):
         card=prediction_pages(self.ledger.export()['records'],'TEST')[0]['embeds'][0]
         self.assertIn('🔵 BTTS NO',card['fields'][0]['value']);self.assertEqual(card['color'],0x3498DB)
 
-    def test_top_three_accent_is_orange_while_daily_remains_blue(self):
+    def test_starred_70_percent_predictions_stay_blue_with_yellow_star(self):
         self.issue()
         records = self.ledger.export()['records']
         regular = prediction_pages(records, 'Daily BTTS predictions')
         highlighted = prediction_pages(records, 'Top 3 highlighted', highlighted=True)
         self.assertEqual(regular[0]['embeds'][0]['color'], 0x3498DB)
-        self.assertEqual(highlighted[0]['embeds'][0]['color'], 0xF97316)
+        self.assertEqual(highlighted[0]['embeds'][0]['color'], 0x3498DB)
         self.assertIn('🔵 BTTS NO', highlighted[0]['embeds'][0]['fields'][0]['value'])
-        self.assertIn('Highlighted experimental pick', highlighted[0]['embeds'][0]['footer']['text'])
+        self.assertIn('⭐ 70%+ model probability', highlighted[0]['embeds'][0]['footer']['text'])
+        self.assertIn('🟨',str(regular))
         validate_payload(regular[0])
         validate_payload(highlighted[0])
 
@@ -104,8 +105,8 @@ class PredictionPlatformTests(unittest.TestCase):
         posted=[]
         def send(payload,*args,**kwargs):posted.append(copy.deepcopy(payload));return self.sender(payload,*args,**kwargs)
         counts=publish_predictions(self.ledger,'fake-offline',now=NOW,sender=send)
-        self.assertEqual(counts,{'daily':14,'top':0})
-        self.assertEqual(publish_predictions(self.ledger,'fake-offline',now=NOW,sender=send),{'daily':0,'top':0})
+        self.assertEqual(counts,{'daily':14,'starred':14})
+        self.assertEqual(publish_predictions(self.ledger,'fake-offline',now=NOW,sender=send),{'daily':0,'starred':14})
         self.assertEqual(sum(len(p['embeds']) for p in posted if p['content'].startswith('Daily')),14)
 
     def test_repeat_and_intentional_revision_preserve_original(self):
@@ -172,24 +173,28 @@ class PredictionPlatformTests(unittest.TestCase):
         self.assertEqual(sum(len(p['embeds']) for p in pages),50)
         for p in pages:validate_payload(p);self.assertEqual(p['allowed_mentions'],{'parse':[]})
 
-    def test_daily_top_limit_remains_occupied_after_early_kickoffs(self):
+    def test_ended_fixtures_do_not_appear_in_daily_starred_delivery(self):
         data=slate(6)
         for p in data['fixtures'][:3]:p['kickoff_utc']='2026-11-05T12:00:00+00:00'
         self.ledger.issue_slate(data,now=NOW)
         publish_predictions(self.ledger,'fake',now=NOW,sender=self.sender)
         counts=publish_predictions(self.ledger,'fake',now=NOW+timedelta(hours=2),sender=self.sender)
-        self.assertEqual(counts['top'],0)
+        self.assertEqual(counts['starred'],3)
 
-    def test_legacy_reservation_blocks_same_fixture_from_new_highlights(self):
-        self.issue(3)
-        self.ledger.issues.append({'number':99,'user':{'login':'github-actions[bot]'},
-            'body':'statrally-beta-data:'+json.dumps({'league':'epl','espn_event_id':'1','kickoff_utc':'2026-11-05T18:00:00+00:00'})})
-        counts=publish_predictions(self.ledger,'fake',now=NOW,sender=self.sender)
-        self.assertEqual(counts,{'daily':3,'top':0})
-        top_ids={e['prediction_id'] for events in self.ledger.comments.values() for event in events
-                 if event['body'].startswith(DELIVERY) for e in [json.loads(event['body'][len(DELIVERY):])]
-                 if e['kind']=='top'}
-        self.assertNotIn(self.ledger.forecasts[0]['prediction']['prediction_id'],top_ids)
+    def test_more_than_three_starred_forecasts_do_not_require_separate_highlight_posts(self):
+        self.issue(8)
+        sent=[]
+        def send(payload,*args,**kwargs):
+            sent.append(payload)
+            return self.sender(payload,*args,**kwargs)
+        result=publish_predictions(self.ledger,'offline',now=NOW,sender=send)
+        self.assertEqual(result,{'daily':8,'starred':8})
+        self.assertEqual(sum(len(p['embeds']) for p in sent),8)
+        self.assertTrue(all(e['color']==0x3498DB for p in sent for e in p['embeds']))
+        self.assertTrue(all('🟨' in str(e) for p in sent for e in p['embeds']))
+        self.assertFalse(any(e.get('kind')=='top' for events in self.ledger.comments.values()
+                         for event in events if event['body'].startswith(DELIVERY)
+                         for e in [json.loads(event['body'][len(DELIVERY):])]))
 
     def test_provider_outage_cannot_erase_predictions_or_override_side(self):
         issued=self.issue(3)['predictions']

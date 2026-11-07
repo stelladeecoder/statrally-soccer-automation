@@ -15,7 +15,7 @@ from m13_discord_embeds import (CENTRAL, match_card, side_style, validate_payloa
                                 render_paper_result)
 from prediction_ledger import Ledger, MARKET, GRADE, DELIVERY, METRICS, SELECTION, ENTRY_QUOTE
 from prediction_schema import MARKETS, canonical, validate
-from prediction_quality import classify, eligible_ranked, load_policy, policy_digest
+from prediction_quality import classify, is_starred_probability, load_policy, policy_digest
 
 
 def annotate(ledger, envelope):
@@ -189,10 +189,8 @@ def prediction_pages(items, title, *, policy=None, highlighted=False, quotes=Non
     for item in items:
         prediction = item["prediction"]
         quality = classify(prediction,policy)
-        card, when = match_card(prediction, "Highlighted experimental pick · Uncalibrated model estimate" if highlighted else "Experimental paper prediction · Uncalibrated model estimate")
-        if highlighted:
-            # Visual emphasis only; selection decisions remain policy-gated upstream.
-            card["color"] = 0xF97316
+        starred = is_starred_probability(prediction)
+        card, when = match_card(prediction, "Experimental paper prediction · Uncalibrated model estimate")
         card["description"] += " · "+when.strftime("%I:%M %p").lstrip("0")+" CT"
         status = item.get("market", {}).get("status", "provider_unavailable")
         if status not in MARKETS:
@@ -202,12 +200,12 @@ def prediction_pages(items, title, *, policy=None, highlighted=False, quotes=Non
         card["fields"] = [{"name":"Prediction","value":side_style(prediction["side"])[1],"inline":True},
                           {"name":"YES / NO","value":format(Decimal(prediction["p_yes"]),".1%")+" / "+format(Decimal(prediction["p_no"]),".1%"),"inline":True},
                           {"name":"Selected-side estimate","value":format(Decimal(prediction["confidence"]),".1%"),"inline":True},
-                          {"name":"Probability category","value":quality["probability_category"]+" · descriptive only","inline":False},
+                          {"name":"Probability category","value":("⭐ 🟨 **VERY HIGH MODEL PROBABILITY · 70%+**" if starred else quality["probability_category"])+" · descriptive only, not validated reliability","inline":False},
                           {"name":"Model / calibration","value":prediction["model_version"]+" · "+quality["calibration_status"],"inline":False},
                           {"name":"Data quality","value":prediction["data_quality_status"].replace("_"," "),"inline":True},
                           {"name":"Selection status","value":"Validated policy eligible" if quality["selection_eligible"] else "Experimental forecast · Not an approved selection","inline":False},
                           {"name":"Polymarket US","value":labels[status],"inline":True}]
-        # Both the daily slate and the Top 3 are delivered to #btts-picks.
+        # All predictions share the blue #btts-picks presentation. The star is descriptive.
         verified=safe_quote_for(item,quotes,now)
         if verified:
             price=Decimal(verified["price_dollars"])
@@ -219,7 +217,7 @@ def prediction_pages(items, title, *, policy=None, highlighted=False, quotes=Non
                 {"name":"Illustrative $10 gross profit","value":"$"+format(gross,".2f")+" if correct; before fees","inline":False}]
         else:
             card["fields"].append({"name":"Market price","value":"Unavailable · no verified current quote","inline":False})
-        card["footer"]={"text":("Highlighted experimental pick" if highlighted else "Experimental paper prediction")+" · Quote not guaranteed fill · No trades"}
+        card["footer"]={"text":("⭐ 70%+ model probability · " if starred else "")+"Experimental paper prediction · Quote not guaranteed fill · No trades"}
         if cards and (len(cards) >= 8 or sum(embed_units(c) for c in cards)+embed_units(card) > 5700):
             pages.append(cards);cards=[]
         cards.append(card)
@@ -265,37 +263,21 @@ def publish_predictions(ledger, webhook, *, now=None, sender=publish, policy=Non
         if key not in latest or record["prediction"]["revision"] > latest[key]["prediction"]["revision"]:
             latest[key] = record
     items = sorted(latest.values(), key=lambda r:(r["prediction"]["kickoff_utc"],r["prediction"]["fixture_id"]))
-    # Top reservations remain occupied after ambiguous sends. Legacy official
-    # paper reservations share the same three-per-day cap during migration.
-    top_ids = {e["prediction_id"] for issue in ledger.comments for e in ledger.events(issue, DELIVERY)
-               if e.get("kind") == "top" and e.get("state") == "reserved"}
-    occupied = sum(r["prediction"]["prediction_id"] in top_ids for r in all_day)
-    occupied += reserved_today(ledger.issues, now=now)
-    top_fixtures = {r["prediction"]["fixture_id"] for r in all_day if r["prediction"]["prediction_id"] in top_ids}
-    # Existing legacy reservations must suppress the same fixture, not merely
-    # consume a numeric slot. Keep the complete new slate independent of this
-    # migration guard; only the separately highlighted official picks deduplicate.
-    for issue in ledger.issues:
-        if issue.get("user",{}).get("login") != "github-actions[bot]" or issue.get("pull_request"):
-            continue
-        for line in (issue.get("body") or "").splitlines():
-            if line.startswith("statrally-beta-data:"):
-                legacy=json.loads(line.removeprefix("statrally-beta-data:"))
-                if parse_time(legacy["kickoff_utc"]).astimezone(CENTRAL).date()==day:
-                    top_fixtures.add(f"espn:{legacy['league']}:{legacy['espn_event_id']}")
-    ranked = eligible_ranked([r for r in items if r["prediction"]["fixture_id"] not in top_fixtures],policy,now=now)
-    selected = ranked[:max(0,3-occupied)]
-    reasons = Counter(reason for r in items for reason in classify(r["prediction"],policy,now=now)["selection_reasons"])
-    decision = {"date_central":day.isoformat(),"policy_version":policy["policy_version"],"policy_sha256":policy_digest(policy),
-                "eligible_prediction_ids":[r["prediction"]["prediction_id"] for r in ranked],
-                "selected_prediction_ids":[r["prediction"]["prediction_id"] for r in selected],
-                "status":"selected" if selected else "no_qualifying_selections","reason_counts":dict(reasons)}
+    # A star is a descriptive probability threshold, never an approval or a
+    # second delivery. All eligible prematch forecasts are published once.
+    starred = [r for r in items if is_starred_probability(r["prediction"])]
+    decision = {
+        "date_central": day.isoformat(), "rule": "descriptive_model_probability_ge_0.70",
+        "highlighted_prediction_ids": [r["prediction"]["prediction_id"] for r in starred],
+        "status": "descriptive_only_not_validated_bet_selection",
+    }
     number = ledger.daily(day.isoformat())
-    if not any(d==decision for d in ledger.events(number,SELECTION)):
-        ledger.append(number,SELECTION,decision)
-    counts = {"daily":deliver(ledger,items,kind="daily",webhook=webhook,now=now,sender=sender,clock=clock,policy=policy)}
-    counts["top"] = deliver(ledger,selected,kind="top",webhook=webhook,now=now,sender=sender,clock=clock,policy=policy,quotes=quotes)
-    return counts
+    if not any(d == decision for d in ledger.events(number, SELECTION)):
+        ledger.append(number, SELECTION, decision)
+    return {"daily": deliver(ledger, items, kind="daily", webhook=webhook,
+                             now=now, sender=sender, clock=clock, policy=policy,
+                             quotes=quotes),
+            "starred": len(starred)}
 
 
 def publish_results(ledger, webhook, *, sender=publish):

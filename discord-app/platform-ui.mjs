@@ -1,5 +1,5 @@
 // Pure view selection, shared by browser and offline completeness tests.
-import {classifyPrediction} from "./prediction-quality.mjs";
+import {isStarredProbability} from "./prediction-quality.mjs";
 export function dayCentral(value=new Date()) {
   return new Intl.DateTimeFormat("en-CA",{timeZone:"America/Chicago",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date(value));
 }
@@ -13,9 +13,9 @@ export function views(data, day=dayCentral()) {
   const predicted=new Set(today.map(r=>r.prediction.fixture_id));
   const unavailable=(data.evaluated||[]).filter(r=>dayCentral(r.kickoff_utc)===day&&!predicted.has(r.fixture_id));
   const highlights=data.records.filter(r=>dayCentral(r.prediction.kickoff_utc)===day&&r.deliveries.some(e=>e.kind==="top"&&e.state==="reserved"));
-  const top=highlights.filter(r=>classifyPrediction(r.prediction,data.selection_policy).selection_eligible);
+  const top=today.filter(r=>isStarredProbability(r.prediction));
   top.sort((a,b)=>Number(b.prediction.confidence)-Number(a.prediction.confidence));
-  return {today,unavailable,top,historical_highlights:highlights.filter(r=>!top.includes(r)),history:[...data.records].sort((a,b)=>b.issued_at.localeCompare(a.issued_at))};
+  return {today,unavailable,top,historical_highlights:highlights,history:[...data.records].sort((a,b)=>b.issued_at.localeCompare(a.issued_at))};
 }
 export function page(items,index=1,size=25) {
   const pages=Math.max(1,Math.ceil(items.length/size));

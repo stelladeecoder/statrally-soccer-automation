@@ -20,6 +20,8 @@ class RecapTests(unittest.TestCase):
         data=slate(5)
         data["fixtures"][3]=prediction(4,p_yes="0.70")
         data["fixtures"][4]=prediction(5,p_yes="0.70")
+        data["fixtures"][3]["confidence"]="0.70"
+        data["fixtures"][4]["confidence"]="0.70"
         self.ledger.issue_slate(data,now=NOW)
         self.posts=[]
         self.edits=[]
@@ -59,10 +61,11 @@ class RecapTests(unittest.TestCase):
         self.assertEqual(x["overall"]["ALL"]["correct"],3)
         self.assertEqual(x["overall"]["NO"]["correct"],2)
         self.assertEqual(x["overall"]["NO"]["incorrect"],1)
-        self.assertEqual(x["top"]["graded"],2)
-        self.assertEqual(x["top"]["correct"],1)
+        self.assertEqual(x["top"]["graded"],4)
+        self.assertEqual(x["top"]["correct"],3)
         self.assertEqual(x["overall"]["ALL"]["graded"], 4)  # Highlight subset, no double count.
         self.assertIn("included in Overall", str(weekly_payload(x)))
+        self.assertIn("70%+ Model Picks", str(weekly_payload(x)))
         self.assertIn("included in Overall", str(monthly_payload(x)))
         payload=weekly_payload(x)
         self.assertIn("Sunday–Saturday",payload["embeds"][0]["description"])
@@ -77,7 +80,7 @@ class RecapTests(unittest.TestCase):
         img=Image.open(BytesIO(blob))
         self.assertGreaterEqual(img.width,900)
         self.assertEqual(img.format,"PNG")
-        self.assertIn("Top 3 Accuracy",str(monthly_payload(x)))
+        self.assertIn("70%+ Model Picks Accuracy",str(monthly_payload(x)))
         self.assertNotIn("yellow",monthly_payload(x)["embeds"][0]["description"].lower())
         self.assertIn("Sunday–Saturday", monthly_payload(x)["embeds"][0]["description"])
 

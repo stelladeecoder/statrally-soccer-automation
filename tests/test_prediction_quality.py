@@ -68,31 +68,27 @@ class PredictionQualityTests(unittest.TestCase):
         api=FakeGitHub();ledger=Ledger(REPO,'fictional-offline',call=api).load();ledger.issue_slate(slate(4),now=NOW)
         posted=[]
         def sender(payload,*a,**kw):posted.append(payload);return {'message_id':'123456789012345678','channel_id':'223456789012345678'}
-        self.assertEqual(publish_predictions(ledger,'fictional-offline',now=NOW,sender=sender),{'daily':4,'top':0})
-        self.assertEqual(publish_predictions(ledger,'fictional-offline',now=NOW,sender=sender),{'daily':0,'top':0})
+        self.assertEqual(publish_predictions(ledger,'fictional-offline',now=NOW,sender=sender),{'daily':4,'starred':4})
+        self.assertEqual(publish_predictions(ledger,'fictional-offline',now=NOW,sender=sender),{'daily':0,'starred':4})
         self.assertEqual(len(ledger.forecasts),4);self.assertTrue(all(p['content'].startswith('Daily') for p in posted))
-        decisions=ledger.events(1,SELECTION);self.assertEqual(len(decisions),1);self.assertEqual(decisions[0]['status'],'no_qualifying_selections')
+        decisions=ledger.events(1,SELECTION);self.assertEqual(len(decisions),1);self.assertEqual(decisions[0]['status'],'descriptive_only_not_validated_bet_selection')
+        self.assertEqual(len(decisions[0]['highlighted_prediction_ids']),4)
 
-    def test_approved_routing_keeps_cap_legacy_guard_and_receipts(self):
-        # Isolate delivery routing from eligibility. The live schema deliberately
-        # refuses hypothetical calibrated models until a separate promotion PR.
-        from unittest.mock import patch
-        from datetime import timedelta
+    def test_star_highlights_are_not_policy_approved_or_capped(self):
         from prediction_ledger import DELIVERY
-        api=FakeGitHub();ledger=Ledger(REPO,'offline',call=api).load();data=slate(6)
-        for p in data['fixtures'][:3]:p['kickoff_utc']='2026-11-05T12:00:00+00:00'
-        ledger.issue_slate(data,now=NOW)
-        def sender(payload,*a,**kw):return {'message_id':'123456789012345678','channel_id':'223456789012345678'}
-        with patch('prediction_platform.eligible_ranked',side_effect=lambda items,*a,**kw:items):
-            self.assertEqual(publish_predictions(ledger,'offline',now=NOW,sender=sender),{'daily':6,'top':3})
-            self.assertEqual(publish_predictions(ledger,'offline',now=NOW+timedelta(hours=2),sender=sender),{'daily':0,'top':0})
-        self.assertEqual(len([e for e in ledger.events(1,DELIVERY) if e['kind']=='top' and e['state']=='accepted']),3)
-        api=FakeGitHub();ledger=Ledger(REPO,'offline',call=api).load();ledger.issue_slate(slate(3),now=NOW)
-        ledger.issues.append({'number':99,'user':{'login':'github-actions[bot]'},'body':'statrally-beta-data:'+json.dumps({'league':'epl','espn_event_id':'1','kickoff_utc':'2026-11-05T18:00:00+00:00'})})
-        with patch('prediction_platform.eligible_ranked',side_effect=lambda items,*a,**kw:items):
-            self.assertEqual(publish_predictions(ledger,'offline',now=NOW,sender=sender),{'daily':3,'top':2})
-        top={e['prediction_id'] for e in ledger.events(1,DELIVERY) if e['kind']=='top'}
-        self.assertNotIn(ledger.forecasts[0]['prediction']['prediction_id'],top)
+        api=FakeGitHub()
+        ledger=Ledger(REPO,'offline',call=api).load()
+        ledger.issue_slate(slate(6),now=NOW)
+        sent=[]
+        def sender(payload,*args,**kwargs):
+            sent.append(payload)
+            return {'message_id':'123456789012345678','channel_id':'223456789012345678'}
+        result=publish_predictions(ledger,'offline',now=NOW,sender=sender)
+        self.assertEqual(result,{'daily':6,'starred':6})
+        self.assertEqual(sum(len(p['embeds']) for p in sent),6)
+        self.assertTrue(all('🟨' in str(p) for p in sent))
+        self.assertFalse(any(e['kind']=='top' for e in ledger.events(1,DELIVERY)))
+        self.assertFalse(classify(ledger.forecasts[0]['prediction'])['selection_eligible'])
 
     def test_python_and_javascript_classification_match(self):
         root=Path(__file__).resolve().parents[1];p,approved=approved_example(prediction(p_yes='.72'))

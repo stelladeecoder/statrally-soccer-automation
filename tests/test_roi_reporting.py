@@ -84,7 +84,7 @@ class PriceReferenceReportingTests(unittest.TestCase):
         self.assertEqual(x["paper_top"]["gross_profit_dollars"],"10.00")
         self.assertIn("1 unpriced excluded",str(weekly_payload(x)))
         m=summary(self.ledger,date(2026,11,1),date(2026,11,30))
-        self.assertIn("Top 3 gross paper ROI",str(monthly_payload(m)))
+        self.assertIn("70%+ Model Picks gross paper ROI",str(monthly_payload(m)))
         self.assertIn("Gross ROI",str(result_embed(report(self.ledger,date(2026,11,5)))))
 
     def test_stale_and_wrong_side_fail_closed(self):
