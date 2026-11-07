@@ -105,6 +105,22 @@ test("Unverified and identity-mismatched results cannot leak into public views",
  assert.ok(!platformCommand({data:{name:"btts"}},record,now).includes("Polymarket: not_found"));
  assert.ok(!platformCommand({data:{name:"picks"}},record,now).includes("identity_mismatch"));
 });
+test("Identity unconfirmed appears in model picks and totals while not-found is removed",()=>{
+ const f=structuredClone(fixture);
+ const marketRows=Object.values(f.comments).flat().filter(c=>c.body.startsWith("statrally-market-v1:"));
+ const unconfirmed=marketRows.find(c=>JSON.parse(c.body.slice("statrally-market-v1:".length)).status==="not_found");
+ assert.ok(unconfirmed);
+ const m=JSON.parse(unconfirmed.body.slice("statrally-market-v1:".length));
+ m.status="identity_mismatch";
+ unconfirmed.body="statrally-market-v1:"+JSON.stringify(m);
+ const output=canonicalPlatform(f.issues,f.comments,now);
+ assert.equal(output.records.length,4);
+ assert.equal(output.records.filter(r=>r.market.status==="identity_mismatch").length,1);
+ assert.equal(views(output,"2026-11-05").today.length,4);
+ const picks=platformCommand({data:{name:"picks"}},output,now);
+ assert.match(picks,/identity_mismatch/);
+ assert.doesNotMatch(picks,/not_found/);
+});
 test("Legacy public export keeps its exact schema and immutable forecast bytes",()=>{
  const current=data(),legacy=legacyProjection(current);
  assert.deepEqual(Object.keys(legacy).sort(),["schema_version","generated_at","records","evaluated","coverage","metrics","trades_placed"].sort());
