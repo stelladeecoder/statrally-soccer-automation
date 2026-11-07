@@ -70,7 +70,7 @@ class RecapTests(unittest.TestCase):
         self.grade(0);self.grade(1,False);self.grade(2)
         x=summary(self.ledger,date(2026,11,1),date(2026,11,30))
         blob=calendar_png(x)
-        self.assertTrue(blob.startswith(b"\\x89PNG\\r\\n\\x1a\\n"))
+        self.assertTrue(blob.startswith(b"\x89PNG\r\n\x1a\n"))
         img=Image.open(BytesIO(blob))
         self.assertGreaterEqual(img.width,900)
         self.assertEqual(img.format,"PNG")
@@ -134,7 +134,7 @@ class RecapTests(unittest.TestCase):
         data={k:v for k,v in x.items() if k!="records"}
         calls=[]
         def fake_month(payload,hook,png,*,message_id=None):
-            self.assertTrue(png.startswith(b"\\x89PNG"))
+            self.assertTrue(png.startswith(b"\x89PNG"))
             calls.append(message_id)
             return {"message_id":"111111111","channel_id":"222222222"}
         params={"kind":"monthly","period_id":"2026-11","issue_day":date(2026,11,1),
