@@ -9,6 +9,7 @@ from m13_discord_embeds import CENTRAL, validate_payload
 from m13_discord_publish import NoRedirect, publish
 from m13_beta_signals import parse_time
 from paper_roi import gross_paper_performance, paper_line
+from prediction_quality import is_starred_probability
 
 DAILY_REPORT = "statrally-daily-report-v1:"
 BLUE = 0x3498DB
@@ -46,18 +47,9 @@ def report(ledger, day):
     rows = rows_for_day(ledger, day)
     if not rows:
         return None
-    top_ids = {r["prediction"]["prediction_id"] for r in rows
-               if any(e.get("kind") == "top" and e.get("state") in ("reserved", "accepted")
-                      for e in r["deliveries"])}
-    # A later revision can be highlighted without changing the overall first-issued sample.
-    all_rows = [r for r in ledger.export()["records"]
-                if parse_time(r["prediction"]["kickoff_utc"]).astimezone(CENTRAL).date() == day]
-    top_fixtures = {r["prediction"]["fixture_id"] for r in all_rows
-                    if any(e.get("kind") == "top" and e.get("state") in ("reserved", "accepted")
-                           for e in r["deliveries"])}
-    if len(top_fixtures) > 3:
-        raise RuntimeError("Top-three historical cap violation")
-    top = [r for r in rows if r["prediction"]["fixture_id"] in top_fixtures]
+    # Starred group is derived from the first issued forecast, not a legacy
+    # Top 3 delivery reservation or an unverified current market price.
+    top = [r for r in rows if is_starred_probability(r["prediction"])]
     return {"date": day.isoformat(), "overall": performance(rows),
             "top": performance(top)["ALL"], "total": len(rows), "top_total": len(top),
             "paper_overall": gross_paper_performance(rows), "paper_top": gross_paper_performance(top)}
@@ -75,16 +67,16 @@ def result_embed(data):
         label = {"ALL": "Overall", "YES": "BTTS YES", "NO": "BTTS NO"}[side]
         fields.append({"name": label, "value": f'{percent(p)} | {p["correct"]}W–{p["incorrect"]}L | {p["graded"]} graded', "inline": True})
     top = data["top"]
-    fields.append({"name": "⭐ Top 3 accuracy (included in Overall)",
+    fields.append({"name": "⭐ 70%+ Model Picks accuracy (included in Overall)",
                    "value": (f'{percent(top)} | {top["correct"]}W–{top["incorrect"]}L | {top["graded"]}/{data["top_total"]} graded'
-                             if data["top_total"] else "No recorded highlighted picks"),
+                             if data["top_total"] else "No 70%+ model predictions"),
                    "inline": False})
     fields.append({"name": "$10 flat-stake · Overall gross paper ROI",
                    "value": paper_line(data["paper_overall"]), "inline": False})
-    fields.append({"name": "$10 flat-stake · Top 3 gross paper ROI (subset)",
+    fields.append({"name": "$10 flat-stake · 70%+ Model Picks gross paper ROI (subset)",
                    "value": paper_line(data["paper_top"]), "inline": False})
     fields.append({"name": "Outstanding",
-                   "value": f'{all_["pending"]} ungraded overall; {top["pending"]} highlighted ungraded',
+                   "value": f'{all_["pending"]} ungraded overall; {top["pending"]} starred ungraded',
                    "inline": False})
     # Discord embeds do not support HTML/CSS progress bars.
     if all_["graded"]:
@@ -93,7 +85,7 @@ def result_embed(data):
         bar = "No verified finals yet"
     payload = {"content": "",
                "embeds": [{"title": "StatRally | Daily Results • " + data["date"],
-                           "description": bar + "\nOverall includes Top 3 exactly once. Top 3 is a breakdown, not additional picks.\nVerified paper predictions only. Gross hypothetical P&L is not realized or fee-adjusted profit.",
+                           "description": bar + "\nOverall includes ⭐ 70%+ Model Picks exactly once. Stars describe model probability, not validated reliability or additional picks.\nVerified paper predictions only. Gross hypothetical P&L is not realized or fee-adjusted profit.",
                            "color": BLUE, "fields": fields,
                            "footer": {"text": "First issued forecast per fixture · America/Chicago · Experimental model"}}],
                "allowed_mentions": {"parse": []}}
