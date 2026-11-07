@@ -173,19 +173,19 @@ def prediction_pages(items, title, *, policy=None, highlighted=False, quotes=Non
                           {"name":"Data quality","value":prediction["data_quality_status"].replace("_"," "),"inline":True},
                           {"name":"Selection status","value":"Validated policy eligible" if quality["selection_eligible"] else "Experimental forecast · Not an approved selection","inline":False},
                           {"name":"Polymarket US","value":labels[status],"inline":True}]
-        if highlighted:
-            verified=safe_quote_for(item,quotes,now)
-            if verified:
-                price=Decimal(verified["price_dollars"])
-                # Pure $1-settlement illustration; excludes fees, liquidity and slippage.
-                gross=(Decimal("10")/price)-Decimal("10")
-                card["fields"] += [
-                    {"name":"Market ask at posting","value":"$"+format(price,".4f"),"inline":True},
-                    {"name":"Quote observed","value":verified["observed_at"]+" · snapshot","inline":False},
-                    {"name":"Illustrative $10 gross profit","value":"$"+format(gross,".2f")+" if correct; before fees","inline":False}]
-            else:
-                card["fields"].append({"name":"Market price","value":"Unavailable · no verified current quote","inline":False})
-            card["footer"]={"text":"Highlighted experimental pick · Quote not guaranteed fill · No trades"}
+        # Both the daily slate and the Top 3 are delivered to #btts-picks.
+        verified=safe_quote_for(item,quotes,now)
+        if verified:
+            price=Decimal(verified["price_dollars"])
+            # Pure $1-settlement illustration; excludes fees, liquidity and slippage.
+            gross=(Decimal("10")/price)-Decimal("10")
+            card["fields"] += [
+                {"name":"Market ask at posting","value":"$"+format(price,".4f"),"inline":True},
+                {"name":"Quote observed","value":verified["observed_at"]+" · snapshot","inline":False},
+                {"name":"Illustrative $10 gross profit","value":"$"+format(gross,".2f")+" if correct; before fees","inline":False}]
+        else:
+            card["fields"].append({"name":"Market price","value":"Unavailable · no verified current quote","inline":False})
+        card["footer"]={"text":("Highlighted experimental pick" if highlighted else "Experimental paper prediction")+" · Quote not guaranteed fill · No trades"}
         if cards and (len(cards) >= 8 or sum(embed_units(c) for c in cards)+embed_units(card) > 5700):
             pages.append(cards);cards=[]
         cards.append(card)
