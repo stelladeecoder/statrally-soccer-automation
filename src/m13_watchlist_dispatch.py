@@ -10,14 +10,19 @@ from m13_beta_grade_issues import records
 from m13_discord_publish import publish, render_watchlist_pages
 
 
-def process(scan, repo, token, webhook, *, now=None):
+def process(scan, repo, token, webhook, *, now=None, revision=None):
     now = now or datetime.now(timezone.utc)
     if now.tzinfo is None or scan.get("date_central") != now.astimezone(CENTRAL).date().isoformat():
         raise ValueError("Watchlist must use the current Central calendar day")
+    if revision not in (None, "v2"):
+        raise ValueError("Unreviewed watchlist revision")
     pages = render_watchlist_pages(scan)
+    if revision == "v2":
+        for page in pages:
+            page["embeds"][0]["title"] = "Updated · " + page["embeds"][0]["title"]
     if not pages:
         raise RuntimeError("No verified fixtures and incomplete feeds; refusing an empty-day claim")
-    marker = "statrally-watchlist-day:" + scan["date_central"]
+    marker = ("statrally-watchlist-update-v2-day:" if revision == "v2" else "statrally-watchlist-day:") + scan["date_central"]
     history = records(f"/repos/{repo}/issues?state=all", token)
     prior=[item for item in history if marker in (item.get("body") or "").splitlines()]
     if prior:
@@ -39,7 +44,7 @@ def process(scan, repo, token, webhook, *, now=None):
         return 0
     proof = hashlib.sha256(json.dumps(pages, sort_keys=True).encode()).hexdigest()
     issue = github("POST", f"/repos/{repo}/issues", token, {
-        "title": "StatRally watchlist | " + scan["date_central"],
+        "title": ("StatRally updated watchlist | " if revision == "v2" else "StatRally watchlist | ") + scan["date_central"],
         "body": marker + "\nPayload SHA256: " + proof + f"\nPages: {len(pages)}\nReserved before Discord delivery. No automatic resend after uncertain delivery."})
     if not isinstance(issue, dict) or type(issue.get("number")) is not int or issue["number"] <= 0:
         raise RuntimeError("Durable watchlist reservation not confirmed")

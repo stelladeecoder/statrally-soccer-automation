@@ -166,39 +166,82 @@ def render_paper_result(signal, result):
                              "embeds": [embed], "allowed_mentions": {"parse": []}})
 
 
+WATCHLIST_FLAGS = {
+    "Premier League": "🏴", "La Liga": "🇪🇸", "Bundesliga": "🇩🇪",
+    "Serie A": "🇮🇹", "Ligue 1": "🇫🇷", "MLS": "🇺🇸",
+    "Liga MX": "🇲🇽", "Champions League": "🏆", "Eredivisie": "🇳🇱",
+    "Liga Portugal": "🇵🇹", "Brasileirão Série A": "🇧🇷",
+    "Argentina Primera División": "🇦🇷", "Europa League": "🏆",
+}
+WATCHLIST_LEAGUES = tuple(WATCHLIST_FLAGS)
+
+
 def watchlist_cards(day, groups, failed):
+    """Discord-native blue presentation with whole-day counts and 13-league coverage.
+
+    Discord embeds cannot render the custom background, gradients or time
+    pills in the concept image. Use only real native fields and markdown.
+    """
+    total = sum(len(lines) for lines in groups.values())
+    failures = set(failed)
+    known = set(WATCHLIST_LEAGUES)
+    # Preserve unknown synthetic labels for existing compatibility tests.
+    active = sorted((league for league, rows in groups.items() if rows),
+                    key=lambda x: (x not in known, x.casefold()))
     fields = []
-    for competition in sorted(groups):
+    for competition in active:
         lines = [line for _, line in sorted(groups[competition])]
+        heading = WATCHLIST_FLAGS.get(competition, "⚽") + "  " + plain(competition)
+        heading += "  ·  " + str(len(lines)) + (" game" if len(lines) == 1 else " games")
+        if competition in failures:
+            heading += "  ⚠️ Partial"
         value, continuation = "", False
         for line in lines:
             if units(line) > 1024:
                 raise ValueError("Watchlist fixture exceeds Discord field limit")
             if value and units(value + "\n" + line) > 1024:
-                fields.append({"name": plain(competition) + (" (continued)" if continuation else ""), "value": value, "inline": False})
+                fields.append({"name": heading + (" (continued)" if continuation else ""),
+                               "value": value, "inline": False})
                 value, continuation = "", True
             value += ("\n" if value else "") + line
         if value:
-            fields.append({"name": plain(competition) + (" (continued)" if continuation else ""), "value": value, "inline": False})
+            fields.append({"name": heading + (" (continued)" if continuation else ""),
+                           "value": value, "inline": False})
+
+    # Report all remaining monitored leagues, including zero-fixture leagues,
+    # rather than silently suggesting that only active leagues are covered.
+    no_games = sorted(known - set(active) - failures)
+    if no_games:
+        fields.append({"name": "Other tracked leagues · 0 games today",
+                       "value": ", ".join(markdown(x) for x in no_games),
+                       "inline": False})
+    if failures:
+        fields.append({"name": "⚠️ Incomplete fixture feeds",
+                       "value": ", ".join(markdown(x) for x in sorted(failures)),
+                       "inline": False})
+
     title = day.strftime("%A") + " watchlist"
-    description = day.strftime("%b %d, %Y").replace(" 0", " ") + " · All times Central"
-    if not fields:
-        description += "\nNo matches scheduled today. All configured feeds succeeded."
-    if failed:
-        description += "\nSchedule incomplete: unavailable feeds for " + ", ".join(markdown(value) for value in failed)
-    base = {"title": title, "description": description, "color": NEUTRAL_COLOR,
-            "footer": {"text": "Fixtures only · Not every match becomes a pick"}, "fields": []}
-    cards, current = [], dict(base, fields=[])
+    summary = day.strftime("%b %d, %Y").replace(" 0", " ") + " · All times Central"
+    summary += "\n\n**📅 " + str(total) + (" game" if total == 1 else " games") + " scheduled**"
+    summary += "  ·  **" + str(len(known)) + " leagues tracked**"
+    if not total and not failures:
+        summary += "\nNo matches scheduled today. All configured feeds succeeded."
+    if failures:
+        summary += "\n⚠️ Incomplete schedule. Some fixture feeds did not respond."
+    base = {"title": title, "description": summary, "color": PICK_COLOR,
+            "footer": {"text": "All tracked fixtures · 13 leagues · Not every match becomes a pick"},
+            "fields": []}
+    pages, current = [], dict(base, fields=[])
     for field in fields:
         trial = dict(current, fields=current["fields"] + [field])
         if current["fields"] and (len(trial["fields"]) > 25 or embed_units(trial) > 5700):
-            cards.append(current)
+            pages.append(current)
             current = dict(base, fields=[])
         current["fields"].append(field)
-    cards.append(current)
-    pages = []
-    for index, card in enumerate(cards, 1):
-        if len(cards) > 1:
-            card["title"] += f" · {index}/{len(cards)}"
-        pages.append(validate_payload({"embeds": [card], "allowed_mentions": {"parse": []}}))
-    return pages
+    pages.append(current)
+    payloads = []
+    for index, card in enumerate(pages, 1):
+        if len(pages) > 1:
+            card["title"] += f" · {index}/{len(pages)}"
+        payloads.append(validate_payload({"embeds": [card], "allowed_mentions": {"parse": []}}))
+    return payloads

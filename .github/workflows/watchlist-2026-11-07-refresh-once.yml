@@ -1,0 +1,68 @@
+name: One-time updated Nov 7 StatRally Discord watchlist
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/watchlist-2026-11-07-refresh-once.yml"
+permissions:
+  contents: read
+  issues: write
+concurrency:
+  group: statrally-watchlist-update-v2-2026-11-07
+  cancel-in-progress: false
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: automation
+      - uses: actions/checkout@v4
+        with:
+          repository: stelladeecoder/statrally-soccer-btts
+          ref: main
+          token: ${{ secrets.STAT_RALLY_PRIVATE_READ_TOKEN }}
+          persist-credentials: false
+          path: engine
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Enforce one-time November 7 Central-date delivery
+        run: |
+          TZ=America/Chicago
+          if [ "$(TZ="$TZ" date +%F)" != "2026-11-07" ]; then
+            echo "Date has changed; no updated message will be posted."
+            exit 1
+          fi
+      - name: Recheck all 13 configured league fixture feeds
+        working-directory: engine
+        env:
+          PYTHONPATH: src
+        run: |
+          python - <<'PY'
+          import json
+          from m13_daily_fixtures import FEEDS,daily_fixtures
+          assert len(FEEDS)==13
+          scan=daily_fixtures()
+          assert scan["date_central"]=="2026-11-07"
+          assert set(scan["failed_leagues"]).issubset(FEEDS)
+          with open(__import__("os").environ["RUNNER_TEMP"]+"/updated-watchlist.json","w") as stream:
+              json.dump(scan,stream)
+          print("Tracked leagues:",len(FEEDS),"Fixtures:",len(scan["fixtures"]),
+                "Failed feeds:",len(scan["failed_leagues"]))
+          PY
+      - name: Publish one explicitly labeled updated Discord watchlist
+        env:
+          PYTHONPATH: automation/src
+          GH_TOKEN: ${{ github.token }}
+          STATRALLY_DISCORD_WEBHOOK: ${{ secrets.STATRALLY_DISCORD_WEBHOOK }}
+        run: |
+          python - <<'PY'
+          import json,os
+          from m13_watchlist_dispatch import process
+          with open(os.environ["RUNNER_TEMP"]+"/updated-watchlist.json") as stream:
+              scan=json.load(stream)
+          process(scan,os.environ["GITHUB_REPOSITORY"],os.environ["GH_TOKEN"],
+                  os.environ["STATRALLY_DISCORD_WEBHOOK"],revision="v2")
+          PY

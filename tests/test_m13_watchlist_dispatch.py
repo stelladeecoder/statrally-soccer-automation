@@ -40,6 +40,14 @@ class WatchlistTests(unittest.TestCase):
         for i in range(300):self.assertIn(f"SYNTHETIC Home {i} vs SYNTHETIC Away {i}**",content+"\n")
         self.assertTrue(all(validate_payload(p) and p["allowed_mentions"]=={"parse":[]} for p in pages))
 
+    def test_total_count_is_visible_on_every_page_and_not_a_mock_value(self):
+        pages=render_watchlist_pages(scan(300))
+        self.assertGreater(len(pages),1)
+        for page in pages:
+            summary=page["embeds"][0]["description"]
+            self.assertIn("300 games scheduled",summary)
+            self.assertIn("13 leagues tracked",summary)
+
     def test_reservation_precedes_delivery_and_repeat_is_blocked(self):
         issues=[]
         comments=[]
@@ -55,6 +63,31 @@ class WatchlistTests(unittest.TestCase):
             self.assertEqual(process(scan(),"owner/repo","token","synthetic"),1)
             self.assertEqual(process(scan(),"owner/repo","token","synthetic"),0)
         publish.assert_called_once()
+
+    def test_explicit_v2_update_has_separate_one_time_reservation(self):
+        issues=[]
+        comments=[]
+        sent=[]
+        def api(method,path,token,data=None):
+            if method=="GET":
+                return copy.deepcopy(comments if "/comments?" in path else issues)
+            if "/comments" in path:
+                comments.append({"id":len(comments)+1,"user":{"login":"github-actions[bot]"},**data})
+                return comments[-1]
+            issues.append({"number":42+len(issues),**data})
+            return issues[-1]
+        def sender(payload,webhook):
+            sent.append(payload)
+        with patch("m13_beta_grade_issues.github",side_effect=api), patch(
+                "m13_watchlist_dispatch.github",side_effect=api), patch(
+                "m13_watchlist_dispatch.publish",side_effect=sender):
+            self.assertEqual(process(scan(),"owner/repo","token","synthetic"),1)
+            self.assertEqual(process(scan(),"owner/repo","token","synthetic",revision="v2"),1)
+            self.assertEqual(process(scan(),"owner/repo","token","synthetic",revision="v2"),0)
+        self.assertEqual(len(sent),2)
+        self.assertIn("Updated ·",sent[1]["embeds"][0]["title"])
+        self.assertEqual(len(issues),2)
+        self.assertIn("statrally-watchlist-update-v2-day:2026-11-08",issues[1]["body"])
 
     def test_uncertain_send_keeps_reservation_and_blocks_retry(self):
         history=[]
