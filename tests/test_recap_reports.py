@@ -20,6 +20,8 @@ class RecapTests(unittest.TestCase):
         data=slate(5)
         data["fixtures"][3]=prediction(4,p_yes="0.70")
         data["fixtures"][4]=prediction(5,p_yes="0.70")
+        data["fixtures"][3]["confidence"]="0.70"
+        data["fixtures"][4]["confidence"]="0.70"
         self.ledger.issue_slate(data,now=NOW)
         self.posts=[]
         self.edits=[]
