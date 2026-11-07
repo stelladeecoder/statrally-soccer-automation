@@ -106,12 +106,15 @@ def grade_issued(ledger, *, scoreboard=fetch_scoreboard, now=None):
     return dict(counts)
 
 
-def prediction_pages(items, title, *, policy=None):
+def prediction_pages(items, title, *, policy=None, highlighted=False):
     pages, cards = [], []
     for item in items:
         prediction = item["prediction"]
         quality = classify(prediction,policy)
-        card, when = match_card(prediction, "Experimental paper prediction · Uncalibrated model estimate")
+        card, when = match_card(prediction, "Highlighted experimental pick · Uncalibrated model estimate" if highlighted else "Experimental paper prediction · Uncalibrated model estimate")
+        if highlighted:
+            # Visual emphasis only; selection decisions remain policy-gated upstream.
+            card["color"] = 0xF97316
         card["description"] += " · "+when.strftime("%I:%M %p").lstrip("0")+" CT"
         status = item.get("market", {}).get("status", "provider_unavailable")
         if status not in MARKETS:
@@ -139,7 +142,7 @@ def deliver(ledger, items, *, kind, webhook, now, sender=publish, clock=None, po
     existing = {e["prediction_id"] for issue in ledger.comments for e in ledger.events(issue, DELIVERY)
                 if e.get("kind") == kind and e.get("state") in {"reserved", "accepted"}}
     fresh = [r for r in items if r["prediction"]["prediction_id"] not in existing]
-    pages = prediction_pages(fresh, "Daily BTTS predictions" if kind == "daily" else "Top 3 BTTS Picks",policy=policy)
+    pages = prediction_pages(fresh, "Daily BTTS predictions" if kind == "daily" else "⭐ Top 3 highlighted BTTS picks",policy=policy,highlighted=(kind == "top"))
     done, index = 0, 0
     for payload in pages:
         batch = fresh[index:index+len(payload["embeds"])];index += len(batch)
