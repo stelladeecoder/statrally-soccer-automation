@@ -28,6 +28,9 @@ export function probabilityCategory(value) {
  if(!(decimalCompare(value,".5")>=0&&decimalCompare(value,"1")<=0))throw new Error("Invalid selected-side probability");
  return decimalCompare(value,".55")<0?"Low confidence":decimalCompare(value,".6")<0?"Moderate confidence":decimalCompare(value,".7")<0?"Higher model probability":"Very high model probability";
 }
+export function isStarredProbability(p) {
+ return probabilityCategory(p.confidence)==="Very high model probability";
+}
 export function classifyPrediction(p,policy=null,now=null) {
  const reasons=[];
  if(decimalCompare(p.confidence,".55")<0)reasons.push("below_descriptive_screen");
@@ -61,7 +64,7 @@ export function classifyPrediction(p,policy=null,now=null) {
 export function filterForecasts(items,filter,policy=null) {
  return items.filter(r=>filter==="yes"?r.prediction.side==="YES":filter==="no"?r.prediction.side==="NO":
   filter==="low"?classifyPrediction(r.prediction,policy).probability_category==="Low confidence":
-  filter==="top"?classifyPrediction(r.prediction,policy).selection_eligible:
+  filter==="top"?isStarredProbability(r.prediction):
   filter==="pending"?["pending","unconfirmed","provider_unavailable"].includes(r.grade?.status||"pending"):
   filter==="graded"?r.grade?.status==="graded":true);
 }
