@@ -157,7 +157,7 @@ class PredictionPlatformTests(unittest.TestCase):
         counts=publish_predictions(self.ledger,'fake-offline',now=NOW,sender=send)
         self.assertEqual(counts,{'daily':3,'starred':3})
         self.assertEqual(publish_predictions(self.ledger,'fake-offline',now=NOW,sender=send),{'daily':0,'starred':3})
-        self.assertEqual(sum(len(p['embeds']) for p in posted if 'BTTS predictions' in p['content']),3)
+        self.assertEqual(sum(len(p['embeds']) for p in posted if 'BTTS model picks' in p['content']),3)
 
     def test_repeat_and_intentional_revision_preserve_original(self):
         first=copy.deepcopy(self.issue()['predictions'][0]);again=self.issue()['predictions'][0]
