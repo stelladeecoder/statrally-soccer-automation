@@ -100,7 +100,7 @@ The command app reads existing records; it does **not** execute a fresh model sc
 | Channel | What you see |
 | :--- | :--- |
 | **#match-watchlist** | Daily fixtures and kickoffs; a fixture is not automatically a pick |
-| **#btts-picks** | Complete same-day BTTS forecasts plus a separate policy-approved shortlist of zero to three selections; unavailable markets remain visible |
+| **#btts-picks** | All same-day BTTS forecasts use **blue Discord embeds**, regardless of YES/NO; separately policy-approved **Top 3 highlighted picks** (0–3 maximum per Central day) use **orange embeds** in this same channel. No extra channel or approval bypass |
 | **#btts-results** | Individual verified BTTS results, with green WIN and red LOSS outcomes; retain this channel |
 | **#daily-results** | **Planned, not yet delivery-verified:** one automatically generated daily embed with overall accuracy, W–L, YES/NO accuracy, color-coded outcome bar and pending count; no individual result posts |
 | **#weekly-recap** | **Planned:** one aggregated weekly performance summary, including league and confidence breakdowns |
@@ -113,6 +113,8 @@ The command app reads existing records; it does **not** execute a fresh model sc
 ### 📊 Daily results embed design (planned; not yet live-verified)
 
 The bot should publish **one summary for each completed America/Chicago calendar day** to `#daily-results`, using only saved, verified forward predictions and their finalized grades. It must not fabricate results from chat messages, replay test fixtures or score predictions that remain pending. Individual verified matches continue in `#btts-results`.
+
+**Top 3 performance:** Include a separate summary for actual highlighted picks only (correct/incorrect, graded count, pending count, accuracy when the denominator is nonzero). Calculate this from durable `top` selection/delivery and verified grades; do not assume that the top three exist every day, or count the same forecast twice. Keep Top 3 performance distinct from the overall slate and YES/NO breakdown. This section remains planned until the reporting job is implemented and tested.
 
 **Display:** a Discord embed headed `StatRally | Daily Results • YYYY-MM-DD` with three prominent accuracy fields (Overall, BTTS YES, BTTS NO), a compact green/red correct/incorrect visual bar or emoji equivalent, and a table-like breakdown of correct, incorrect, total and accuracy per side. Also show pending/ungraded counts, graded sample size and model version/source when available. Use blue branding for the summary, green for correct and red for incorrect. If a side has zero graded forecasts, show `N/A (0 graded)` rather than 0% or 100%.
 
