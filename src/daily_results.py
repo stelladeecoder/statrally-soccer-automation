@@ -73,7 +73,7 @@ def result_embed(data):
         label = {"ALL": "Overall", "YES": "BTTS YES", "NO": "BTTS NO"}[side]
         fields.append({"name": label, "value": f'{percent(p)} | {p["correct"]}W–{p["incorrect"]}L | {p["graded"]} graded', "inline": True})
     top = data["top"]
-    fields.append({"name": "⭐ Top 3 highlights (separate sample)",
+    fields.append({"name": "⭐ Top 3 accuracy (included in Overall)",
                    "value": (f'{percent(top)} | {top["correct"]}W–{top["incorrect"]}L | {top["graded"]}/{data["top_total"]} graded'
                              if data["top_total"] else "No recorded highlighted picks"),
                    "inline": False})
@@ -87,7 +87,7 @@ def result_embed(data):
         bar = "No verified finals yet"
     payload = {"content": "",
                "embeds": [{"title": "StatRally | Daily Results • " + data["date"],
-                           "description": bar + "\nVerified paper predictions only. Not financial P&L.",
+                           "description": bar + "\nOverall includes Top 3 exactly once. Top 3 is a breakdown, not additional picks.\nVerified paper predictions only. Not financial P&L.",
                            "color": BLUE, "fields": fields,
                            "footer": {"text": "First issued forecast per fixture · America/Chicago · Experimental model"}}],
                "allowed_mentions": {"parse": []}}

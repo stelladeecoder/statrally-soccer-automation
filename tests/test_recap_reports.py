@@ -61,6 +61,9 @@ class RecapTests(unittest.TestCase):
         self.assertEqual(x["overall"]["NO"]["incorrect"],1)
         self.assertEqual(x["top"]["graded"],2)
         self.assertEqual(x["top"]["correct"],1)
+        self.assertEqual(x["overall"]["ALL"]["graded"], 4)  # Highlight subset, no double count.
+        self.assertIn("included in Overall", str(weekly_payload(x)))
+        self.assertIn("included in Overall", str(monthly_payload(x)))
         payload=weekly_payload(x)
         self.assertIn("Sunday–Saturday",payload["embeds"][0]["description"])
         self.assertNotIn("calendar",str(payload).lower())
@@ -90,6 +93,7 @@ class RecapTests(unittest.TestCase):
         p=model_payload(d)
         self.assertIn("Not validated",str(p))
         self.assertIn("precision / recall",str(p))
+        self.assertIn("included in Overall",str(p))
         self.assertNotIn("Good reliability",str(p))
 
     def test_durable_weekly_post_update_repeat_and_ambiguous_send(self):
