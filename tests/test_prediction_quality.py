@@ -70,7 +70,7 @@ class PredictionQualityTests(unittest.TestCase):
         def sender(payload,*a,**kw):posted.append(payload);return {'message_id':'123456789012345678','channel_id':'223456789012345678'}
         self.assertEqual(publish_predictions(ledger,'fictional-offline',now=NOW,sender=sender),{'daily':4,'starred':4})
         self.assertEqual(publish_predictions(ledger,'fictional-offline',now=NOW,sender=sender),{'daily':0,'starred':4})
-        self.assertEqual(len(ledger.forecasts),4);self.assertTrue(all('BTTS predictions' in p['content'] for p in posted))
+        self.assertEqual(len(ledger.forecasts),4);self.assertTrue(all('BTTS model picks' in p['content'] for p in posted))
         decisions=ledger.events(1,SELECTION);self.assertEqual(len(decisions),1);self.assertEqual(decisions[0]['status'],'descriptive_only_not_validated_bet_selection')
         self.assertEqual(len(decisions[0]['highlighted_prediction_ids']),4)
 
