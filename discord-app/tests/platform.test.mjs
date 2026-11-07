@@ -117,7 +117,7 @@ test("Identity unconfirmed appears in model picks and totals while not-found is 
  assert.equal(output.records.length,4);
  assert.equal(output.records.filter(r=>r.market.status==="identity_mismatch").length,1);
  assert.equal(views(output,"2026-11-05").today.length,4);
- const picks=platformCommand({data:{name:"picks"}},output,now);
+ const picks=[1,2].map(page=>platformCommand({data:{name:"picks",options:[{name:"page",value:page}]}},output,now)).join("\n");
  assert.match(picks,/identity_mismatch/);
  assert.doesNotMatch(picks,/not_found/);
 });
