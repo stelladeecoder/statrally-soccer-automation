@@ -173,13 +173,13 @@ class PredictionPlatformTests(unittest.TestCase):
         self.assertEqual(sum(len(p['embeds']) for p in pages),50)
         for p in pages:validate_payload(p);self.assertEqual(p['allowed_mentions'],{'parse':[]})
 
-    def test_daily_top_limit_remains_occupied_after_early_kickoffs(self):
+    def test_ended_fixtures_do_not_appear_in_daily_starred_delivery(self):
         data=slate(6)
         for p in data['fixtures'][:3]:p['kickoff_utc']='2026-11-05T12:00:00+00:00'
         self.ledger.issue_slate(data,now=NOW)
         publish_predictions(self.ledger,'fake',now=NOW,sender=self.sender)
         counts=publish_predictions(self.ledger,'fake',now=NOW+timedelta(hours=2),sender=self.sender)
-        self.assertEqual(counts['starred'],6)
+        self.assertEqual(counts['starred'],3)
 
     def test_more_than_three_starred_forecasts_do_not_require_separate_highlight_posts(self):
         self.issue(8)
