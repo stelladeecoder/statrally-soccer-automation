@@ -31,6 +31,15 @@ def describe_probability(confidence):
     return "Very high model probability"
 
 
+
+STAR_THRESHOLD = Decimal("0.70")
+
+
+def is_starred_probability(prediction):
+    """Descriptive 70%+ marker only; not calibrated reliability or bet approval."""
+    return probability(prediction["confidence"]) >= STAR_THRESHOLD
+
+
 def policy_valid(policy):
     required = {"schema_version","policy_version","descriptive_minimum","maximum_selections",
         "minimum_validation_observations","maximum_calibration_ece","minimum_validated_coverage",
