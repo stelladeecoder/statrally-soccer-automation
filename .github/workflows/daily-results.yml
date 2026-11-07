@@ -1,0 +1,57 @@
+name: StatRally daily results summary
+on:
+  workflow_dispatch:
+    inputs:
+      publish_discord:
+        description: Publish real verified daily results (no synthetic data)
+        type: boolean
+        default: false
+  schedule:
+    # 8:15 AM Central across standard/daylight time; local gate runs exactly once.
+    - cron: "15 13,14 * * *"
+permissions:
+  contents: read
+  issues: write
+concurrency:
+  group: statrally-prediction-ledger-writer
+  cancel-in-progress: false
+jobs:
+  daily:
+    if: ${{ github.event_name == 'schedule' || inputs.publish_discord }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Restrict scheduled delivery to 8 AM Central
+        id: gate
+        run: |
+          python - <<'PY'
+          import os
+          from datetime import datetime
+          from zoneinfo import ZoneInfo
+          local = datetime.now(ZoneInfo("America/Chicago"))
+          due = os.environ["GITHUB_EVENT_NAME"] == "workflow_dispatch" or local.hour == 8
+          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+              output.write(f"due={'true' if due else 'false'}\n")
+          PY
+      - name: Test reporting and durable-delivery safeguards
+        if: steps.gate.outputs.due == 'true'
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests -p 'test_daily_results.py' -v
+      - name: Grade all outstanding issued predictions using verified finals
+        if: steps.gate.outputs.due == 'true'
+        env:
+          PYTHONPATH: src
+          GH_TOKEN: ${{ github.token }}
+        run: python src/prediction_platform.py grade
+      - name: Publish and reconcile daily and Top 3 performance summaries
+        if: steps.gate.outputs.due == 'true'
+        env:
+          PYTHONPATH: src
+          GH_TOKEN: ${{ github.token }}
+          STATRALLY_DAILY_RESULTS_DISCORD_WEBHOOK: ${{ secrets.STATRALLY_DAILY_RESULTS_DISCORD_WEBHOOK }}
+        run: python src/daily_results.py
