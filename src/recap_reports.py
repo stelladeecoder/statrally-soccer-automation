@@ -311,7 +311,7 @@ def model_payload(data):
                          if data["top_total"] else "No recorded highlights", False))
     trend = data["recent_days"]
     fields.append(_field("Recent graded days (not a fitted trend)",
-                         "\\n".join(f'{x["date"]}: {x["accuracy"]:.1f}% ({x["correct"]}/{x["graded"]})'
+                         "\n".join(f'{x["date"]}: {x["accuracy"]:.1f}% ({x["correct"]}/{x["graded"]})'
                                    for x in trend) if trend else "No verified daily results", False))
     # Discord caps fields at 25; limit grouped versions and refuse silent truncation.
     if len(fields) > 25:
