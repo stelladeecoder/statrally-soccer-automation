@@ -1,5 +1,5 @@
 import {views,page,dayCentral} from "/platform-ui.mjs";
-import {classifyPrediction,filterForecasts} from "/prediction-quality.mjs";
+import {classifyPrediction,filterForecasts,isStarredProbability} from "/prediction-quality.mjs";
 const el=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;};
 const pct=n=>typeof n==="number"&&Number.isFinite(n)?(100*n).toFixed(1)+"%":"—";
 const probability=n=>pct(n===null||n===undefined?null:Number(n));
@@ -8,12 +8,12 @@ const status=s=>String(s||"pending").replaceAll("_"," ");
 let data=null,view="today",number=1;
 const content=document.querySelector("#content"),league=document.querySelector("#league"),forecastFilter=document.querySelector("#forecast-filter");
 function card(item,history=false){
- const p=item.prediction,g=item.grade||{status:"pending"},q=classifyPrediction(p,data.selection_policy),node=el("article",undefined,"card "+p.side.toLowerCase());
+ const p=item.prediction,g=item.grade||{status:"pending"},q=classifyPrediction(p,data.selection_policy),node=el("article",undefined,"card "+p.side.toLowerCase()+(isStarredProbability(p)?" starred":""));
  node.append(el("h3",p.home_team+" vs "+p.away_team),el("div",p.league.replaceAll("_"," ")+" · "+kickoff(p.kickoff_utc),"muted"));
  const detail=el("div",undefined,"detail");
  detail.append(el("strong","BTTS "+p.side,"side"),el("span","Selected-side estimate "+probability(p.confidence)),el("span","YES "+probability(p.p_yes)+" · NO "+probability(p.p_no)));
- node.append(detail,el("div",q.probability_category+" · descriptive category, not validated reliability"),
-  el("div",q.selection_eligible?"Meets an applicable validated selection policy":"Experimental forecast · Not an approved top selection"),
+ node.append(detail,el("div",(isStarredProbability(p)?"⭐ 🟨 VERY HIGH MODEL PROBABILITY · 70%+":q.probability_category)+" · descriptive, not validated reliability",isStarredProbability(p)?"star-label":""),
+  el("div",q.selection_eligible?"Meets an applicable validated selection policy":"Experimental forecast · Not an approved bet selection"),
   el("div","Polymarket US: "+status(item.market?.status||"provider_unavailable")));
  if(g.status==="graded")node.append(el("div",`${g.result} · Final ${g.home_goals}–${g.away_goals} · Verified full-time`));
  else node.append(el("div","Outcome: "+status(g.status)));
@@ -46,7 +46,7 @@ function render(){
  const items=filterForecasts(chosen,forecastFilter.value,data.selection_policy).filter(r=>!league.value||r.prediction.league===league.value),p=page(items,number);number=p.current;
  document.querySelector("#pages").textContent=`Page ${p.current}/${p.pages} · ${p.total} forecasts`;
  document.querySelector("#previous").disabled=p.current===1;document.querySelector("#next").disabled=p.current===p.pages;
- if(view==="top")content.append(el("p","Up to three selections must pass an applicable validated reliability policy. Probability rank alone is insufficient. An empty selection list is expected when no policy qualifies.","muted"));
+ if(view==="top")content.append(el("p","⭐ Every prediction with at least 70% model probability appears here, with no limit. This is not a validated reliability rating or a betting recommendation.","muted"));
  for(const item of p.items)content.append(card(item,view==="history"));
  if(!p.total)content.append(el("p",view==="top"?"No forecasts pass the applicable selection gate. All valid forecasts remain in Today's predictions.":"No issued forecasts in this filtered view. Future-day fixtures are not substituted."));
  if(view==="today"&&forecastFilter.value==="all")for(const item of all.unavailable.filter(r=>!league.value||r.league===league.value)){const n=el("article",undefined,"card");n.append(el("h3",item.home_team+" vs "+item.away_team),el("div",item.league+" · "+kickoff(item.kickoff_utc)),el("div","Prediction status: "+status(item.prediction_status)));content.append(n);}
