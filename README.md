@@ -102,7 +102,7 @@ The command app reads existing records; it does **not** execute a fresh model sc
 | **#match-watchlist** | Daily fixtures and kickoffs; a fixture is not automatically a pick |
 | **#btts-picks** | All same-day BTTS forecasts use **blue Discord embeds**, regardless of YES/NO; separately policy-approved **Top 3 highlighted picks** (0–3 maximum per Central day) use **orange embeds** in this same channel. No extra channel or approval bypass |
 | **#btts-results** | Individual verified BTTS results, with green WIN and red LOSS outcomes; retain this channel |
-| **#daily-results** | **Planned, not yet delivery-verified:** one automatically generated daily embed with overall accuracy, W–L, YES/NO accuracy, color-coded outcome bar and pending count; no individual result posts |
+| **#daily-results** | **Implemented; live delivery not yet verified:** one automatically generated blue daily embed with overall W–L, YES/NO accuracy, green/red graded-outcome bar, pending counts and a separate recorded Top 3 sample; no individual result posts |
 | **#weekly-recap** | **Planned:** one aggregated weekly performance summary, including league and confidence breakdowns |
 | **#monthly-recap** | **Planned:** one aggregated monthly performance summary, trends and league breakdowns |
 | **#model-performance** | **Planned:** model-version performance, YES/NO precision and recall, Brier score, log loss and calibration, with sufficient-sample disclosure |
@@ -110,11 +110,11 @@ The command app reads existing records; it does **not** execute a fresh model sc
 | **#admin** | Owner-only operational alerts and health reports |
 
 
-### 📊 Daily results embed design (planned; not yet live-verified)
+### 📊 Automated daily results (implementation merged separately; live delivery pending webhook)
 
-The bot should publish **one summary for each completed America/Chicago calendar day** to `#daily-results`, using only saved, verified forward predictions and their finalized grades. It must not fabricate results from chat messages, replay test fixtures or score predictions that remain pending. Individual verified matches continue in `#btts-results`.
+The daily workflow targets **8:15 AM America/Chicago** and reconciles the previous seven calendar days to `#daily-results`, using only saved, verified forward predictions and their finalized grades. It must not fabricate results from chat messages, replay test fixtures or score predictions that remain pending. Individual verified matches continue in `#btts-results`.
 
-**Top 3 performance:** Include a separate summary for actual highlighted picks only (correct/incorrect, graded count, pending count, accuracy when the denominator is nonzero). Calculate this from durable `top` selection/delivery and verified grades; do not assume that the top three exist every day, or count the same forecast twice. Keep Top 3 performance distinct from the overall slate and YES/NO breakdown. This section remains planned until the reporting job is implemented and tested.
+**Top 3 performance:** Includes a separate summary for actual highlighted picks only (correct/incorrect, graded count, pending count, accuracy when the denominator is nonzero). Calculate this from durable `top` selection/delivery and verified grades; do not assume that the top three exist every day, or count the same forecast twice. Keep Top 3 performance distinct from the overall slate and YES/NO breakdown. This section is implemented with regression tests; genuine Discord delivery still requires the dedicated webhook secret and live acceptance.
 
 **Display:** a Discord embed headed `StatRally | Daily Results • YYYY-MM-DD` with three prominent accuracy fields (Overall, BTTS YES, BTTS NO), a compact green/red correct/incorrect visual bar or emoji equivalent, and a table-like breakdown of correct, incorrect, total and accuracy per side. Also show pending/ungraded counts, graded sample size and model version/source when available. Use blue branding for the summary, green for correct and red for incorrect. If a side has zero graded forecasts, show `N/A (0 graded)` rather than 0% or 100%.
 
@@ -126,7 +126,7 @@ The bot should publish **one summary for each completed America/Chicago calendar
 | BTTS NO | 2 | 1 | 66.7% |
 | **Overall** | **4** | **1** | **80.0%** |
 
-**Automation acceptance criteria:** compute from immutable saved grades; deduplicate by first issued forecast per fixture and report date by fixture's Central date; reconcile all known final scores before publish; hold or explicitly label pending results; post exactly once per date with a durable Discord message receipt, or update the existing message idempotently if new verified finals arrive; never silently replace an ambiguous delivery; report failures privately to `#admin`; include an automated test for 2/2 YES, 2/3 NO, no-data, pending, duplicate rerun, daylight-saving transition and missed-day backfill. Verification must include an actual `#daily-results` delivery receipt before claiming it is live.
+**Delivery safeguards:** canonical saved final grades only; deduplicate by first issued forecast per fixture and kickoff date in Central time; label ungraded fixtures as pending; post once per date with a durable Discord receipt and edit the existing message when newly verified finals change the snapshot. Ambiguous posts and edits fail closed for manual review. Regression tests cover YES/NO aggregation, separate Top 3, pending records, repeat runs, revisions, and DST. A workflow failure is visible in GitHub Actions; dedicated owner-admin alerting for this new report remains future work. Real Discord acceptance is not yet verified. Configure the GitHub Actions secret `STATRALLY_DAILY_RESULTS_DISCORD_WEBHOOK` with a webhook created in `#daily-results` before enabling live publication. This does not require using a general picks/results webhook.
 
 ### ⏱️ Configured Central Time windows
 
