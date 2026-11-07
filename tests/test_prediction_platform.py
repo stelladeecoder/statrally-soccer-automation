@@ -95,8 +95,9 @@ class PredictionPlatformTests(unittest.TestCase):
                 **({"event_slug":"verified-event","market_slug":"verified-btts"}
                    if value=="verified_available" else {})}]})
         status("identity_mismatch")
-        status("not_found")
-        self.assertEqual(self.ledger.export()["records"][0]["market"]["status"],"identity_mismatch")
+        for unverified in ("not_found", "market_closed", "provider_unavailable"):
+            status(unverified)
+            self.assertEqual(self.ledger.export()["records"][0]["market"]["status"],"identity_mismatch")
         status("verified_available")
         self.assertEqual(self.ledger.export()["records"][0]["market"]["status"],"verified_available")
 
