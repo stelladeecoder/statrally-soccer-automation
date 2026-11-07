@@ -17,6 +17,7 @@ LEDGER = "statrally-prediction-ledger-v1:"
 PREDICTION = "statrally-prediction-v1:"
 MARKET = "statrally-market-v1:"
 ENTRY_QUOTE = "statrally-entry-quote-v1:"
+MANUAL_MARKET = "statrally-manual-market-review-v1:"
 GRADE = "statrally-grade-v1:"
 DELIVERY = "statrally-prediction-delivery-v1:"
 SCAN = "statrally-prediction-scan-v1:"
@@ -173,12 +174,22 @@ class Ledger:
             identity = p["prediction_id"]
             events = lambda prefix: [e for e in self.events(number, prefix) if e.get("prediction_id") == identity]
             markets, grades, entry_quotes = events(MARKET), events(GRADE), events(ENTRY_QUOTE)
+            reviews = events(MANUAL_MARKET)
+            if len(reviews) > 1:
+                raise RuntimeError("Conflicting manual market decisions; manual review required")
+            manual = reviews[0] if reviews else None
+            if manual is not None:
+                if (set(manual) != {"prediction_id","decision","source"} or manual["decision"] not in ("available","unavailable")
+                    or manual["source"] != "user_manual_check" or manual["prediction_id"] != identity):
+                    raise RuntimeError("Invalid manual market review event")
+            actual_market = markets[-1] if markets else {"status": "provider_unavailable"}
+            effective_market = {"status": "manual_"+manual["decision"]} if manual else actual_market
             if len(entry_quotes) > 1:
                 raise RuntimeError("Duplicate immutable entry-price reference")
             finals = [g for g in grades if g.get("status") == "graded"]
             if len(finals) > 1:
                 raise RuntimeError("Conflicting repeated final grades")
-            output.append({**item, "market": markets[-1] if markets else {"status": "provider_unavailable"},
+            output.append({**item, "market": effective_market,
                            "grade": finals[0] if finals else (grades[-1] if grades else {"status": "pending"}),
                            "entry_quote": entry_quotes[0] if entry_quotes else None,
                            "deliveries": events(DELIVERY)})
