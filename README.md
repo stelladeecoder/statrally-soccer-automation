@@ -5,10 +5,14 @@
 
 **Soccer insights. BTTS predictions. Verified results.**
 
-![Beta](https://img.shields.io/badge/Status-Public%20Beta-16a34a?style=for-the-badge)
-![Free](https://img.shields.io/badge/Access-Free-0891b2?style=for-the-badge)
+![Status: Coming Soon](https://img.shields.io/badge/Mobile%20App-Coming%20Soon-0891b2?style=for-the-badge)
+![Free](https://img.shields.io/badge/Access-Free-16a34a?style=for-the-badge)
 
-**[Install the StatRally Discord App](https://discord.com/oauth2/authorize?client_id=1567283370419814472)**
+## 📱 Mobile Experience Coming Soon
+
+**A mobile-friendly StatRally experience is on the way.**
+
+Preview access will be announced here when the app is ready.
 
 </div>
 
@@ -16,33 +20,22 @@
 
 ## ⚽ What is StatRally?
 
-StatRally is an independent soccer analytics project built for fans who want a clearer view of **Both Teams to Score (BTTS)** match predictions.
+StatRally is an independent soccer analytics project for exploring **Both Teams to Score (BTTS)** match predictions and verified results.
 
-It brings daily soccer forecasts and confirmed results together in an easy-to-follow experience.
+## ✨ What to expect
 
-## ✨ Explore the beta
+- Daily soccer match watchlists.
+- BTTS YES/NO predictions and highlighted picks.
+- Independently verified match outcomes.
+- Daily, weekly and monthly accuracy recaps.
+- Model-performance insights.
 
-- **Daily match watchlists** to see upcoming soccer fixtures.
-- **BTTS YES/NO forecasts** published for eligible matches.
-- **Highlighted picks** when available, clearly identified within the full prediction slate.
-- **Match results and accuracy recaps**, including daily, weekly and monthly views.
-- **Model-performance reporting** to track how forecasts perform over time.
-- **Discord commands and a developing web experience** for convenient access.
+The mobile experience is **not yet publicly available**. There is no registration or invitation link at this time.
 
-The public beta is **free**. Some features are still being improved or verified.
+## 📊 Research transparency
 
-## 📊 Accountability matters
-
-StatRally records its experimental predictions and evaluates them against independently verified match results. Highlighted predictions are included in overall accuracy and also shown as their own breakdown, without double-counting.
-
-**Predictions are experimental.** Historical accuracy does not guarantee future results, and StatRally does not claim a proven betting edge. No trades or wagers are placed by the public app.
-
-## 💬 StatRally on Discord
-
-The link below installs the StatRally Discord app. It is **not** an invitation to the StatRally community server.
-
-**[Install the StatRally Discord App](https://discord.com/oauth2/authorize?client_id=1567283370419814472)**
+StatRally predictions are experimental. Historical accuracy does not guarantee future outcomes, and StatRally does not claim a proven betting edge. The public app does not place trades or wagers.
 
 ---
 
-<sub>© 2026 StatRally. Independent research and analytics project.</sub>
+<sub>© 2026 StatRally. Independent soccer analytics project.</sub>
