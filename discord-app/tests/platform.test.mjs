@@ -107,6 +107,30 @@ test("Identity-unconfirmed forecasts remain visible, counted and separately labe
  assert.match(platformCommand({data:{name:"btts"}},data,now),/identity_mismatch/);
 });
 
+test("Manual market decisions override display eligibility without changing original market records",()=>{
+ const f=structuredClone(fixture);
+ const p=f.comments["1"].filter(c=>c.body.startsWith("statrally-prediction-v1:"))
+     .map(c=>JSON.parse(c.body.slice("statrally-prediction-v1:".length)));
+ const market=f.comments["1"].filter(c=>c.body.startsWith("statrally-market-v1:"))
+     .map(c=>JSON.parse(c.body.slice("statrally-market-v1:".length)));
+ const confirmed=market.find(m=>m.status==="verified_available").prediction_id;
+ const absent=p.find(row=>!market.some(m=>m.prediction_id===row.prediction_id&&m.status==="verified_available")).prediction_id;
+ const create=(prediction_id,decision,id)=>({
+   id,user:{login:"github-actions[bot]"},created_at:now.toISOString(),
+   updated_at:now.toISOString(),body:"statrally-manual-market-review-v1:"+
+     JSON.stringify({prediction_id,decision,source:"user_manual_check"})
+ });
+ f.comments["1"].push(create(confirmed,"unavailable",8001),create(absent,"available",8002));
+ const output=canonicalPlatform(f.issues,f.comments,now);
+ assert.equal(output.records.length,3);
+ assert.ok(output.records.some(row=>row.prediction.prediction_id===absent&&row.market.status==="manual_available"));
+ assert.ok(!output.records.some(row=>row.prediction.prediction_id===confirmed));
+ assert.ok(!output.records.some(row=>row.market.status==="manual_unavailable"));
+ assert.match(platformCommand({data:{name:"btts"}},output,now),/manual_available/);
+ f.comments["1"].push(create(absent,"unavailable",8003));
+ assert.throws(()=>canonicalPlatform(f.issues,f.comments,now),/Ambiguous manual market review/);
+});
+
 test("Not-found markets cannot leak into public views",()=>{
  const f=structuredClone(fixture);
  const record=canonicalPlatform(f.issues,f.comments,now);

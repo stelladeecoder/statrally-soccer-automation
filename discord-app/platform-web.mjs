@@ -30,7 +30,7 @@ function table(title,rows){
  t.append(tbody);wrap.append(t);block.append(wrap);return block;
 }
 function performance(){
- const m=data.records.some(r=>!["verified_available","identity_mismatch"].includes(r.market?.status))?null:data.metrics;if(!m){content.append(el("p","Pick-cohort performance is unavailable until recalculated. Not-found and closed markets are excluded."));return;}
+ const m=data.records.some(r=>!["verified_available","identity_mismatch","manual_available"].includes(r.market?.status))?null:data.metrics;if(!m){content.append(el("p","Pick-cohort performance is unavailable until recalculated. Not-found and closed markets are excluded."));return;}
  const overall=league.value?m.by_league[league.value]:m.overall;if(!overall){content.append(el("p","No forward predictions recorded for this competition yet."));return;}
  const summary=el("div",undefined,"summary");
  for(const [name,v] of [["Predictions",overall.total_predictions],["Graded",overall.graded_predictions],["Pending",overall.pending_predictions],["Ungradable",overall.ungradable_predictions],["Accuracy",pct(overall.accuracy)],["Coverage",pct(league.value?overall.prediction_coverage:m.coverage.fraction)]]){const n=el("div",undefined,"metric");n.append(el("span",name),el("strong",String(v??"—")));summary.append(n);}

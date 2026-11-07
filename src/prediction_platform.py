@@ -198,10 +198,12 @@ def prediction_pages(items, title, *, policy=None, highlighted=False, quotes=Non
         card, when = match_card(prediction, "Experimental paper prediction · Uncalibrated model estimate")
         card["description"] += " · "+when.strftime("%I:%M %p").lstrip("0")+" CT"
         status = item.get("market", {}).get("status", "provider_unavailable")
-        if status not in MARKETS:
+        if status not in MARKETS | {"manual_available", "manual_unavailable"}:
             raise ValueError("Unreviewed market display status")
         labels = {"verified_available":"Verified available", "not_found":"Not found", "identity_mismatch":"Identity unconfirmed",
-                  "market_closed":"Closed", "provider_unavailable":"Provider unavailable"}
+                  "market_closed":"Closed", "provider_unavailable":"Provider unavailable",
+                  "manual_available":"Available · manually confirmed, API identity unconfirmed",
+                  "manual_unavailable":"Unavailable · manually confirmed"}
         card["fields"] = [{"name":"Prediction","value":side_style(prediction["side"])[1],"inline":True},
                           {"name":"YES / NO","value":format(Decimal(prediction["p_yes"]),".1%")+" / "+format(Decimal(prediction["p_no"]),".1%"),"inline":True},
                           {"name":"Selected-side estimate","value":format(Decimal(prediction["confidence"]),".1%"),"inline":True},
@@ -261,7 +263,7 @@ def publish_predictions(ledger, webhook, *, now=None, sender=publish, policy=Non
     policy = load_policy() if policy is None else policy
     day = now.astimezone(CENTRAL).date()
     all_day = [r for r in ledger.export()["records"] if parse_time(r["prediction"]["kickoff_utc"]).astimezone(CENTRAL).date() == day]
-    records = [r for r in all_day if r["market"]["status"] in {"verified_available", "identity_mismatch"}
+    records = [r for r in all_day if r["market"]["status"] in {"verified_available", "identity_mismatch", "manual_available"}
                and parse_time(r["prediction"]["kickoff_utc"]) > now]
     latest = {}
     for record in records:
