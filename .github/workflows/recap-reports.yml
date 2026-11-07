@@ -1,0 +1,63 @@
+name: StatRally weekly, monthly and model recaps
+on:
+  workflow_dispatch:
+    inputs:
+      publish_discord:
+        description: Publish verified recap reports to configured channels
+        type: boolean
+        default: false
+  schedule:
+    # 9:10 AM Central during daylight or standard time, gated by local hour.
+    - cron: "10 14,15 * * *"
+permissions:
+  contents: read
+  issues: write
+concurrency:
+  group: statrally-prediction-ledger-writer
+  cancel-in-progress: false
+jobs:
+  recaps:
+    if: ${{ github.event_name == 'schedule' || inputs.publish_discord }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Restrict scheduled reports to morning Central Time
+        id: gate
+        run: |
+          python - <<'PY'
+          import os
+          from datetime import datetime
+          from zoneinfo import ZoneInfo
+          local=datetime.now(ZoneInfo("America/Chicago"))
+          run=os.environ["GITHUB_EVENT_NAME"]=="workflow_dispatch" or local.hour==9
+          with open(os.environ["GITHUB_OUTPUT"],"a") as out:
+              out.write("due="+("true" if run else "false")+"\n")
+          PY
+      - name: Install image rendering dependency
+        if: steps.gate.outputs.due == 'true'
+        run: python -m pip install Pillow==11.3.0
+      - name: Test recap boundaries, formatting and delivery protections
+        if: steps.gate.outputs.due == 'true'
+        env:
+          PYTHONPATH: src:tests
+        run: python -m unittest discover -s tests -p 'test_recap_reports.py' -v
+      - name: Refresh verified full-time grades
+        if: steps.gate.outputs.due == 'true'
+        env:
+          PYTHONPATH: src
+          GH_TOKEN: ${{ github.token }}
+        run: python src/prediction_platform.py grade
+      - name: Publish recap reports from the canonical ledger
+        if: steps.gate.outputs.due == 'true'
+        env:
+          PYTHONPATH: src
+          GH_TOKEN: ${{ github.token }}
+          STATRALLY_FORCE_RECAPS: ${{ inputs.publish_discord }}
+          STATRALLY_WEEKLY_RECAP_DISCORD_WEBHOOK: ${{ secrets.STATRALLY_WEEKLY_RECAP_DISCORD_WEBHOOK }}
+          STATRALLY_MONTHLY_RECAP_DISCORD_WEBHOOK: ${{ secrets.STATRALLY_MONTHLY_RECAP_DISCORD_WEBHOOK }}
+          STATRALLY_MODEL_PERFORMANCE_DISCORD_WEBHOOK: ${{ secrets.STATRALLY_MODEL_PERFORMANCE_DISCORD_WEBHOOK }}
+        run: python src/recap_reports.py
