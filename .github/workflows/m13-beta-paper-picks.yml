@@ -80,6 +80,14 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           STATRALLY_ADMIN_DISCORD_WEBHOOK: ${{ secrets.STATRALLY_ADMIN_DISCORD_WEBHOOK }}
         run: python automation/src/prediction_platform.py alert
+      - name: Observe current side-specific market quotes (read-only)
+        if: inputs.publish_discord
+        continue-on-error: true
+        working-directory: engine
+        env:
+          PYTHONPATH: src
+        run: |
+          python src/m15_paper_quote_export.py --issued "$RUNNER_TEMP/issued.json" --markets "$RUNNER_TEMP/markets.json" --output "$RUNNER_TEMP/pick-quotes.json"
       - name: Publish complete slate and separate top-three highlights
         id: delivery
         if: inputs.publish_discord
@@ -88,7 +96,7 @@ jobs:
           PYTHONPATH: automation/src
           GH_TOKEN: ${{ github.token }}
           STATRALLY_PICKS_DISCORD_WEBHOOK: ${{ secrets.STATRALLY_PICKS_DISCORD_WEBHOOK }}
-        run: python automation/src/prediction_platform.py publish
+        run: python automation/src/prediction_platform.py publish --quotes "$RUNNER_TEMP/pick-quotes.json"
       - name: Report delivery or source blockers after all forecasts are retained
         env:
           ALERT_OUTCOME: ${{ steps.market-alert.outcome }}
