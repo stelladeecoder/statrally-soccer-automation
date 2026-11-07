@@ -156,8 +156,14 @@ export function canonicalPlatform(issues, comments, now = new Date()) {
     }
   }
   if(!validPolicy(selectionPolicy))throw new Error("Invalid checked-in selection policy");
-  for(const record of records)record.presentation=classifyPrediction(record.prediction,selectionPolicy,now);
-  return {schema_version:1,generated_at:now.toISOString(),records,evaluated:[...evaluated.values()],coverage,metrics,
+  // Preserve all source records internally for validation, but only expose
+  // verified BTTS markets to public-facing pick/result/performance clients.
+  // An aggregate computed over ALL research forecasts cannot be presented as
+  // market-eligible performance; suppress it until re-scoped upstream.
+  const eligible=records.filter(r=>r.market.status==="verified_available");
+  for(const record of eligible)record.presentation=classifyPrediction(record.prediction,selectionPolicy,now);
+  return {schema_version:1,generated_at:now.toISOString(),records:eligible,evaluated:[...evaluated.values()],coverage,
+          metrics:eligible.length===records.length?metrics:null,
           selection_policy:selectionPolicy,trades_placed:0};
 }
 
@@ -184,7 +190,12 @@ export async function publicPlatform({fetcher=fetch,now=new Date()}={}) {
   }
   if(value.metrics)safeMetrics(value.metrics);
   for(const row of Object.values(value.coverage))safeCoverage(row);
-  cached={...value,selection_policy:selectionPolicy,stale:now.getTime()-Date.parse(value.generated_at)>45*60*1000};cachedAt=now.getTime();return cached;
+  const eligible=value.records.filter(r=>r.market?.status==="verified_available");
+  // Also gate older already-published snapshots; never silently display
+  // unverified-market records or research-wide metrics as pick performance.
+  cached={...value,records:eligible,metrics:eligible.length===value.records.length?value.metrics:null,
+          selection_policy:selectionPolicy,stale:now.getTime()-Date.parse(value.generated_at)>45*60*1000};
+  cachedAt=now.getTime();return cached;
 }
 
 export function todayRows(data, now=new Date()) {
