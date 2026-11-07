@@ -87,6 +87,38 @@ class EmbedPresentationTests(unittest.TestCase):
         data=envelope();data['signals'][0]['market_price']='0.000001'
         self.assertEqual(render_beta(data,now=NOW)['embeds'][0]['fields'][2]['value'],'$0.000001')
 
+    def test_watchlist_count_and_all_13_configured_leagues(self):
+        from m13_discord_embeds import WATCHLIST_LEAGUES
+        sample = {"status": "fixture_schedule", "date_central": "2026-11-03",
+                  "fixtures": [
+                      {"league": "Premier League", "home_team": "Fictional A", "away_team": "Fictional B",
+                       "kickoff_utc": "2026-11-03T20:00:00Z"},
+                      {"league": "MLS", "home_team": "Fictional C", "away_team": "Fictional D",
+                       "kickoff_utc": "2026-11-03T23:00:00Z"}],
+                  "failed_leagues": []}
+        self.assertEqual(len(WATCHLIST_LEAGUES), 13)
+        pages = render_watchlist_pages(sample)
+        body = "\\n".join(payload_text(p) for p in pages)
+        self.assertIn("2 games scheduled", body)
+        self.assertIn("13 leagues tracked", body)
+        self.assertIn("Premier League  ·  1 game", body)
+        self.assertIn("MLS  ·  1 game", body)
+        for league in WATCHLIST_LEAGUES:
+            self.assertIn(league, body)
+        self.assertTrue(all(p["embeds"][0]["color"] == PICK_COLOR for p in pages))
+        validate_payload(pages[0])
+
+    def test_watchlist_counts_deduplicated_fixtures_and_shows_failed_feed(self):
+        item={"league":"MLS","home_team":"Fictional A","away_team":"Fictional B",
+              "kickoff_utc":"2026-11-03T20:00:00Z"}
+        schedule={"status":"partial_fixture_schedule","date_central":"2026-11-03",
+                  "fixtures":[item,item],"failed_leagues":["Liga MX"]}
+        body=payload_text(render_watchlist_pages(schedule)[0])
+        self.assertIn("1 game scheduled",body)
+        self.assertIn("1 game",body)
+        self.assertIn("Liga MX",body)
+        self.assertIn("Incomplete fixture feeds",body)
+
     def test_busy_watchlist_preserves_all_competitions_and_fixtures(self):
         scan={'status':'fixture_schedule','date_central':'2026-11-03','fixtures':[
             {'league':f'Competition {i//5:02d}','home_team':f'Fictional Home {i}','away_team':f'Fictional Away {i}',
@@ -97,7 +129,7 @@ class EmbedPresentationTests(unittest.TestCase):
         for i in range(400):self.assertEqual(text.count(f'Fictional Home {i} vs Fictional Away {i}**'),1)
         for p in pages:
             validate_payload(p)
-            self.assertEqual(p['embeds'][0]['color'],NEUTRAL_COLOR)
+            self.assertEqual(p['embeds'][0]['color'],PICK_COLOR)
             self.assertLessEqual(len(p['embeds'][0]['fields']),25)
             self.assertIn('All times Central',payload_text(p))
 
