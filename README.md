@@ -102,12 +102,29 @@ The command app reads existing records; it does **not** execute a fresh model sc
 | **#match-watchlist** | Daily fixtures and kickoffs; a fixture is not automatically a pick |
 | **#btts-picks** | Complete same-day BTTS forecasts plus a separate policy-approved shortlist of zero to three selections; unavailable markets remain visible |
 | **#btts-results** | Individual verified BTTS results, with green WIN and red LOSS outcomes; retain this channel |
-| **#daily-results** | **Planned:** one aggregated daily performance summary (W–L, accuracy, YES/NO breakdown, pending count); no individual result posts |
+| **#daily-results** | **Planned, not yet delivery-verified:** one automatically generated daily embed with overall accuracy, W–L, YES/NO accuracy, color-coded outcome bar and pending count; no individual result posts |
 | **#weekly-recap** | **Planned:** one aggregated weekly performance summary, including league and confidence breakdowns |
 | **#monthly-recap** | **Planned:** one aggregated monthly performance summary, trends and league breakdowns |
 | **#model-performance** | **Planned:** model-version performance, YES/NO precision and recall, Brier score, log loss and calibration, with sufficient-sample disclosure |
 | **#bot-commands** | On-demand, private slash-command replies |
 | **#admin** | Owner-only operational alerts and health reports |
+
+
+### 📊 Daily results embed design (planned; not yet live-verified)
+
+The bot should publish **one summary for each completed America/Chicago calendar day** to `#daily-results`, using only saved, verified forward predictions and their finalized grades. It must not fabricate results from chat messages, replay test fixtures or score predictions that remain pending. Individual verified matches continue in `#btts-results`.
+
+**Display:** a Discord embed headed `StatRally | Daily Results • YYYY-MM-DD` with three prominent accuracy fields (Overall, BTTS YES, BTTS NO), a compact green/red correct/incorrect visual bar or emoji equivalent, and a table-like breakdown of correct, incorrect, total and accuracy per side. Also show pending/ungraded counts, graded sample size and model version/source when available. Use blue branding for the summary, green for correct and red for incorrect. If a side has zero graded forecasts, show `N/A (0 graded)` rather than 0% or 100%.
+
+**Example layout only, supplied by the owner for November 6, 2026 (not ledger-verified):**
+
+| Prediction | Correct | Incorrect | Accuracy |
+| :--- | ---: | ---: | ---: |
+| BTTS YES | 2 | 0 | 100.0% |
+| BTTS NO | 2 | 1 | 66.7% |
+| **Overall** | **4** | **1** | **80.0%** |
+
+**Automation acceptance criteria:** compute from immutable saved grades; deduplicate by first issued forecast per fixture and report date by fixture's Central date; reconcile all known final scores before publish; hold or explicitly label pending results; post exactly once per date with a durable Discord message receipt, or update the existing message idempotently if new verified finals arrive; never silently replace an ambiguous delivery; report failures privately to `#admin`; include an automated test for 2/2 YES, 2/3 NO, no-data, pending, duplicate rerun, daylight-saving transition and missed-day backfill. Verification must include an actual `#daily-results` delivery receipt before claiming it is live.
 
 ### ⏱️ Configured Central Time windows
 
