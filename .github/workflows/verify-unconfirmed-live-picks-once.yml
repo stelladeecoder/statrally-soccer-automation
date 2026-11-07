@@ -1,0 +1,61 @@
+name: One-time live identity-unconfirmed picks verification
+on:
+  push:
+    branches: [main]
+    paths: [".github/workflows/verify-unconfirmed-live-picks-once.yml"]
+permissions:
+  contents: read
+  issues: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate real ledger inclusion and public-facing preview without posting
+        env:
+          PYTHONPATH: src
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          python - <<'PY'
+          import json
+          from collections import Counter
+          from datetime import datetime, timezone, date
+          from prediction_ledger import Ledger
+          from prediction_platform import prediction_pages
+          from daily_results import rows_for_day, report
+          from recap_reports import summary
+
+          ledger=Ledger("stelladeecoder/statrally-soccer-automation",__import__("os").environ["GH_TOKEN"]).load()
+          source=ledger.export()["records"]
+          included=[r for r in source if r["market"]["status"] in {"verified_available","identity_mismatch"}]
+          excluded=[r for r in source if r["market"]["status"] not in {"verified_available","identity_mismatch"}]
+          states=Counter(r["market"]["status"] for r in included)
+          assert states["identity_mismatch"]>0, "No live identity-unconfirmed fixtures available for proof"
+          assert all(r["market"]["status"]!="not_found" for r in included)
+          assert len(included)+len(excluded)==len(source)
+          assert any(r["market"]["status"]=="identity_mismatch" for r in rows_for_day(ledger,date(2026,11,7))), "Missing unconfirmed in daily total"
+          day=report(ledger,date(2026,11,7))
+          assert day is not None
+          day_count=len(rows_for_day(ledger,date(2026,11,7)))
+          assert day["total"]==day_count
+          weekly=summary(ledger,date(2026,11,1),date(2026,11,7))
+          assert len(weekly["records"])>=day_count
+          preview=prediction_pages([r for r in included if r["market"]["status"]=="identity_mismatch"][:3],
+              "VERIFICATION ONLY · NEVER POSTED")
+          assert preview and all("Identity unconfirmed" in str(p) for p in preview)
+          assert all("Verified available" not in str(p) for p in preview)
+          print("LIVE_READONLY_VERIFICATION="+json.dumps({
+              "ledger_forecasts":len(source),"included_picks":len(included),
+              "identity_unconfirmed_included":states["identity_mismatch"],
+              "verified_included":states["verified_available"],
+              "excluded_markets":dict(Counter(r["market"]["status"] for r in excluded)),
+              "nov_7_included":day_count,"nov_7_unconfirmed":sum(r["market"]["status"]=="identity_mismatch" for r in rows_for_day(ledger,date(2026,11,7))),
+              "preview_embeds":sum(len(p["embeds"]) for p in preview),
+              "discord_messages_sent":0
+          }))
+          PY
