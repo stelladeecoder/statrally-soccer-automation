@@ -185,7 +185,7 @@ def prediction_pages(items, title, *, policy=None, highlighted=False, quotes=Non
                     {"name":"Illustrative $10 gross profit","value":"$"+format(gross,".2f")+" if correct; before fees","inline":False}]
             else:
                 card["fields"].append({"name":"Market price","value":"Unavailable · no verified current quote","inline":False})
-            card["footer"]={"text":"Paper pick · Quote not guaranteed fill · No trades"}
+            card["footer"]={"text":"Highlighted experimental pick · Quote not guaranteed fill · No trades"}
         if cards and (len(cards) >= 8 or sum(embed_units(c) for c in cards)+embed_units(card) > 5700):
             pages.append(cards);cards=[]
         cards.append(card)
