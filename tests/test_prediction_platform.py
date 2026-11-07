@@ -117,7 +117,7 @@ class PredictionPlatformTests(unittest.TestCase):
         for i,p in enumerate(predictions):
             self.ledger.append(self.ledger.forecasts[i]["issue_number"],"statrally-grade-v1:",{
                 "prediction_id":p["prediction_id"],"status":"graded",
-                "result":"WIN","correct":True})
+                "result":"WIN","correct":True,"home_goals":2,"away_goals":0})
         result=publish_results(self.ledger,"offline",sender=self.sender)
         self.assertEqual(result,1)
 
