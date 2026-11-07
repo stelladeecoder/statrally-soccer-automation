@@ -36,10 +36,10 @@ def annotate(ledger, envelope):
     for value in envelope["markets"]:
         item = known[value["prediction_id"]]
         events = [e for e in ledger.events(item["issue_number"], MARKET) if e["prediction_id"] == value["prediction_id"]]
-        # A fresh empty search is not proof that an earlier credible
-        # identity conflict disappeared. Preserve its unresolved status until
-        # an independently verified contract resolves the ambiguity.
-        if events and events[-1]["status"] == "identity_mismatch" and value["status"] == "not_found":
+        # Unconfirmed stays under manual review. Automated missing, closed
+        # or provider-failure results cannot remove it from picks. Only a
+        # positively verified market can update it without a manual override.
+        if events and events[-1]["status"] == "identity_mismatch" and value["status"] != "verified_available":
             continue
         if not events or {k:v for k,v in events[-1].items() if k!="checked_at"} != {k:v for k,v in value.items() if k!="checked_at"}:
             ledger.append(item["issue_number"], MARKET, value)
@@ -209,7 +209,7 @@ def prediction_pages(items, title, *, policy=None, highlighted=False, quotes=Non
                           {"name":"Model / calibration","value":prediction["model_version"]+" · "+quality["calibration_status"],"inline":False},
                           {"name":"Data quality","value":prediction["data_quality_status"].replace("_"," "),"inline":True},
                           {"name":"Selection status","value":"Validated policy eligible" if quality["selection_eligible"] else "Experimental forecast · Not an approved selection","inline":False},
-                          {"name":"Polymarket US","value":labels[status],"inline":True}]
+                          {"name":"Polymarket US","value":labels[status]+(" · Manual check required; not verified available" if status == "identity_mismatch" else ""),"inline":True}]
         # All predictions share the blue #btts-picks presentation. The star is descriptive.
         verified=safe_quote_for(item,quotes,now)
         if verified:
