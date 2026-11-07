@@ -40,6 +40,14 @@ class WatchlistTests(unittest.TestCase):
         for i in range(300):self.assertIn(f"SYNTHETIC Home {i} vs SYNTHETIC Away {i}**",content+"\n")
         self.assertTrue(all(validate_payload(p) and p["allowed_mentions"]=={"parse":[]} for p in pages))
 
+    def test_total_count_is_visible_on_every_page_and_not_a_mock_value(self):
+        pages=render_watchlist_pages(scan(300))
+        self.assertGreater(len(pages),1)
+        for page in pages:
+            summary=page["embeds"][0]["description"]
+            self.assertIn("300 games scheduled",summary)
+            self.assertIn("13 leagues tracked",summary)
+
     def test_reservation_precedes_delivery_and_repeat_is_blocked(self):
         issues=[]
         comments=[]
