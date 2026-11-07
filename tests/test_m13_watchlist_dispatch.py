@@ -64,6 +64,31 @@ class WatchlistTests(unittest.TestCase):
             self.assertEqual(process(scan(),"owner/repo","token","synthetic"),0)
         publish.assert_called_once()
 
+    def test_explicit_v2_update_has_separate_one_time_reservation(self):
+        issues=[]
+        comments=[]
+        sent=[]
+        def api(method,path,token,data=None):
+            if method=="GET":
+                return copy.deepcopy(comments if "/comments?" in path else issues)
+            if "/comments" in path:
+                comments.append({"id":len(comments)+1,"user":{"login":"github-actions[bot]"},**data})
+                return comments[-1]
+            issues.append({"number":42+len(issues),**data})
+            return issues[-1]
+        def sender(payload,webhook):
+            sent.append(payload)
+        with patch("m13_beta_grade_issues.github",side_effect=api), patch(
+                "m13_watchlist_dispatch.github",side_effect=api), patch(
+                "m13_watchlist_dispatch.publish",side_effect=sender):
+            self.assertEqual(process(scan(),"owner/repo","token","synthetic"),1)
+            self.assertEqual(process(scan(),"owner/repo","token","synthetic",revision="v2"),1)
+            self.assertEqual(process(scan(),"owner/repo","token","synthetic",revision="v2"),0)
+        self.assertEqual(len(sent),2)
+        self.assertIn("Updated ·",sent[1]["embeds"][0]["title"])
+        self.assertEqual(len(issues),2)
+        self.assertIn("statrally-watchlist-update-v2-day:2026-11-08",issues[1]["body"])
+
     def test_uncertain_send_keeps_reservation_and_blocks_retry(self):
         history=[]
         def api(*args):
