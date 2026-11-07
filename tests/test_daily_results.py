@@ -117,7 +117,7 @@ class DailyResultsTests(unittest.TestCase):
 
     def test_daylight_saving_boundary_uses_central_kickoff(self):
         from daily_results import rows_for_day
-        self.ledger.forecasts[0]["prediction"]["kickoff_utc"] = "2026-11-01T05:30:00Z"
+        self.ledger.forecasts[0]["prediction"]["kickoff_utc"] = "2026-11-01T04:30:00Z"
         self.assertEqual(len(rows_for_day(self.ledger, datetime(2026, 10, 31).date())), 1)
 
 
