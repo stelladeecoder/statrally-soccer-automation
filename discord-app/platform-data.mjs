@@ -9,7 +9,7 @@ const BOT = "github-actions[bot]";
 const prefix = "statrally-";
 const forecastFields = new Set("fixture_id espn_event_id league home_team away_team espn_home_team_id espn_away_team_id kickoff_utc fixture_observed_at fixture_source prediction_status p_yes p_no side confidence model_name model_version created_at history_coverage identity_verified probabilities_calibrated data_quality_status baseline_yes_probability prediction_source prediction_id revision".split(" "));
 const leagues = new Set("epl bundesliga laliga serie_a ligue_1 eredivisie liga_portugal brasileirao mls liga_mx primera_lpf champions_league europa_league".split(" "));
-const markets = new Set(["verified_available", "not_found", "identity_mismatch", "market_closed", "provider_unavailable"]);
+const markets = new Set(["verified_available", "not_found", "identity_mismatch", "market_closed", "provider_unavailable", "manual_available", "manual_unavailable"]);
 const numeric = value => value === null || (typeof value === "number" && Number.isFinite(value));
 export function canonical(value) {
   const sort = x => Array.isArray(x) ? x.map(sort) : x && typeof x === "object"
@@ -123,6 +123,15 @@ export function canonicalPlatform(issues, comments, now = new Date()) {
     }
   }
   const byId = new Map(records.map(r => [r.prediction.prediction_id,r]));
+  const reviewById=new Map();
+  for (const issue of issues) for (const comment of comments[String(issue.number)] || []) {
+    const manual=readEvent(comment,"manual-market-review");
+    if(!manual)continue;
+    if(Object.keys(manual).sort().join(",")!=="decision,prediction_id,source" || !["available","unavailable"].includes(manual.decision) || manual.source!=="user_manual_check")throw new Error("Invalid manual market decision");
+    const record=byId.get(manual.prediction_id);
+    if(!record || record.issue_number!==issue.number || reviewById.has(manual.prediction_id))throw new Error("Ambiguous manual market review");
+    reviewById.set(manual.prediction_id,manual);
+  }
   for (const issue of issues) for (const comment of comments[String(issue.number)] || []) {
     for (const name of ["market","grade","prediction-delivery"]) {
       const event = readEvent(comment,name);
@@ -155,12 +164,16 @@ export function canonicalPlatform(issues, comments, now = new Date()) {
       }
     }
   }
+  for(const record of records){
+    const review=reviewById.get(record.prediction.prediction_id);
+    if(review)record.market={status:"manual_"+review.decision};
+  }
   if(!validPolicy(selectionPolicy))throw new Error("Invalid checked-in selection policy");
   // Preserve all source records internally for validation, but only expose
   // verified BTTS markets to public-facing pick/result/performance clients.
   // An aggregate computed over ALL research forecasts cannot be presented as
   // market-eligible performance; suppress it until re-scoped upstream.
-  const eligible=records.filter(r=>["verified_available","identity_mismatch"].includes(r.market.status));
+  const eligible=records.filter(r=>["verified_available","identity_mismatch","manual_available"].includes(r.market.status));
   for(const record of eligible)record.presentation=classifyPrediction(record.prediction,selectionPolicy,now);
   return {schema_version:1,generated_at:now.toISOString(),records:eligible,evaluated:[...evaluated.values()],coverage,
           metrics:eligible.length===records.length?metrics:null,
