@@ -39,6 +39,14 @@ class PaperQuoteRendering(unittest.TestCase):
         self.assertIn("not guaranteed fill",card["footer"]["text"])
         validate_payload({"embeds":[card]})
 
+    def test_daily_slate_in_same_channel_also_gets_quote(self):
+        q=verified_quote_map(bundle())
+        card=prediction_pages([item()],"DAILY TEST",highlighted=False,
+            quotes=q,now=NOW)[0]["embeds"][0]
+        fields={f["name"]:f["value"] for f in card["fields"]}
+        self.assertEqual(fields["Market ask at posting"],"$0.6000")
+        self.assertIn("Experimental paper prediction",card["footer"]["text"])
+
     def test_unavailable_quote_never_assumes_model_confidence_is_price(self):
         for rows in ({},verified_quote_map(bundle(status="unavailable"))):
             card=self.render(rows)
