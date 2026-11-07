@@ -32,21 +32,29 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: node discord-app/build-snapshot.mjs
-      - name: Commit latest public snapshot only
+      - name: Regenerate snapshot on latest main and publish safely
         shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          git add docs/discord-public-snapshot.json docs/predictions-public.json docs/predictions-public-v2.json
-          if git diff --cached --quiet; then
-            echo "Public snapshot unchanged"
-            exit 0
-          fi
-          git -c user.name="github-actions[bot]" \
-              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
-              commit -m "data(discord): refresh public read-only records [skip ci]"
-          for attempt in 1 2 3; do
+          # Snapshots are generated data, not source patches. Never rebase
+          # stale generated JSON through another snapshot commit.
+          for attempt in 1 2 3 4 5; do
             git fetch origin main
-            git rebase origin/main
-            if git push origin HEAD:main; then exit 0; fi
+            git reset --hard origin/main
+            node discord-app/build-snapshot.mjs
+            git add docs/discord-public-snapshot.json docs/predictions-public.json docs/predictions-public-v2.json
+            if git diff --cached --quiet; then
+              echo "Public snapshot already current"
+              exit 0
+            fi
+            git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -m "data(discord): refresh public read-only records [skip ci]"
+            if git push origin HEAD:main; then
+              echo "Fresh public snapshot committed"
+              exit 0
+            fi
+            echo "Snapshot changed concurrently; rebuilding against latest main ($attempt/5)"
           done
+          echo "Public snapshot not confirmed after retry attempts"
           exit 1
