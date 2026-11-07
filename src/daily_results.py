@@ -19,7 +19,7 @@ def rows_for_day(ledger, day):
     first = {}
     for row in sorted(ledger.export()["records"], key=lambda x: (parse_time(x["issued_at"]), x["comment_id"])):
         p = row["prediction"]
-        if parse_time(p["kickoff_utc"]).astimezone(CENTRAL).date() != day or row["market"]["status"] != "verified_available":
+        if parse_time(p["kickoff_utc"]).astimezone(CENTRAL).date() != day or row["market"]["status"] not in {"verified_available", "identity_mismatch"}:
             continue
         first.setdefault(p["fixture_id"], row)
     return list(first.values())
