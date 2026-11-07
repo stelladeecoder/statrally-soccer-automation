@@ -210,7 +210,7 @@ def model_summary(ledger):
     first = {}
     for row in sorted(ledger.export()["records"], key=lambda x: (parse_time(x["issued_at"]), x["comment_id"])):
         first.setdefault(row["prediction"]["fixture_id"], row)
-    rows = [r for r in first.values() if r["market"]["status"] in {"verified_available", "identity_mismatch"}]
+    rows = [r for r in first.values() if r["market"]["status"] in {"verified_available", "identity_mismatch", "manual_available"}]
     top = [r for r in rows if is_starred_probability(r["prediction"])]
     # Trend only includes verified days; never interpolate future or missing results.
     days = sorted({parse_time(r["prediction"]["kickoff_utc"]).astimezone(CENTRAL).date()
