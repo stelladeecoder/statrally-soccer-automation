@@ -205,8 +205,11 @@ def calendar_png(data):
 
 
 def model_summary(ledger):
-    rows = period_rows(ledger, date(2020, 1, 1),
-                       datetime.now(timezone.utc).astimezone(CENTRAL).date())
+    # A single canonical export avoids rescanning every day in history.
+    first = {}
+    for row in sorted(ledger.export()["records"], key=lambda x: (parse_time(x["issued_at"]), x["comment_id"])):
+        first.setdefault(row["prediction"]["fixture_id"], row)
+    rows = list(first.values())
     # Group by original model version; do not pool model changes as one algorithm.
     groups = {}
     for row in rows:
@@ -240,7 +243,16 @@ def model_summary(ledger):
                     raise RuntimeError("Invalid stored baseline probability")
                 baseline.append(int((q >= .5) == actual))
                 base_n += 1
+        tp, fp = confusion[("YES", "YES")], confusion[("NO", "YES")]
+        tn, fn = confusion[("NO", "NO")], confusion[("YES", "NO")]
+        def ratio(num, denom):
+            return 100*num/denom if denom else None
+        class_quality = {
+            "yes_precision": ratio(tp,tp+fp), "yes_recall": ratio(tp,tp+fn),
+            "no_precision": ratio(tn,tn+fn), "no_recall": ratio(tn,tn+fp),
+        }
         versions[version] = {
+            "classification": class_quality,
             "performance": perf, "brier": sum(brier)/len(brier) if brier else None,
             "log_loss": sum(loss)/len(loss) if loss else None,
             "baseline_accuracy": 100*sum(baseline)/base_n if base_n == len(graded) and base_n else None,
@@ -263,6 +275,12 @@ def model_payload(data):
             _field("Observed accuracy", _line(all_), False),
             _field("BTTS YES", _line(p["YES"])),
             _field("BTTS NO", _line(p["NO"])),
+            _field("YES precision / recall", 
+                   " / ".join(f"{item['classification'][k]:.1f}%" if item["classification"][k] is not None else "N/A"
+                            for k in ("yes_precision", "yes_recall"))),
+            _field("NO precision / recall",
+                   " / ".join(f"{item['classification'][k]:.1f}%" if item["classification"][k] is not None else "N/A"
+                            for k in ("no_precision", "no_recall"))),
             _field("Brier score ↓", fmt(item["brier"])),
             _field("Log loss ↓", fmt(item["log_loss"])),
             _field("Baseline accuracy (matched fixtures)",
