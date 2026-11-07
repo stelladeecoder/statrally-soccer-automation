@@ -140,7 +140,7 @@ def monthly_payload(data):
         _field("Average graded picks / active day", f'{a["graded"]/active:.1f}' if active else "N/A"),
         _field("⭐ 70%+ Model Picks Accuracy (included in Overall)", _top_line(data), False),
         _field("$10 flat-stake · Overall gross paper ROI", paper_line(data["paper_overall"]), False),
-        _field("$10 flat-stake · Top 3 gross paper ROI (subset)", paper_line(data["paper_top"]), False),
+        _field("$10 flat-stake · 70%+ Model Picks gross paper ROI (subset)", paper_line(data["paper_top"]), False),
         _field("Pending results", str(a["pending"])),
     ] + _side_fields(data)
     return _payload("StatRally | Monthly Recap",
@@ -304,7 +304,7 @@ def model_payload(data):
                    else "Requires a separate reliability assessment", False),
         ]
     top = data["top"]
-    fields.append(_field("⭐ Top 3 accuracy (included in Overall)",
+    fields.append(_field("⭐ 70%+ Model Picks accuracy (included in Overall)",
                          f'{percent(top)} | {top["correct"]}/{top["graded"]} correct'
                          if data["top_total"] else "No 70%+ model predictions", False))
     trend = data["recent_days"]
