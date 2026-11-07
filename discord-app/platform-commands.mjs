@@ -6,8 +6,8 @@ const clock=s=>new Intl.DateTimeFormat("en-US",{timeZone:"America/Chicago",hour:
 export function platformCommand(interaction,data,now=new Date()) {
  const name=interaction.data.name,all=views(data,centralDay(now));
  if(name==="performance") {
-  const m=data.records.some(r=>r.market?.status!=="verified_available")?null:data.metrics?.overall;
-  if(!m)return "**StatRally forward performance**\nVerified-market performance is unavailable until the reporting snapshot is recalculated. Unmatched and unconfirmed markets are excluded.";
+  const m=data.records.some(r=>!["verified_available","identity_mismatch"].includes(r.market?.status))?null:data.metrics?.overall;
+  if(!m)return "**StatRally forward performance**\nVerified-market performance is unavailable until the reporting snapshot is recalculated. Not-found markets are excluded; identity-unconfirmed forecasts remain under manual review.";
   return `**StatRally forward performance**\nPredictions: ${m.total_predictions} | Graded: ${m.graded_predictions} | Pending: ${m.pending_predictions} | Ungradable: ${m.ungradable_predictions}\nAccuracy: ${m.accuracy===null?"unavailable":pct(m.accuracy)} | YES precision: ${m.yes_precision===null?"unavailable":pct(m.yes_precision)} | NO precision: ${m.no_precision===null?"unavailable":pct(m.no_precision)}\nBrier: ${m.brier??"unavailable"} | Log loss: ${m.log_loss??"unavailable"}\nActual immutable prematch records; experimental estimates. No trades or betting ROI. Export: ${data.generated_at}`;
  }
  let rows;
@@ -19,7 +19,7 @@ export function platformCommand(interaction,data,now=new Date()) {
  else rows=all.today;
  const options=optionsFor(interaction),requested=options.find(o=>o.name==="page")?.value??1;
  if(!Number.isInteger(requested)||requested<1||requested>10000)return "Enter a positive page number.";
- const render=r=>{const p=r.prediction,q=classifyPrediction(p,data.selection_policy);return `• **${safeText(p.home_team,50)} vs ${safeText(p.away_team,50)}**\n  ${safeText(p.league)} · ${clock(p.kickoff_utc)} CT · BTTS ${p.side} · selected ${pct(p.confidence)}\n  YES ${pct(p.p_yes)} / NO ${pct(p.p_no)} · ${isStarredProbability(p)?"⭐ 🟨 VERY HIGH MODEL PROBABILITY (70%+)":q.probability_category} (descriptive, uncalibrated)\n  ${safeText(p.model_version)} · ${q.calibration_status} · ${safeText(p.data_quality_status)}\n  ${q.selection_eligible?"Policy eligible":"Experimental; no validated selection approval"} · Polymarket: ${safeText(r.market?.status||"provider_unavailable")}\n  ${safeText(r.grade?.status||"pending")} · ESPN ${p.espn_event_id}`;};
+ const render=r=>{const p=r.prediction,q=classifyPrediction(p,data.selection_policy);return `• **${safeText(p.home_team,50)} vs ${safeText(p.away_team,50)}**\n  ${safeText(p.league)} · ${clock(p.kickoff_utc)} CT · BTTS ${p.side} · selected ${pct(p.confidence)}\n  YES ${pct(p.p_yes)} / NO ${pct(p.p_no)} · ${isStarredProbability(p)?"⭐ 🟨 VERY HIGH MODEL PROBABILITY (70%+)":q.probability_category} (descriptive, uncalibrated)\n  ${safeText(p.model_version)} · ${q.calibration_status} · ${safeText(p.data_quality_status)}\n  ${q.selection_eligible?"Policy eligible":"Experimental; no validated selection approval"} · Polymarket: ${safeText(r.market?.status||"provider_unavailable")}${r.market?.status==="identity_mismatch"?" (manual check needed; market price unverified)":""}\n  ${safeText(r.grade?.status||"pending")} · ESPN ${p.espn_event_id}`;};
  if(name==="picks"&&!rows.length)return `**StatRally | ${centralDay(now)} Central · ⭐ 70%+ Model Picks**\nNo unstarted fixtures meet the 70% model-probability threshold. This is descriptive, not validated betting confidence. Full predictions remain available through /btts.`;
  const entries=rows.map(render);
  if(name==="btts")entries.push(...all.unavailable.map(r=>`• **${safeText(r.home_team,55)} vs ${safeText(r.away_team,55)}**\n  ${safeText(r.league)} · ${clock(r.kickoff_utc)} CT · ${safeText(r.prediction_status)}`));
