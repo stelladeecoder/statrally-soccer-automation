@@ -80,6 +80,18 @@ class PredictionPlatformTests(unittest.TestCase):
         card=prediction_pages(self.ledger.export()['records'],'TEST')[0]['embeds'][0]
         self.assertIn('🔵 BTTS NO',card['fields'][0]['value']);self.assertEqual(card['color'],0x3498DB)
 
+    def test_top_three_accent_is_orange_while_daily_remains_blue(self):
+        self.issue()
+        records = self.ledger.export()['records']
+        regular = prediction_pages(records, 'Daily BTTS predictions')
+        highlighted = prediction_pages(records, 'Top 3 highlighted', highlighted=True)
+        self.assertEqual(regular[0]['embeds'][0]['color'], 0x3498DB)
+        self.assertEqual(highlighted[0]['embeds'][0]['color'], 0xF97316)
+        self.assertIn('🔵 BTTS NO', highlighted[0]['embeds'][0]['fields'][0]['value'])
+        self.assertIn('Highlighted experimental pick', highlighted[0]['embeds'][0]['footer']['text'])
+        validate_payload(regular[0])
+        validate_payload(highlighted[0])
+
     def test_fourteen_predictions_only_three_markets_full_pagination_and_top_three(self):
         records=self.issue(14)['predictions']
         annotations=[dict(prediction_id=p['prediction_id'],provider='polymarket_us',checked_at=NOW.isoformat(),
