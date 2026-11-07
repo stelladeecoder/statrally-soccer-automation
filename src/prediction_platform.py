@@ -69,7 +69,7 @@ def verified_quote_map(report):
 def safe_quote_for(item, quotes, now):
     """Only present a matching side/market and fresh quote taken before kickoff."""
     p=item["prediction"]
-    row=quotes.get(p["prediction_id"])
+    row=quotes.get(p.get("prediction_id"))
     market=item.get("market",{})
     if not row or row.get("status")!="verified" or market.get("status")!="verified_available":
         return None
