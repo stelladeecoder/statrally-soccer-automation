@@ -12,7 +12,10 @@ class DailyResultsTests(unittest.TestCase):
     def setUp(self):
         self.api = FakeGitHub()
         self.ledger = Ledger(REPO, "synthetic-token", call=self.api).load()
-        self.ledger.issue_slate(slate(5), now=NOW)
+        data = slate(5)
+        data['fixtures'][3] = prediction(4, p_yes='0.70')
+        data['fixtures'][4] = prediction(5, p_yes='0.70')
+        self.ledger.issue_slate(data, now=NOW)
         self.day = "2026-11-05"
         self.sent = []
         self.edited = []
