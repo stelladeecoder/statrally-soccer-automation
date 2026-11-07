@@ -103,9 +103,9 @@ The command app reads existing records; it does **not** execute a fresh model sc
 | **#btts-picks** | All same-day BTTS forecasts use **blue Discord embeds**, regardless of YES/NO; separately policy-approved **Top 3 highlighted picks** (0–3 maximum per Central day) use **orange embeds** in this same channel. No extra channel or approval bypass |
 | **#btts-results** | Individual verified BTTS results, with green WIN and red LOSS outcomes; retain this channel |
 | **#daily-results** | **Implemented; live delivery not yet verified:** one automatically generated blue daily embed with overall W–L, YES/NO accuracy, green/red graded-outcome bar, pending counts and a separate recorded Top 3 sample; no individual result posts |
-| **#weekly-recap** | **Planned:** one aggregated weekly performance summary, including league and confidence breakdowns |
-| **#monthly-recap** | **Planned:** one aggregated monthly performance summary, trends and league breakdowns |
-| **#model-performance** | **Planned:** model-version performance, YES/NO precision and recall, Brier score, log loss and calibration, with sufficient-sample disclosure |
+| **#weekly-recap** | **Implemented, awaiting live Discord verification:** calendar-free Sunday–Saturday recap with overall accuracy, YES/NO, daily graded breakdown and separate Top 3 metrics |
+| **#monthly-recap** | **Implemented, awaiting live Discord verification:** monthly accuracy image calendar with green/red/gray cells only and separate Top 3, overall, YES/NO, activity and pending metrics |
+| **#model-performance** | **Implemented, awaiting live Discord verification:** forward model-version accuracy, YES/NO precision/recall, Brier score, log loss, matched baseline when available and small-sample warning |
 | **#bot-commands** | On-demand, private slash-command replies |
 | **#admin** | Owner-only operational alerts and health reports |
 
@@ -127,6 +127,23 @@ The daily workflow targets **8:15 AM America/Chicago** and reconciles the previo
 | **Overall** | **4** | **1** | **80.0%** |
 
 **Delivery safeguards:** canonical saved final grades only; deduplicate by first issued forecast per fixture and kickoff date in Central time; label ungraded fixtures as pending; post once per date with a durable Discord receipt and edit the existing message when newly verified finals change the snapshot. Ambiguous posts and edits fail closed for manual review. Regression tests cover YES/NO aggregation, separate Top 3, pending records, repeat runs, revisions, and DST. A workflow failure is visible in GitHub Actions; dedicated owner-admin alerting for this new report remains future work. Real Discord acceptance is not yet verified. Configure the GitHub Actions secret `STATRALLY_DAILY_RESULTS_DISCORD_WEBHOOK` with a webhook created in `#daily-results` before enabling live publication. This does not require using a general picks/results webhook.
+
+
+### 📅 Automated recap reports (implementation; Discord acceptance pending)
+
+The [recap workflow](.github/workflows/recap-reports.yml) targets **9:10 AM Central daily** (GitHub schedule best effort; timezone gate handles DST). Weekly reports are created **on Sunday morning** for the **previous complete Sunday–Saturday week**. Monthly reports display the **current calendar month to date** and update the *same* Discord message as verified results arrive; the model-performance report also updates its existing message. Only final verified forecasts are counted; pending cases are disclosed but not scored as incorrect.
+
+The **weekly layout has no calendar**. It shows weighted overall accuracy (total correct / total graded), YES/NO, Top 3 and a seven-row day-by-day breakdown. The **monthly report includes a real PNG image** with Sunday-first calendar cells: green for a descriptive daily accuracy at least 70%, red for below 70%, and gray for no graded data; there are **no orange/yellow Top 3 calendar cells**. Top 3 is its own aggregate metric outside the calendar. Each populated day shows the correct/graded sample size. The cutoff is only visual and is not a validated model-quality or betting threshold.
+
+The **model report** computes observed class metrics, Brier and log loss from verified forward records and original probabilities, separately by model version. A paired baseline is shown only where the original frozen baseline supports the comparison. It never prints fabricated backtest, profit, or reliability numbers. Calibration remains unvalidated absent separate adequate evidence.
+
+GitHub Actions repository secrets required for each destination:
+
+- `STATRALLY_WEEKLY_RECAP_DISCORD_WEBHOOK` for `#weekly-recap`
+- `STATRALLY_MONTHLY_RECAP_DISCORD_WEBHOOK` for `#monthly-recap`
+- `STATRALLY_MODEL_PERFORMANCE_DISCORD_WEBHOOK` for `#model-performance`
+
+A missing secret is reported as `missing_webhook` and does not misroute to another channel. Writes reserve an append-only record before Discord posting, require a confirmed message receipt, update prior messages rather than reposting, and fail closed on ambiguous delivery. Source implementation and CI tests **are not proof** of any successful live Discord message. The complete user-approved three-channel design is implemented, subject to live acceptance and production refinements.
 
 ### ⏱️ Configured Central Time windows
 
