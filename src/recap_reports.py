@@ -397,26 +397,38 @@ def publish_period(ledger, *, kind, period_id, issue_day, data, payload, webhook
 def run(ledger, today, hooks, *, weekly=True, monthly=True, model=True, test_senders=None):
     outcomes = {}
     if weekly:
-        end = sunday_start(today)-timedelta(days=1)  # last completed Saturday
-        start = end-timedelta(days=6)
-        data=summary(ledger,start,end)
-        if data["overall"]["ALL"]["graded"]:
-            kwargs=(test_senders or {}).get("weekly",{})
-            outcomes["weekly"]=publish_period(ledger,kind="weekly",period_id=start.isoformat(),
-                issue_day=end,data={k:v for k,v in data.items() if k!="records"},payload=weekly_payload(data),
-                webhook=hooks.get("weekly",""),**kwargs)
-        else:
-            outcomes["weekly"]="no_verified_results"
+        # Reconcile the four most recent COMPLETE weeks so late finals can update
+        # the original post rather than silently changing historical accuracy.
+        recent_end = sunday_start(today)-timedelta(days=1)
+        for weeks_ago in range(4):
+            end = recent_end-timedelta(days=7*weeks_ago)
+            start = end-timedelta(days=6)
+            data=summary(ledger,start,end)
+            key = "weekly" if weeks_ago == 0 else "weekly_backfill:"+start.isoformat()
+            if data["overall"]["ALL"]["graded"]:
+                kwargs=(test_senders or {}).get("weekly",{})
+                outcomes[key]=publish_period(ledger,kind="weekly",period_id=start.isoformat(),
+                    issue_day=end,data={k:v for k,v in data.items() if k!="records"},payload=weekly_payload(data),
+                    webhook=hooks.get("weekly",""),**kwargs)
+            elif weeks_ago == 0:
+                outcomes[key]="no_verified_results"
     if monthly:
-        start,end=month_bounds(today)
-        data=summary(ledger,start,end)
-        if data["overall"]["ALL"]["graded"]:
-            kwargs=(test_senders or {}).get("monthly",{})
-            outcomes["monthly"]=publish_period(ledger,kind="monthly",period_id=start.strftime("%Y-%m"),
-                issue_day=start,data={k:v for k,v in data.items() if k!="records"},payload=monthly_payload(data),
-                webhook=hooks.get("monthly",""),png=calendar_png(data),**kwargs)
-        else:
-            outcomes["monthly"]="no_verified_results"
+        # Revisit last month during the first week, but never populate dates
+        # with forecasts that have not been graded.
+        starts = [today.replace(day=1)]
+        if today.day <= 7:
+            starts.append(today.replace(day=1)-timedelta(days=1))
+        for ix, target in enumerate(starts):
+            start,end=month_bounds(target)
+            data=summary(ledger,start,end)
+            key = "monthly" if ix == 0 else "monthly_previous"
+            if data["overall"]["ALL"]["graded"]:
+                kwargs=(test_senders or {}).get("monthly",{})
+                outcomes[key]=publish_period(ledger,kind="monthly",period_id=start.strftime("%Y-%m"),
+                    issue_day=start,data={k:v for k,v in data.items() if k!="records"},payload=monthly_payload(data),
+                    webhook=hooks.get("monthly",""),png=calendar_png(data),**kwargs)
+            elif ix == 0:
+                outcomes[key]="no_verified_results"
     if model:
         data=model_summary(ledger)
         if data["graded_total"]:
@@ -436,7 +448,7 @@ def main():
     hooks={"weekly":os.environ.get("STATRALLY_WEEKLY_RECAP_DISCORD_WEBHOOK",""),
            "monthly":os.environ.get("STATRALLY_MONTHLY_RECAP_DISCORD_WEBHOOK",""),
            "model":os.environ.get("STATRALLY_MODEL_PERFORMANCE_DISCORD_WEBHOOK","")}
-    result=run(ledger,now.date(),hooks,weekly=(now.weekday()==6 or os.environ.get("STATRALLY_FORCE_RECAPS")=="true"))
+    result=run(ledger,now.date(),hooks)
     print("STATRALLY_RECAPS="+json.dumps(result,sort_keys=True))
 
 
