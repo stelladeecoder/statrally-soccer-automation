@@ -8,7 +8,7 @@
 ![Beta](https://img.shields.io/badge/Status-Public%20Beta-16a34a?style=for-the-badge)
 ![Free](https://img.shields.io/badge/Access-Free-0891b2?style=for-the-badge)
 
-**[Join StatRally on Discord](https://discord.com/oauth2/authorize?client_id=1567283370419814472)**
+**[Install the StatRally Discord App](https://discord.com/oauth2/authorize?client_id=1567283370419814472)**
 
 </div>
 
@@ -37,11 +37,11 @@ StatRally records its experimental predictions and evaluates them against indepe
 
 **Predictions are experimental.** Historical accuracy does not guarantee future results, and StatRally does not claim a proven betting edge. No trades or wagers are placed by the public app.
 
-## 💬 Join the community
+## 💬 StatRally on Discord
 
-Follow the predictions, review the results, and see how StatRally develops.
+The link below installs the StatRally Discord app. It is **not** an invitation to the StatRally community server.
 
-**[Open StatRally on Discord](https://discord.com/oauth2/authorize?client_id=1567283370419814472)**
+**[Install the StatRally Discord App](https://discord.com/oauth2/authorize?client_id=1567283370419814472)**
 
 ---
 
