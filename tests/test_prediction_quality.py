@@ -8,7 +8,7 @@ import unittest
 from prediction_quality import classify, describe_probability, eligible_ranked, load_policy
 from prediction_platform import prediction_pages, publish_predictions
 from prediction_ledger import Ledger,SELECTION
-from test_prediction_platform import prediction,slate,FakeGitHub,NOW,REPO
+from test_prediction_platform import prediction,slate,FakeGitHub,NOW,REPO,verify_synthetic
 
 
 def approved_example(p):
@@ -65,7 +65,7 @@ class PredictionQualityTests(unittest.TestCase):
         self.assertFalse(classify(p,policy)['selection_eligible'])
 
     def test_current_policy_records_successful_zero_selections_without_hiding_forecasts(self):
-        api=FakeGitHub();ledger=Ledger(REPO,'fictional-offline',call=api).load();ledger.issue_slate(slate(4),now=NOW)
+        api=FakeGitHub();ledger=Ledger(REPO,'fictional-offline',call=api).load();issued=ledger.issue_slate(slate(4),now=NOW);verify_synthetic(ledger,issued['predictions'])
         posted=[]
         def sender(payload,*a,**kw):posted.append(payload);return {'message_id':'123456789012345678','channel_id':'223456789012345678'}
         self.assertEqual(publish_predictions(ledger,'fictional-offline',now=NOW,sender=sender),{'daily':4,'starred':4})
@@ -78,7 +78,7 @@ class PredictionQualityTests(unittest.TestCase):
         from prediction_ledger import DELIVERY
         api=FakeGitHub()
         ledger=Ledger(REPO,'offline',call=api).load()
-        ledger.issue_slate(slate(6),now=NOW)
+        issued=ledger.issue_slate(slate(6),now=NOW);verify_synthetic(ledger,issued['predictions'])
         sent=[]
         def sender(payload,*args,**kwargs):
             sent.append(payload)
