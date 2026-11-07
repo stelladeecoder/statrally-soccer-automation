@@ -160,7 +160,7 @@ export function canonicalPlatform(issues, comments, now = new Date()) {
   // verified BTTS markets to public-facing pick/result/performance clients.
   // An aggregate computed over ALL research forecasts cannot be presented as
   // market-eligible performance; suppress it until re-scoped upstream.
-  const eligible=records.filter(r=>r.market.status==="verified_available");
+  const eligible=records.filter(r=>["verified_available","identity_mismatch"].includes(r.market.status));
   for(const record of eligible)record.presentation=classifyPrediction(record.prediction,selectionPolicy,now);
   return {schema_version:1,generated_at:now.toISOString(),records:eligible,evaluated:[...evaluated.values()],coverage,
           metrics:eligible.length===records.length?metrics:null,
@@ -190,7 +190,7 @@ export async function publicPlatform({fetcher=fetch,now=new Date()}={}) {
   }
   if(value.metrics)safeMetrics(value.metrics);
   for(const row of Object.values(value.coverage))safeCoverage(row);
-  const eligible=value.records.filter(r=>r.market?.status==="verified_available");
+  const eligible=value.records.filter(r=>["verified_available","identity_mismatch"].includes(r.market?.status));
   // Also gate older already-published snapshots; never silently display
   // unverified-market records or research-wide metrics as pick performance.
   cached={...value,records:eligible,metrics:eligible.length===value.records.length?value.metrics:null,

@@ -100,7 +100,7 @@ class PredictionPlatformTests(unittest.TestCase):
         status("verified_available")
         self.assertEqual(self.ledger.export()["records"][0]["market"]["status"],"verified_available")
 
-    def test_unverified_markets_are_excluded_from_picks_results_and_stars(self):
+    def test_identity_unconfirmed_included_not_found_and_closed_excluded(self):
         predictions=self.issue(5)["predictions"]
         for i,state in enumerate(("not_found","identity_mismatch","provider_unavailable","market_closed")):
             annotate(self.ledger,{"schema_version":1,"trades_placed":0,"markets":[{
@@ -111,15 +111,16 @@ class PredictionPlatformTests(unittest.TestCase):
             published.extend(payload.get("embeds",[]))
             return self.sender(payload,*args,**kwargs)
         counts=publish_predictions(self.ledger,"offline",now=NOW,sender=send)
-        self.assertEqual(counts,{"daily":1,"starred":1})
-        self.assertEqual(len(published),1)
+        self.assertEqual(counts,{"daily":2,"starred":2})
+        self.assertEqual(len(published),2)
+        self.assertIn("Identity unconfirmed",str(published))
         self.assertEqual(len(self.ledger.export()["records"]),5)
         for i,p in enumerate(predictions):
             self.ledger.append(self.ledger.forecasts[i]["issue_number"],"statrally-grade-v1:",{
                 "prediction_id":p["prediction_id"],"status":"graded",
                 "result":"WIN","correct":True,"home_goals":2,"away_goals":0})
         result=publish_results(self.ledger,"offline",sender=self.sender)
-        self.assertEqual(result,1)
+        self.assertEqual(result,2)
 
     def test_no_72_percent_never_switches_to_yes(self):
         p=self.issue()['predictions'][0]

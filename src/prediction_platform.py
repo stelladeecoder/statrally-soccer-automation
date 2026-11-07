@@ -236,7 +236,7 @@ def deliver(ledger, items, *, kind, webhook, now, sender=publish, clock=None, po
     existing = {e["prediction_id"] for issue in ledger.comments for e in ledger.events(issue, DELIVERY)
                 if e.get("kind") == kind and e.get("state") in {"reserved", "accepted"}}
     fresh = [r for r in items if r["prediction"]["prediction_id"] not in existing]
-    pages = prediction_pages(fresh, "Verified-market BTTS predictions",policy=policy,quotes=quotes,now=now)
+    pages = prediction_pages(fresh, "BTTS predictions · verified + identity unconfirmed",policy=policy,quotes=quotes,now=now)
     done, index = 0, 0
     for payload in pages:
         batch = fresh[index:index+len(payload["embeds"])];index += len(batch)
@@ -261,7 +261,7 @@ def publish_predictions(ledger, webhook, *, now=None, sender=publish, policy=Non
     policy = load_policy() if policy is None else policy
     day = now.astimezone(CENTRAL).date()
     all_day = [r for r in ledger.export()["records"] if parse_time(r["prediction"]["kickoff_utc"]).astimezone(CENTRAL).date() == day]
-    records = [r for r in all_day if r["market"]["status"] == "verified_available"
+    records = [r for r in all_day if r["market"]["status"] in {"verified_available", "identity_mismatch"}
                and parse_time(r["prediction"]["kickoff_utc"]) > now]
     latest = {}
     for record in records:
@@ -288,7 +288,7 @@ def publish_predictions(ledger, webhook, *, now=None, sender=publish, policy=Non
 
 def publish_results(ledger, webhook, *, sender=publish):
     items = [r for r in ledger.export()["records"]
-             if r["market"]["status"] == "verified_available"]
+             if r["market"]["status"] in {"verified_available", "identity_mismatch"}]
     reserved = {e["prediction_id"] for issue in ledger.comments for e in ledger.events(issue, DELIVERY)
                 if e.get("kind") == "result" and e.get("state") in {"reserved","accepted"}}
     count = 0

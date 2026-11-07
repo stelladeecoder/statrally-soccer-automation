@@ -92,7 +92,22 @@ test("Unlimited yellow-star model picks are descriptive and do not include finis
  assert.match(platformCommand({data:{name:"picks"}},output,finished),/No unstarted fixtures/);
 });
 
-test("Unverified and identity-mismatched results cannot leak into public views",()=>{
+test("Identity-unconfirmed forecasts remain visible, counted and separately labeled",()=>{
+ const f=structuredClone(fixture);
+ const first=f.comments["1"].find(c=>c.body.startsWith("statrally-market-v1:"));
+ assert.ok(first);
+ const ev=JSON.parse(first.body.slice("statrally-market-v1:".length));
+ ev.status="identity_mismatch";
+ delete ev.event_slug;
+ delete ev.market_slug;
+ first.body="statrally-market-v1:"+JSON.stringify(ev);
+ const data=canonicalPlatform(f.issues,f.comments,now);
+ assert.equal(data.records.filter(r=>r.market.status==="identity_mismatch").length,1);
+ assert.equal(data.records.length,3);
+ assert.match(platformCommand({data:{name:"btts"}},data,now),/identity_mismatch/);
+});
+
+test("Not-found markets cannot leak into public views",()=>{
  const f=structuredClone(fixture);
  const record=canonicalPlatform(f.issues,f.comments,now);
  assert.equal(record.records.length,3);
@@ -103,7 +118,7 @@ test("Unverified and identity-mismatched results cannot leak into public views",
  assert.equal(matching.history.length,3);
  assert.equal(matching.top.length,3);
  assert.ok(!platformCommand({data:{name:"btts"}},record,now).includes("Polymarket: not_found"));
- assert.ok(!platformCommand({data:{name:"picks"}},record,now).includes("identity_mismatch"));
+ assert.ok(!platformCommand({data:{name:"picks"}},record,now).includes("not_found"));
 });
 test("Legacy public export keeps its exact schema and immutable forecast bytes",()=>{
  const current=data(),legacy=legacyProjection(current);
