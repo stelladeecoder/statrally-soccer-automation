@@ -210,6 +210,21 @@ def model_summary(ledger):
     for row in sorted(ledger.export()["records"], key=lambda x: (parse_time(x["issued_at"]), x["comment_id"])):
         first.setdefault(row["prediction"]["fixture_id"], row)
     rows = list(first.values())
+    top_ids = {r["prediction"]["fixture_id"] for r in ledger.export()["records"]
+               if any(x.get("kind") == "top" and x.get("state") in ("reserved","accepted")
+                      for x in r["deliveries"])}
+    top = [r for r in rows if r["prediction"]["fixture_id"] in top_ids]
+    # Trend only includes verified days; never interpolate future or missing results.
+    days = sorted({parse_time(r["prediction"]["kickoff_utc"]).astimezone(CENTRAL).date()
+                   for r in rows})
+    trend = []
+    for day in days:
+        subset = [r for r in rows
+                  if parse_time(r["prediction"]["kickoff_utc"]).astimezone(CENTRAL).date() == day]
+        stats = performance(subset)["ALL"]
+        if stats["graded"]:
+            trend.append({"date":day.isoformat(), "correct":stats["correct"],
+                          "graded":stats["graded"], "accuracy":stats["accuracy"]})
     # Group by original model version; do not pool model changes as one algorithm.
     groups = {}
     for row in rows:
@@ -258,7 +273,8 @@ def model_summary(ledger):
             "baseline_accuracy": 100*sum(baseline)/base_n if base_n == len(graded) and base_n else None,
             "baseline_n": base_n, "confusion": dict((f"{x[0]}:{x[1]}", v) for x,v in confusion.items()),
         }
-    return {"versions": versions, "graded_total": sum(v["performance"]["ALL"]["graded"] for v in versions.values())}
+    return {"versions": versions, "graded_total": sum(v["performance"]["ALL"]["graded"] for v in versions.values()),
+            "top": performance(top)["ALL"], "top_total": len(top), "recent_days": trend[-7:]}
 
 
 def model_payload(data):
@@ -289,6 +305,14 @@ def model_payload(data):
             _field("Calibration", "Not validated; small forward sample" if all_["graded"] < 200
                    else "Requires a separate reliability assessment", False),
         ]
+    top = data["top"]
+    fields.append(_field("⭐ Top 3 highlights (separate sample)",
+                         f'{percent(top)} | {top["correct"]}/{top["graded"]} correct'
+                         if data["top_total"] else "No recorded highlights", False))
+    trend = data["recent_days"]
+    fields.append(_field("Recent graded days (not a fitted trend)",
+                         "\\n".join(f'{x["date"]}: {x["accuracy"]:.1f}% ({x["correct"]}/{x["graded"]})'
+                                   for x in trend) if trend else "No verified daily results", False))
     # Discord caps fields at 25; limit grouped versions and refuse silent truncation.
     if len(fields) > 25:
         raise RuntimeError("Too many model versions for one Discord embed; add pagination")
