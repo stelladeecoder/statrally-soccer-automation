@@ -5,7 +5,7 @@ import unittest
 
 from prediction_ledger import Ledger, GRADE, DELIVERY
 from daily_results import report, performance, result_embed, publish_report
-from test_prediction_platform import FakeGitHub, prediction, slate, NOW, REPO
+from test_prediction_platform import FakeGitHub, prediction, slate, NOW, REPO, verify_synthetic
 
 
 class DailyResultsTests(unittest.TestCase):
@@ -17,7 +17,8 @@ class DailyResultsTests(unittest.TestCase):
         data['fixtures'][4] = prediction(5, p_yes='0.70')
         data['fixtures'][3]['confidence'] = '0.70'
         data['fixtures'][4]['confidence'] = '0.70'
-        self.ledger.issue_slate(data, now=NOW)
+        issued=self.ledger.issue_slate(data, now=NOW)
+        verify_synthetic(self.ledger,issued["predictions"])
         self.day = "2026-11-05"
         self.sent = []
         self.edited = []
