@@ -86,6 +86,41 @@ class PredictionPlatformTests(unittest.TestCase):
         grade_issued(self.ledger,scoreboard=lambda l,d:final_feed(p),now=self.api.now)
         self.assertTrue(self.ledger.export()['records'][0]['grade']['correct'])
 
+    def test_identity_mismatch_never_downgrades_to_not_found(self):
+        p=self.issue()["predictions"][0]
+        def status(value):
+            annotate(self.ledger,{"schema_version":1,"trades_placed":0,"markets":[{
+                "prediction_id":p["prediction_id"],"provider":"polymarket_us",
+                "status":value,"checked_at":NOW.isoformat(),
+                **({"event_slug":"verified-event","market_slug":"verified-btts"}
+                   if value=="verified_available" else {})}]})
+        status("identity_mismatch")
+        status("not_found")
+        self.assertEqual(self.ledger.export()["records"][0]["market"]["status"],"identity_mismatch")
+        status("verified_available")
+        self.assertEqual(self.ledger.export()["records"][0]["market"]["status"],"verified_available")
+
+    def test_unverified_markets_are_excluded_from_picks_results_and_stars(self):
+        predictions=self.issue(5)["predictions"]
+        for i,state in enumerate(("not_found","identity_mismatch","provider_unavailable","market_closed")):
+            annotate(self.ledger,{"schema_version":1,"trades_placed":0,"markets":[{
+                "prediction_id":predictions[i]["prediction_id"],"provider":"polymarket_us",
+                "status":state,"checked_at":NOW.isoformat()}]})
+        published=[]
+        def send(payload,*args,**kwargs):
+            published.extend(payload.get("embeds",[]))
+            return self.sender(payload,*args,**kwargs)
+        counts=publish_predictions(self.ledger,"offline",now=NOW,sender=send)
+        self.assertEqual(counts,{"daily":1,"starred":1})
+        self.assertEqual(len(published),1)
+        self.assertEqual(len(self.ledger.export()["records"]),5)
+        for i,p in enumerate(predictions):
+            self.ledger.append(self.ledger.forecasts[i]["issue_number"],"statrally-grade-v1:",{
+                "prediction_id":p["prediction_id"],"status":"graded",
+                "result":"WIN","correct":True})
+        result=publish_results(self.ledger,"offline",sender=self.sender)
+        self.assertEqual(result,1)
+
     def test_no_72_percent_never_switches_to_yes(self):
         p=self.issue()['predictions'][0]
         self.assertEqual(p['side'],'NO');self.assertAlmostEqual(float(p['confidence']),.72)
