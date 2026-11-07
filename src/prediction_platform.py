@@ -36,6 +36,11 @@ def annotate(ledger, envelope):
     for value in envelope["markets"]:
         item = known[value["prediction_id"]]
         events = [e for e in ledger.events(item["issue_number"], MARKET) if e["prediction_id"] == value["prediction_id"]]
+        # A fresh empty search is not proof that an earlier credible
+        # identity conflict disappeared. Preserve its unresolved status until
+        # an independently verified contract resolves the ambiguity.
+        if events and events[-1]["status"] == "identity_mismatch" and value["status"] == "not_found":
+            continue
         if not events or {k:v for k,v in events[-1].items() if k!="checked_at"} != {k:v for k,v in value.items() if k!="checked_at"}:
             ledger.append(item["issue_number"], MARKET, value)
 
@@ -231,7 +236,7 @@ def deliver(ledger, items, *, kind, webhook, now, sender=publish, clock=None, po
     existing = {e["prediction_id"] for issue in ledger.comments for e in ledger.events(issue, DELIVERY)
                 if e.get("kind") == kind and e.get("state") in {"reserved", "accepted"}}
     fresh = [r for r in items if r["prediction"]["prediction_id"] not in existing]
-    pages = prediction_pages(fresh, "Daily BTTS predictions" if kind == "daily" else "⭐ Top 3 highlighted BTTS picks",policy=policy,highlighted=(kind == "top"),quotes=quotes,now=now)
+    pages = prediction_pages(fresh, "Verified-market BTTS predictions",policy=policy,quotes=quotes,now=now)
     done, index = 0, 0
     for payload in pages:
         batch = fresh[index:index+len(payload["embeds"])];index += len(batch)
@@ -256,7 +261,8 @@ def publish_predictions(ledger, webhook, *, now=None, sender=publish, policy=Non
     policy = load_policy() if policy is None else policy
     day = now.astimezone(CENTRAL).date()
     all_day = [r for r in ledger.export()["records"] if parse_time(r["prediction"]["kickoff_utc"]).astimezone(CENTRAL).date() == day]
-    records = [r for r in all_day if parse_time(r["prediction"]["kickoff_utc"]) > now]
+    records = [r for r in all_day if r["market"]["status"] == "verified_available"
+               and parse_time(r["prediction"]["kickoff_utc"]) > now]
     latest = {}
     for record in records:
         key = record["prediction"]["fixture_id"]
@@ -281,7 +287,8 @@ def publish_predictions(ledger, webhook, *, now=None, sender=publish, policy=Non
 
 
 def publish_results(ledger, webhook, *, sender=publish):
-    items = ledger.export()["records"]
+    items = [r for r in ledger.export()["records"]
+             if r["market"]["status"] == "verified_available"]
     reserved = {e["prediction_id"] for issue in ledger.comments for e in ledger.events(issue, DELIVERY)
                 if e.get("kind") == "result" and e.get("state") in {"reserved","accepted"}}
     count = 0

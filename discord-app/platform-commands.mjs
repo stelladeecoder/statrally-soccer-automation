@@ -6,8 +6,8 @@ const clock=s=>new Intl.DateTimeFormat("en-US",{timeZone:"America/Chicago",hour:
 export function platformCommand(interaction,data,now=new Date()) {
  const name=interaction.data.name,all=views(data,centralDay(now));
  if(name==="performance") {
-  const m=data.metrics?.overall;
-  if(!m)return "**StatRally forward performance**\nNo saved monitoring report yet. Pending outcomes are not losses.";
+  const m=data.records.some(r=>r.market?.status!=="verified_available")?null:data.metrics?.overall;
+  if(!m)return "**StatRally forward performance**\nVerified-market performance is unavailable until the reporting snapshot is recalculated. Unmatched and unconfirmed markets are excluded.";
   return `**StatRally forward performance**\nPredictions: ${m.total_predictions} | Graded: ${m.graded_predictions} | Pending: ${m.pending_predictions} | Ungradable: ${m.ungradable_predictions}\nAccuracy: ${m.accuracy===null?"unavailable":pct(m.accuracy)} | YES precision: ${m.yes_precision===null?"unavailable":pct(m.yes_precision)} | NO precision: ${m.no_precision===null?"unavailable":pct(m.no_precision)}\nBrier: ${m.brier??"unavailable"} | Log loss: ${m.log_loss??"unavailable"}\nActual immutable prematch records; experimental estimates. No trades or betting ROI. Export: ${data.generated_at}`;
  }
  let rows;

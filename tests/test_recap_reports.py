@@ -10,7 +10,7 @@ from prediction_ledger import Ledger, GRADE, DELIVERY
 from recap_reports import (sunday_start, weekly_bounds, month_bounds, summary,
                            weekly_payload, monthly_payload, calendar_png,
                            model_summary, model_payload, publish_period, run)
-from test_prediction_platform import FakeGitHub, REPO, NOW, prediction, slate
+from test_prediction_platform import FakeGitHub, REPO, NOW, prediction, slate, verify_synthetic
 
 
 class RecapTests(unittest.TestCase):
@@ -22,7 +22,8 @@ class RecapTests(unittest.TestCase):
         data["fixtures"][4]=prediction(5,p_yes="0.70")
         data["fixtures"][3]["confidence"]="0.70"
         data["fixtures"][4]["confidence"]="0.70"
-        self.ledger.issue_slate(data,now=NOW)
+        issued=self.ledger.issue_slate(data,now=NOW)
+        verify_synthetic(self.ledger,issued["predictions"])
         self.posts=[]
         self.edits=[]
 

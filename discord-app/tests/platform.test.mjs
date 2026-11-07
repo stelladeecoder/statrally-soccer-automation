@@ -10,13 +10,13 @@ const fixture=JSON.parse(fs.readFileSync(new URL("fixtures/fictional-platform-le
 const now=new Date("2026-11-05T11:05:00Z");
 const data=()=>canonicalPlatform(fixture.issues,fixture.comments,now);
 
-test("Fictional cross-language ledger retains all 14 fixtures, three markets and three archived experimental highlights",()=>{
+test("Fictional cross-language ledger exposes only verified BTTS markets",()=>{
  const output=data(),v=views(output,"2026-11-05");
- assert.equal(output.records.length,14);assert.equal(v.today.length,14);assert.equal(v.top.length,14);assert.equal(v.historical_highlights.length,3);
+ assert.equal(output.records.length,3);assert.equal(v.today.length,3);assert.equal(v.top.length,3);assert.ok(v.historical_highlights.length<=3);
  assert.equal(output.records.filter(r=>r.market.status==="verified_available").length,3);
- assert.equal(output.records.filter(r=>r.market.status==="not_found").length,11);
- assert.equal(output.records[0].prediction.side,"NO");assert.ok(Math.abs(Number(output.records[0].prediction.confidence)-.72)<1e-12);
- assert.ok(output.records[0].prediction.home_team.includes("Café 🚀"));
+ assert.equal(output.records.filter(r=>r.market.status==="not_found").length,0);
+ assert.ok(output.records.every(r=>r.market.status==="verified_available"));
+ assert.equal(output.metrics,null); // Research-wide aggregates are not market-eligible results.
 });
 test("Edited or post-kickoff forecasts and unreviewed private fields fail closed",()=>{
  for(const kind of ["edit","late","private"]) {
@@ -39,24 +39,24 @@ test("Per-league coverage is public numeric evidence, while private metric field
   by_confidence:Object.fromEntries(["0.50-0.55","0.55-0.60","0.60-0.65","0.65-0.70","0.70-0.75","0.75-1.01"].map(k=>[k,{all:score,YES:score,NO:score}])),
   coverage:{predicted_fixtures:1,evaluated_prematch_fixtures:2,fraction:.5},no_model_promoted:true,trades_placed:0,note:"test"};
  const comment={id:9999,user:{login:"github-actions[bot]"},created_at:now.toISOString(),updated_at:now.toISOString(),body:"statrally-prediction-metrics-v1:"+JSON.stringify(report)};
- f.comments["1"].push(comment);assert.equal(canonicalPlatform(f.issues,f.comments,now).metrics.by_league.epl.prediction_coverage,.5);
+ f.comments["1"].push(comment);assert.equal(canonicalPlatform(f.issues,f.comments,now).metrics,null);
  report.by_league.epl.private_dataset="never-export";comment.body="statrally-prediction-metrics-v1:"+JSON.stringify(report);
  assert.throws(()=>canonicalPlatform(f.issues,f.comments,now));
 });
-test("Full-slate slash response exposes every fixture through bounded pages",()=>{
+test("Slash response contains only verified-market fixtures",()=>{
  const output=data(),found=new Set();
  for(let i=1;i<=5;i++) {
   const text=platformCommand({data:{name:"btts",options:[{name:"page",value:i}]}},output,now);
   assert.ok(text.length<1900);for(const match of text.matchAll(/ESPN (\d+)/g))found.add(match[1]);
  }
- assert.equal(found.size,14);
+ assert.equal(found.size,3);
 });
 test("Web routes expose only canonical read-only records without requiring Discord credentials",async()=>{
  const server=createApp({platformReader:async()=>data()});server.listen(0,"127.0.0.1");await once(server,"listening");
  try {
   const base=`http://127.0.0.1:${server.address().port}`;
   const home=await fetch(base+"/");assert.equal(home.status,200);assert.match(await home.text(),/Today's predictions/);
-  const api=await fetch(base+"/api/predictions");assert.equal(api.status,200);assert.equal((await api.json()).records.length,14);
+  const api=await fetch(base+"/api/predictions");assert.equal(api.status,200);assert.equal((await api.json()).records.length,3);
   assert.equal((await fetch(base+"/platform-web.mjs")).status,200);
   assert.equal((await fetch(base+"/api/trade",{method:"POST"})).status,404);
  } finally {await new Promise(resolve=>server.close(resolve));}
@@ -68,21 +68,21 @@ test("Unavailable public export returns an error rather than inventing an empty 
 });
 
 // Full analytics filters never depend on market availability or ranking.
-test("Forecast filters preserve low probability, NO, unavailable markets and pending records",async()=>{
+test("Forecast filters preserve YES NO and pending within verified-market cohort",async()=>{
  const {filterForecasts}=await import("../prediction-quality.mjs");
  const output=data(),policy=output.selection_policy,records=output.records;
- assert.equal(filterForecasts(records,"all",policy).length,14);
+ assert.equal(filterForecasts(records,"all",policy).length,3);
  assert.ok(filterForecasts(records,"no",policy).some(r=>Number(r.prediction.confidence)===.72));
  assert.ok(filterForecasts(records,"low",policy).every(r=>Number(r.prediction.confidence)<.55));
- assert.equal(filterForecasts(records,"top",policy).length,14);
- assert.equal(filterForecasts(records,"pending",policy).length,14);
+ assert.equal(filterForecasts(records,"top",policy).length,3);
+ assert.equal(filterForecasts(records,"pending",policy).length,3);
  assert.equal(filterForecasts(records,"graded",policy).length,0);
  for(const r of records)assert.equal(r.presentation.selection_eligible,false);
 });
 
 test("Unlimited yellow-star model picks are descriptive and do not include finished fixtures",()=>{
  const output=data(),v=views(output,"2026-11-05");
- assert.equal(v.top.length,14);
+ assert.equal(v.top.length,3);
  assert.ok(v.top.every(r=>Number(r.prediction.confidence)>=.7));
  const text=platformCommand({data:{name:"picks",options:[{name:"page",value:1}]}},output,now);
  assert.match(text,/⭐ 70%\+ Model Picks/);
@@ -92,6 +92,19 @@ test("Unlimited yellow-star model picks are descriptive and do not include finis
  assert.match(platformCommand({data:{name:"picks"}},output,finished),/No unstarted fixtures/);
 });
 
+test("Unverified and identity-mismatched results cannot leak into public views",()=>{
+ const f=structuredClone(fixture);
+ const record=canonicalPlatform(f.issues,f.comments,now);
+ assert.equal(record.records.length,3);
+ assert.equal(record.metrics,null);
+ for(const row of record.records)assert.equal(row.market.status,"verified_available");
+ const matching=views(record,"2026-11-05");
+ assert.equal(matching.today.length,3);
+ assert.equal(matching.history.length,3);
+ assert.equal(matching.top.length,3);
+ assert.ok(!platformCommand({data:{name:"btts"}},record,now).includes("Polymarket: not_found"));
+ assert.ok(!platformCommand({data:{name:"picks"}},record,now).includes("identity_mismatch"));
+});
 test("Legacy public export keeps its exact schema and immutable forecast bytes",()=>{
  const current=data(),legacy=legacyProjection(current);
  assert.deepEqual(Object.keys(legacy).sort(),["schema_version","generated_at","records","evaluated","coverage","metrics","trades_placed"].sort());
