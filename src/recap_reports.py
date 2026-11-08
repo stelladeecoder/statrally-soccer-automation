@@ -444,13 +444,16 @@ def run(ledger, today, hooks, *, weekly=True, monthly=True, model=True, test_sen
             start,end=month_bounds(target)
             data=summary(ledger,start,end)
             key = "monthly" if ix == 0 else "monthly_previous"
-            if data["overall"]["ALL"]["graded"]:
+            # Publish the current-month calendar even before the first verified
+            # final. Gray means no graded result, never a fabricated outcome.
+            # Keep previous-month backfills restricted to months with grades.
+            if ix == 0 or data["overall"]["ALL"]["graded"]:
+                if not hooks.get("monthly"):
+                    raise RuntimeError("Monthly recap Discord webhook is not configured")
                 kwargs=(test_senders or {}).get("monthly",{})
                 outcomes[key]=publish_period(ledger,kind="monthly",period_id=start.strftime("%Y-%m"),
                     issue_day=start,data={k:v for k,v in data.items() if k!="records"},payload=monthly_payload(data),
-                    webhook=hooks.get("monthly",""),png=calendar_png(data),**kwargs)
-            elif ix == 0:
-                outcomes[key]="no_verified_results"
+                    webhook=hooks["monthly"],png=calendar_png(data),**kwargs)
     if model:
         data=model_summary(ledger)
         if data["graded_total"]:
