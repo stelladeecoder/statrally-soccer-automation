@@ -7,7 +7,8 @@ on:
         type: boolean
         default: false
   schedule:
-    # 8:15 AM Central across standard/daylight time; local gate runs exactly once.
+    # Dual UTC windows cover 8:15 AM Central in both standard/daylight time.
+    # Both windows run; durable ledger receipts make repeat delivery idempotent.
     - cron: "15 13,14 * * *"
 permissions:
   contents: read
@@ -25,18 +26,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Restrict scheduled delivery to 8 AM Central
+      - name: Allow delayed GitHub schedules to complete
         id: gate
-        run: |
-          python - <<'PY'
-          import os
-          from datetime import datetime
-          from zoneinfo import ZoneInfo
-          local = datetime.now(ZoneInfo("America/Chicago"))
-          due = os.environ["GITHUB_EVENT_NAME"] == "workflow_dispatch" or local.hour == 8
-          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
-              output.write(f"due={'true' if due else 'false'}\n")
-          PY
+        run: echo "due=true" >> "$GITHUB_OUTPUT"
       - name: Test reporting and durable-delivery safeguards
         if: steps.gate.outputs.due == 'true'
         env:
