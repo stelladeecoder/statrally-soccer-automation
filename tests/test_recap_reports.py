@@ -141,7 +141,7 @@ class RecapTests(unittest.TestCase):
         messages=[]
         def fake_month(payload, webhook, png, *, message_id=None):
             self.assertEqual(webhook,hook)
-            self.assertTrue(png.startswith(b"\\x89PNG"))
+            self.assertTrue(png.startswith(bytes([137,80,78,71])))
             messages.append(message_id)
             return {"message_id":"111111111","channel_id":"222222222"}
         with patch("recap_reports.month_send",side_effect=fake_month):
