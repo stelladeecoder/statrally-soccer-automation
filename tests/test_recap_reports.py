@@ -133,8 +133,28 @@ class RecapTests(unittest.TestCase):
     def test_empty_groups_and_missing_webhooks_do_not_publish(self):
         data=summary(self.ledger,date(2026,11,1),date(2026,11,30))
         self.assertEqual(data["overall"]["ALL"]["graded"],0)
-        self.assertEqual(run(self.ledger,date(2026,11,8),{"weekly":"","monthly":"","model":""}),
-                         {"weekly":"no_verified_results","monthly":"no_verified_results","model":"no_verified_results"})
+        with self.assertRaisesRegex(RuntimeError, "Monthly recap Discord webhook"):
+            run(self.ledger,date(2026,11,8),{"weekly":"","monthly":"","model":""})
+
+    def test_november_monthly_posts_before_grading_and_updates_in_place(self):
+        hook="https://discord.com/api/webhooks/123456/token"
+        messages=[]
+        def fake_month(payload, webhook, png, *, message_id=None):
+            self.assertEqual(webhook,hook)
+            self.assertTrue(png.startswith(b"\\x89PNG"))
+            messages.append(message_id)
+            return {"message_id":"111111111","channel_id":"222222222"}
+        with patch("recap_reports.month_send",side_effect=fake_month):
+            result=run(self.ledger,date(2026,11,8),
+                       {"weekly":"","monthly":hook,"model":""},weekly=False,model=False)
+            self.assertEqual(result["monthly"],"posted")
+            self.assertEqual(len(messages),1)
+            self.assertIsNone(messages[0])
+            self.grade(0)
+            result=run(self.ledger,date(2026,11,8),
+                       {"weekly":"","monthly":hook,"model":""},weekly=False,model=False)
+            self.assertEqual(result["monthly"],"updated")
+            self.assertEqual(messages,[None,"111111111"])
 
     def test_monthly_multipart_send_and_patch_use_same_message(self):
         self.grade(0)
