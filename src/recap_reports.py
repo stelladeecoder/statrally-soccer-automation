@@ -435,10 +435,10 @@ def run(ledger, today, hooks, *, weekly=True, monthly=True, model=True, test_sen
             elif weeks_ago == 0:
                 outcomes[key]="no_verified_results"
     if monthly:
-        # Revisit last month during the first week, but never populate dates
-        # with forecasts that have not been graded.
+        # Revisit last month through the first two weeks to recover delayed
+        # schedules and late grading without inventing unverified outcomes.
         starts = [today.replace(day=1)]
-        if today.day <= 7:
+        if today.day <= 14:
             starts.append(today.replace(day=1)-timedelta(days=1))
         for ix, target in enumerate(starts):
             start,end=month_bounds(target)
