@@ -6,6 +6,15 @@ on:
         description: Publish real verified daily results (no synthetic data)
         type: boolean
         default: false
+  workflow_run:
+    # Backstop the daily cron using the independently recovered posting scheduler.
+    workflows: ["StatRally automatic posting scheduler"]
+    types: [completed]
+    branches: [main]
+  push:
+    # One-off recovery when this workflow is repaired, without running on data commits.
+    branches: [main]
+    paths: [".github/workflows/daily-results.yml"]
   schedule:
     # Dual UTC windows cover 8:15 AM Central in both standard/daylight time.
     # Both windows run; durable ledger receipts make repeat delivery idempotent.
@@ -18,7 +27,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   daily:
-    if: ${{ github.event_name == 'schedule' || inputs.publish_discord }}
+    if: ${{ github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_run' || inputs.publish_discord }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -26,9 +35,21 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Allow delayed GitHub schedules to complete
+      - name: Check Central-time backup window
         id: gate
-        run: echo "due=true" >> "$GITHUB_OUTPUT"
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          python - <<'PY'
+          from datetime import datetime, time
+          from zoneinfo import ZoneInfo
+          import os
+          local = datetime.now(ZoneInfo("America/Chicago")).time()
+          due = os.environ["EVENT_NAME"] != "workflow_run" or time(8, 20) <= local <= time(10, 15)
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write("due=" + str(due).lower() + "\\n")
+          print("Daily results backup gate:", due)
+          PY
       - name: Test reporting and durable-delivery safeguards
         if: steps.gate.outputs.due == 'true'
         env:
