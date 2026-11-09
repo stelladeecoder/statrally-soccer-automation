@@ -47,7 +47,7 @@ jobs:
           local = datetime.now(ZoneInfo("America/Chicago")).time()
           due = os.environ["EVENT_NAME"] != "workflow_run" or time(8, 20) <= local <= time(10, 15)
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
-              output.write("due=" + str(due).lower() + "\\n")
+              output.write("due=" + str(due).lower() + "\n")
           print("Daily results backup gate:", due)
           PY
       - name: Test reporting and durable-delivery safeguards
