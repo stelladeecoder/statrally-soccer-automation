@@ -61,10 +61,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           STATRALLY_RESULTS_DISCORD_WEBHOOK: ${{ secrets.STATRALLY_RESULTS_DISCORD_WEBHOOK }}
         run: python automation/src/prediction_platform.py results
-      - name: Continue grading legacy official paper records during migration
-        if: inputs.publish_discord
-        env:
-          PYTHONPATH: automation/src
-          GH_TOKEN: ${{ github.token }}
-          STATRALLY_RESULTS_DISCORD_WEBHOOK: ${{ secrets.STATRALLY_RESULTS_DISCORD_WEBHOOK }}
-        run: python automation/src/m13_beta_grade_issues.py
+      # The canonical ledger publisher above is the sole results-channel writer.
+      # Do not run m13_beta_grade_issues.py here: it uses an independent
+      # reservation ledger and can publish duplicate cards for the same match.
