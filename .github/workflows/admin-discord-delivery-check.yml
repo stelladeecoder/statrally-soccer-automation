@@ -1,0 +1,75 @@
+name: One-time StatRally admin Discord delivery verification
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/admin-discord-delivery-check.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  issues: write
+jobs:
+  delivery:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[verify-admin-discord]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Send single requested verification to private admin channel
+        id: send
+        continue-on-error: true
+        env:
+          STATRALLY_ADMIN_DISCORD_WEBHOOK: ${{ secrets.STATRALLY_ADMIN_DISCORD_WEBHOOK }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          from urllib.request import Request, urlopen
+          secret=os.environ.get("STATRALLY_ADMIN_DISCORD_WEBHOOK","")
+          if not secret:
+              Path("/tmp/admin-delivery-status.txt").write_text("missing_webhook_secret")
+              raise SystemExit("Missing configured admin webhook")
+          # Reserve before sending: reruns should never make duplicate test messages.
+          repo=os.environ["GITHUB_REPOSITORY"]
+          req=Request("https://api.github.com/repos/"+repo+"/issues/107/comments",
+              headers={"Authorization":"Bearer "+os.environ["GH_TOKEN"],
+              "Accept":"application/vnd.github+json","User-Agent":"StatRally-Verification"})
+          with urlopen(req,timeout=15) as response:
+              comments=json.load(response)
+          if any("ADMIN_DISCORD_DELIVERY_CONFIRMED" in (row.get("body") or "") for row in comments):
+              Path("/tmp/admin-delivery-status.txt").write_text("previously_confirmed_no_resend")
+              print("Previously confirmed, no duplicate verification sent.")
+          else:
+              from sys import path
+              path.insert(0,"src")
+              from m18_admin_monitor import send
+              try:
+                  send(secret, "**StatRally | Admin delivery verification**\nOne-time requested check of Discord webhook delivery. No BTTS picks or trades were generated.")
+                  Path("/tmp/admin-delivery-status.txt").write_text("ADMIN_DISCORD_DELIVERY_CONFIRMED")
+              except Exception as exc:
+                  Path("/tmp/admin-delivery-status.txt").write_text("delivery_unconfirmed:"+type(exc).__name__)
+                  raise
+          PY
+      - name: Record sanitized receipt in tracking issue
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          p=Path("/tmp/admin-delivery-status.txt")
+          status=p.read_text().strip() if p.exists() else "unconfirmed_no_status"
+          run="https://github.com/"+os.environ["GITHUB_REPOSITORY"]+"/actions/runs/"+os.environ["GITHUB_RUN_ID"]
+          Path("/tmp/admin-delivery-comment.json").write_text(json.dumps({
+            "body":"Admin Discord verification status: **"+status+"**\nRun: "+run+
+                   "\nNo webhook URLs, market positions, model details or Discord message IDs were recorded."}))
+          PY
+          gh api -X POST "repos/${{ github.repository }}/issues/107/comments" --input /tmp/admin-delivery-comment.json --silent
+      - name: Require confirmed delivery
+        if: always()
+        env:
+          SEND_OUTCOME: ${{ steps.send.outcome }}
+        run: |
+          test "$SEND_OUTCOME" = success &&
+          grep -Eq '^(ADMIN_DISCORD_DELIVERY_CONFIRMED|previously_confirmed_no_resend)$' /tmp/admin-delivery-status.txt
