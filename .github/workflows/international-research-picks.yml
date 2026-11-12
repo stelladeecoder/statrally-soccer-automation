@@ -1,4 +1,5 @@
 name: StatRally international experimental BTTS Discord delivery
+# International model CI aligns historical tests with the current Central day.
 on:
   workflow_dispatch:
     inputs:
