@@ -12,7 +12,7 @@ on:
     paths:
       - .github/workflows/international-research-picks.yml
   schedule:
-    - cron: "35 13,14 * * *"
+    - cron: "05 09,10 * * *"
 permissions:
   contents: read
   issues: write
@@ -36,13 +36,13 @@ jobs:
           from zoneinfo import ZoneInfo
           event=os.environ["EVENT_NAME"]
           local=datetime.now(ZoneInfo("America/Chicago"))
-          # The two UTC schedules correspond to 8:35 Central in standard
+          # The two UTC schedules correspond to 4:05 Central in standard
           # and daylight time. The other slot must remain silent.
-          publish=(event=="schedule" and local.hour==8) or (
+          publish=(event=="schedule" and local.hour==4) or (
               event=="workflow_dispatch" and os.environ.get("MANUAL_PUBLISH")=="true")
           with open(os.environ["GITHUB_OUTPUT"],"a") as f:
               f.write("publish="+str(publish).lower()+"\n")
-              f.write("skip="+str(event=="schedule" and local.hour!=8).lower()+"\n")
+              f.write("skip="+str(event=="schedule" and local.hour!=4).lower()+"\n")
           print("STATRALLY_INTL_RUN_POLICY",{"event":event,"publish":publish,
                                            "central_hour":local.hour})
           PY
