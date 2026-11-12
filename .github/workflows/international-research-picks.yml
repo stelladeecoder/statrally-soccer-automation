@@ -1,0 +1,122 @@
+name: StatRally international experimental BTTS Discord delivery
+on:
+  workflow_dispatch:
+    inputs:
+      publish_discord:
+        description: Send the live international research forecast slate to BTTS picks Discord
+        type: boolean
+        default: false
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/international-research-picks.yml
+  schedule:
+    - cron: "35 13,14 * * *"
+permissions:
+  contents: read
+  issues: write
+concurrency:
+  group: statrally-international-research-discord-daily
+  cancel-in-progress: false
+jobs:
+  international:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Determine local-time delivery policy
+        id: policy
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          MANUAL_PUBLISH: ${{ inputs.publish_discord }}
+        run: |
+          python - <<'PY'
+          import os
+          from datetime import datetime
+          from zoneinfo import ZoneInfo
+          event=os.environ["EVENT_NAME"]
+          local=datetime.now(ZoneInfo("America/Chicago"))
+          # The two UTC schedules correspond to 8:35 Central in standard
+          # and daylight time. The other slot must remain silent.
+          publish=(event=="schedule" and local.hour==8) or (
+              event=="workflow_dispatch" and os.environ.get("MANUAL_PUBLISH")=="true")
+          with open(os.environ["GITHUB_OUTPUT"],"a") as f:
+              f.write("publish="+str(publish).lower()+"\n")
+              f.write("skip="+str(event=="schedule" and local.hour!=8).lower()+"\n")
+          print("STATRALLY_INTL_RUN_POLICY",{"event":event,"publish":publish,
+                                           "central_hour":local.hour})
+          PY
+      - uses: actions/checkout@v4
+        if: steps.policy.outputs.skip != 'true'
+        with:
+          path: automation
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        if: steps.policy.outputs.skip != 'true'
+        with:
+          repository: stelladeecoder/statrally-soccer-btts
+          ref: main
+          token: ${{ secrets.STAT_RALLY_PRIVATE_READ_TOKEN }}
+          persist-credentials: false
+          path: engine
+      - uses: actions/setup-python@v5
+        if: steps.policy.outputs.skip != 'true'
+        with:
+          python-version: "3.12"
+      - name: Install read-only research dependencies
+        if: steps.policy.outputs.skip != 'true'
+        run: python -m pip install polymarket-us==2.4.1 pandas==2.2.3 numpy==2.3.5
+      - name: Verify offline international research safeguards
+        if: steps.policy.outputs.skip != 'true'
+        working-directory: engine
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests -p 'test_international_*.py' -v
+      - name: Discover international fixture slate
+        if: steps.policy.outputs.skip != 'true'
+        working-directory: engine
+        env:
+          PYTHONPATH: src
+        run: python src/international_discovery.py --days 1 --output "$RUNNER_TEMP/int-fixtures.json"
+      - name: Verify Polymarket US market identity
+        if: steps.policy.outputs.skip != 'true'
+        working-directory: engine
+        env:
+          PYTHONPATH: src
+        run: python src/international_market_scout.py --input "$RUNNER_TEMP/int-fixtures.json" --output "$RUNNER_TEMP/int-markets.json"
+      - name: Generate experimental international national-team forecasts
+        if: steps.policy.outputs.skip != 'true'
+        working-directory: engine
+        env:
+          PYTHONPATH: src
+        run: python src/international_research_forecasts.py --fixtures "$RUNNER_TEMP/int-fixtures.json" --markets "$RUNNER_TEMP/int-markets.json" --output "$RUNNER_TEMP/int-forecasts.json"
+      - name: Render labeled experimental BTTS Discord forecasts
+        if: steps.policy.outputs.skip != 'true'
+        working-directory: engine
+        env:
+          PYTHONPATH: src
+        run: python src/international_research_discord.py --input "$RUNNER_TEMP/int-forecasts.json" --output "$RUNNER_TEMP/int-discord.json"
+      - name: Only send on approved delivery window
+        if: steps.policy.outputs.publish == 'true' && steps.policy.outputs.skip != 'true'
+        working-directory: automation
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STATRALLY_PICKS_DISCORD_WEBHOOK: ${{ secrets.STATRALLY_PICKS_DISCORD_WEBHOOK }}
+        run: python src/international_research_delivery.py --input "$RUNNER_TEMP/int-discord.json"
+      - name: Report safe delivery diagnostics
+        if: steps.policy.outputs.skip != 'true'
+        env:
+          PUBLISH: ${{ steps.policy.outputs.publish }}
+        run: |
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          path=Path(os.environ["RUNNER_TEMP"])/"int-discord.json"
+          data=json.loads(path.read_text())
+          print("STATRALLY_INTERNATIONAL_DAILY_SUMMARY="+json.dumps({
+              "eligible_forecasts":data["fixture_count"],
+              "very_high_probability_70_pct":data["very_high_count"],
+              "discord_pages":len(data["payloads"]),
+              "delivery_attempt_enabled":os.environ["PUBLISH"]=="true",
+              "trades_placed":0
+          },sort_keys=True))
+          PY
