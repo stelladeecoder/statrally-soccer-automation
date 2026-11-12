@@ -46,6 +46,23 @@ jobs:
           print("STATRALLY_INTL_RUN_POLICY",{"event":event,"publish":publish,
                                            "central_hour":local.hour})
           PY
+      - name: Verify Central DST schedule mapping
+        run: |
+          python - <<'PY'
+          from datetime import datetime, timezone
+          from zoneinfo import ZoneInfo
+          central=ZoneInfo("America/Chicago")
+          cases=[
+              (datetime(2026,7,12,9,5,tzinfo=timezone.utc),4),
+              (datetime(2026,7,12,10,5,tzinfo=timezone.utc),5),
+              (datetime(2026,11,13,9,5,tzinfo=timezone.utc),3),
+              (datetime(2026,11,13,10,5,tzinfo=timezone.utc),4),
+          ]
+          for utc,expected_hour in cases:
+              local=utc.astimezone(central)
+              assert local.hour == expected_hour and local.minute == 5,(utc,local)
+              print("VERIFIED_UTC_TO_CENTRAL",utc.isoformat(),local.isoformat())
+          PY
       - uses: actions/checkout@v4
         if: steps.policy.outputs.skip != 'true'
         with:
