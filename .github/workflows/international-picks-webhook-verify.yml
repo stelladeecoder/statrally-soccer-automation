@@ -1,0 +1,73 @@
+name: International research picks webhook one-time verification
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/international-picks-webhook-verify.yml']
+permissions:
+  contents: read
+  issues: write
+jobs:
+  confirm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Send and remove clearly labeled one-time non-pick message
+        env:
+          STATRALLY_PICKS_DISCORD_WEBHOOK: ${{ secrets.STATRALLY_PICKS_DISCORD_WEBHOOK }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          from urllib.request import Request,urlopen
+          from urllib.parse import urlsplit,urlunsplit,urlencode,parse_qsl
+          token=os.environ["GH_TOKEN"]
+          repo=os.environ["GITHUB_REPOSITORY"]
+          result={"verified":False,"cleanup_confirmed":False,"trades_placed":0,
+                  "message_kind":"temporary_non_pick_test"}
+          # Do not automatically send a duplicate one-time smoke if any prior
+          # test reserved the slot in the audit issue.
+          url="https://api.github.com/repos/"+repo+"/issues/108/comments?per_page=100"
+          with urlopen(Request(url,headers={"Authorization":"Bearer "+token,
+                  "Accept":"application/vnd.github+json"}),timeout=15) as response:
+              comments=json.load(response)
+          if any("INTL_PICKS_WEBHOOK_SMOKE_RESERVATION_V1" in str(c.get("body",""))
+                 for c in comments):
+              raise SystemExit("One-time verification already reserved; no resend")
+          def comment(body):
+              payload=json.dumps({"body":body}).encode()
+              req=Request("https://api.github.com/repos/"+repo+"/issues/108/comments",
+                          method="POST",data=payload,headers={"Authorization":"Bearer "+token,
+                            "Accept":"application/vnd.github+json","Content-Type":"application/json"})
+              with urlopen(req,timeout=15) as response:
+                  return json.load(response)
+          if not comment("INTL_PICKS_WEBHOOK_SMOKE_RESERVATION_V1: reserved before one-time webhook verification").get("id"):
+              raise SystemExit("Unconfirmed reservation; no send")
+          try:
+              hook=os.environ.get("STATRALLY_PICKS_DISCORD_WEBHOOK","")
+              parts=urlsplit(hook)
+              if parts.scheme!="https" or parts.netloc!="discord.com" or not parts.path.startswith("/api/webhooks/"):
+                  raise ValueError("Picks Discord webhook missing or invalid")
+              endpoint=urlunsplit((parts.scheme,parts.netloc,parts.path,"wait=true",""))
+              body={"content":"⚽ StatRally international BTTS delivery verification. This is a temporary test message, **not a prediction or betting pick**.",
+                    "allowed_mentions":{"parse":[]}}
+              with urlopen(Request(endpoint,method="POST",data=json.dumps(body).encode(),
+                                   headers={"Content-Type":"application/json"}),timeout=15) as response:
+                  if response.status!=200:raise RuntimeError("Missing Discord acknowledgement")
+                  receipt=json.loads(response.read(65536))
+              message_id=receipt.get("id")
+              if not isinstance(message_id,str) or not message_id.isdigit():
+                  raise RuntimeError("Invalid Discord message receipt")
+              result["verified"]=True
+              # Delete the verification message to avoid polluting #btts-picks.
+              delete_url=urlunsplit((parts.scheme,parts.netloc,parts.path+"/messages/"+message_id,"",""))
+              with urlopen(Request(delete_url,method="DELETE"),timeout=15) as response:
+                  result["cleanup_confirmed"]=response.status==204
+          except Exception as exc:
+              result["error_type"]=type(exc).__name__
+              raise
+          finally:
+              comment("INTL_PICKS_WEBHOOK_SMOKE_RESULT_V1: "+json.dumps(result,sort_keys=True))
+              print("INTL_PICKS_WEBHOOK_SMOKE_RESULT="+json.dumps(result,sort_keys=True))
+          PY
