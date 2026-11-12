@@ -1,0 +1,70 @@
+name: Diagnose international BTTS picks Discord webhook
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/international-picks-webhook-diagnostic.yml']
+permissions:
+  contents: read
+  issues: write
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compare configured Discord webhook status without transmitting messages
+        env:
+          PICK_HOOK: ${{ secrets.STATRALLY_PICKS_DISCORD_WEBHOOK }}
+          ADMIN_HOOK: ${{ secrets.STATRALLY_ADMIN_DISCORD_WEBHOOK }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import json,os
+          from urllib.request import Request,urlopen
+          from urllib.parse import urlsplit
+          from urllib.error import HTTPError,URLError
+          from pathlib import Path
+          result={"run_id":os.environ["GITHUB_RUN_ID"],"no_posts_sent":True,"webhooks":{}}
+          for kind,key in (("picks","PICK_HOOK"),("admin","ADMIN_HOOK")):
+              secret=os.environ.get(key,"")
+              if not secret:
+                  result["webhooks"][kind]={"configured":False,"status":"missing_secret"}
+                  continue
+              parts=urlsplit(secret)
+              if parts.scheme!="https" or parts.netloc!="discord.com" or not parts.path.startswith("/api/webhooks/"):
+                  result["webhooks"][kind]={"configured":True,"status":"invalid_url_format"}
+                  continue
+              try:
+                  with urlopen(Request(secret,method="GET",
+                        headers={"User-Agent":"StatRally-Research/1"}),timeout=15) as response:
+                      result["webhooks"][kind]={"configured":True,"status_code":response.status,
+                                                "status":"reachable"}
+              except HTTPError as exc:
+                  result["webhooks"][kind]={"configured":True,"status_code":exc.code,
+                                            "status":"http_error"}
+              except URLError as exc:
+                  result["webhooks"][kind]={"configured":True,
+                                            "status":"transport_error","error_type":type(exc).__name__}
+              except Exception as exc:
+                  result["webhooks"][kind]={"configured":True,
+                                            "status":"other_error","error_type":type(exc).__name__}
+          Path("/tmp/webhook-status.json").write_text(json.dumps(result))
+          print("WEBHOOK_STATUS_ONLY="+json.dumps(result,sort_keys=True))
+          PY
+      - name: Record secret-safe result
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          path=Path("/tmp/webhook-status.json")
+          if path.exists():
+              report=json.loads(path.read_text())
+              body="### Picks webhook non-posting diagnostic\n```json\n"+json.dumps(report,sort_keys=True,indent=2)+"\n```"
+          else:
+              body="Picks webhook diagnostic could not run; no webhook status verified."
+          Path("/tmp/webhook-status-comment.json").write_text(json.dumps({"body":body}))
+          PY
+          gh api -X POST "repos/${{ github.repository }}/issues/108/comments" --input /tmp/webhook-status-comment.json --silent
