@@ -72,30 +72,35 @@ jobs:
           PYTHONPATH: src
         run: python -m unittest discover -s tests -p 'test_international_*.py' -v
       - name: Discover international fixture slate
+        id: fixtures
         if: steps.policy.outputs.skip != 'true'
         working-directory: engine
         env:
           PYTHONPATH: src
         run: python src/international_discovery.py --days 1 --output "$RUNNER_TEMP/int-fixtures.json"
       - name: Verify Polymarket US market identity
+        id: markets
         if: steps.policy.outputs.skip != 'true'
         working-directory: engine
         env:
           PYTHONPATH: src
         run: python src/international_market_scout.py --input "$RUNNER_TEMP/int-fixtures.json" --output "$RUNNER_TEMP/int-markets.json"
       - name: Generate experimental international national-team forecasts
+        id: forecast
         if: steps.policy.outputs.skip != 'true'
         working-directory: engine
         env:
           PYTHONPATH: src
         run: python src/international_research_forecasts.py --fixtures "$RUNNER_TEMP/int-fixtures.json" --markets "$RUNNER_TEMP/int-markets.json" --output "$RUNNER_TEMP/int-forecasts.json"
       - name: Render labeled experimental BTTS Discord forecasts
+        id: render
         if: steps.policy.outputs.skip != 'true'
         working-directory: engine
         env:
           PYTHONPATH: src
         run: python src/international_research_discord.py --input "$RUNNER_TEMP/int-forecasts.json" --output "$RUNNER_TEMP/int-discord.json"
       - name: Only send on approved delivery window
+        id: delivery
         if: steps.policy.outputs.publish == 'true' && steps.policy.outputs.skip != 'true'
         working-directory: automation
         env:
@@ -120,3 +125,39 @@ jobs:
               "trades_placed":0
           },sort_keys=True))
           PY
+
+      - name: Persist sanitized daily run audit
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED_PUBLISH: ${{ steps.policy.outputs.publish }}
+          FIXTURES: ${{ steps.fixtures.outcome }}
+          MARKETS: ${{ steps.markets.outcome }}
+          FORECAST: ${{ steps.forecast.outcome }}
+          RENDER: ${{ steps.render.outcome }}
+          DELIVERY: ${{ steps.delivery.outcome }}
+        run: |
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          temp=Path(os.environ["RUNNER_TEMP"])
+          values={"run_id":os.environ["GITHUB_RUN_ID"],
+                  "event":os.environ["GITHUB_EVENT_NAME"],
+                  "publish_requested":os.environ.get("EXPECTED_PUBLISH")=="true",
+                  "fixtures_stage":os.environ.get("FIXTURES"),
+                  "market_stage":os.environ.get("MARKETS"),
+                  "forecast_stage":os.environ.get("FORECAST"),
+                  "render_stage":os.environ.get("RENDER"),
+                  "delivery_stage":os.environ.get("DELIVERY"),"trades_placed":0}
+          cards=temp/"int-discord.json"
+          if cards.exists():
+              report=json.loads(cards.read_text())
+              values.update({"forecast_count":report.get("fixture_count"),
+                             "very_high_70pct_count":report.get("very_high_count"),
+                             "discord_pages":len(report.get("payloads",[]))})
+          body="### International research delivery scan\n" + chr(10).join(
+              "- **"+k+"**: "+str(v) for k,v in values.items())
+          body+="\nRun: https://github.com/"+os.environ["GITHUB_REPOSITORY"]+"/actions/runs/"+os.environ["GITHUB_RUN_ID"]
+          (temp/"intl-audit-comment.json").write_text(json.dumps({"body":body}))
+          PY
+          gh api -X POST "repos/${{ github.repository }}/issues/108/comments" --input "$RUNNER_TEMP/intl-audit-comment.json" --silent
